@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { api } from '@/lib/api';
+import { setToken } from '@/lib/auth';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -16,7 +17,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const { access_token } = await api.auth.register(email, password, fullName || undefined);
-      localStorage.setItem('token', access_token);
+      setToken(access_token);
       window.location.href = '/';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
