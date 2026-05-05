@@ -60,8 +60,8 @@ Existing global tools (Carta, EquityList, Qapita) treat Saudi as a currency feat
 ### Setup
 ```bash
 # Clone
-git clone https://github.com/ByTixty1/01 Capital.git
-cd 01 Capital
+git clone https://github.com/ByTixty1/01.Capital.git
+cd 01.Capital
 
 # Read the spec first
 cat CONSULTANT_SPEC.md
