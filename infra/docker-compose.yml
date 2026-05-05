@@ -33,6 +33,9 @@ services:
     build: ../backend
     container_name: zerocaps-backend
     env_file: ../backend/.env
+    environment:
+      # Override localhost → postgres service name inside the Docker network
+      DATABASE_URL: postgresql+asyncpg://zerocaps:zerocaps@postgres:5432/zerocaps
     ports:
       - "8000:8000"
     depends_on:
