@@ -1,8 +1,8 @@
-# ZeroCaps — Cap Table Software for Saudi Startups
+# 01 Capital — Cap Table Software for Saudi Startups
 
 > Working name. Final product naming happens after discovery validation.
 
-This repository contains the technical implementation, architecture, and supporting documentation for ZeroOne's cap table software product. It does **not** contain operational tracking, sales pipelines, learning logs, or general project journey artifacts — those live in the team's Notion workspace.
+This repository contains the technical implementation, architecture, and supporting documentation for 01 Capital's cap table software product. It does **not** contain operational tracking, sales pipelines, learning logs, or general project journey artifacts — those live in the team's Notion workspace.
 
 ---
 
@@ -60,8 +60,8 @@ Existing global tools (Carta, EquityList, Qapita) treat Saudi as a currency feat
 ### Setup
 ```bash
 # Clone
-git clone https://github.com/ByTixty1/ZeroCaps.git
-cd ZeroCaps
+git clone https://github.com/ByTixty1/01 Capital.git
+cd 01 Capital
 
 # Read the spec first
 cat CONSULTANT_SPEC.md
@@ -112,4 +112,4 @@ This repo is implementation-focused. The broader project — vision, strategy, c
 
 ## License
 
-Proprietary. © ZeroOne Tech Solutions. All rights reserved.
+Proprietary. © 01 Capital Tech Solutions. All rights reserved.

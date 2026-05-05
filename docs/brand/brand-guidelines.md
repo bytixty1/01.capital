@@ -1,6 +1,6 @@
-# ZeroCaps Brand Guidelines
+# 01 Capital Brand Guidelines
 
-> Inherits ZeroOne's visual identity: dark premium surfaces, restrained purple accent, professional typography. Adapted for a compliance-grade B2B context — even more restrained than the parent brand.
+> Inherits 01 Capital's visual identity: dark premium surfaces, restrained purple accent, professional typography. Adapted for a compliance-grade B2B context — even more restrained than the parent brand.
 
 ---
 
@@ -115,9 +115,9 @@ Cap table waterfall / dilution charts: use a sequential purple ramp (light to da
 
 ## Logo usage
 
-ZeroOne logo (parent brand) appears in the top-left of authenticated views and on the marketing site. Minimum size: 24px height. Clear space: 1x logo height on all sides.
+01 Capital logo (parent brand) appears in the top-left of authenticated views and on the marketing site. Minimum size: 24px height. Clear space: 1x logo height on all sides.
 
-ZeroCaps wordmark (when finalized after discovery) appears below or beside the logo, never on top of it.
+01 Capital wordmark (when finalized after discovery) appears below or beside the logo, never on top of it.
 
 ---
 

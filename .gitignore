@@ -62,3 +62,14 @@ private-keys/
 tmp/
 temp/
 *.tmp
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Claude Code system skills and tools (not part of this project)
+.claude/skills/brand-guidelines/
+.claude/skills/deep-research/
+.claude/skills/frontend-design/
+.claude/skills/pdf/
+.claude/skills/xlsx/
+.tools/

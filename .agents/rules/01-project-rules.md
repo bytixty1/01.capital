@@ -2,14 +2,14 @@
 trigger: always_on
 ---
 
-# ZeroCaps Project Rules
+# 01 Capital Project Rules
 
-This workspace is for building cap table and equity management software for Saudi startups under the ZeroOne brand.
+This workspace is for building cap table and equity management software for Saudi startups under the 01 Capital brand.
 
 ## Project identity
 
 - Product type: Cap table / equity management SaaS for Saudi-domiciled companies
-- Brand: ZeroOne
+- Brand: 01 Capital
 - Product posture: serious, compliance-grade, professional B2B tool
 - Primary users in V1: Saudi startup founders and CFOs managing their own equity
 - Geographic focus: Saudi Arabia first; other GCC markets are out of scope for MVP

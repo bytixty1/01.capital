@@ -3,24 +3,24 @@ version: "3.9"
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: zerocaps-postgres
+    container_name: 01capital-postgres
     environment:
-      POSTGRES_USER: zerocaps
-      POSTGRES_PASSWORD: zerocaps
-      POSTGRES_DB: zerocaps
+      POSTGRES_USER: 01capital
+      POSTGRES_PASSWORD: 01capital
+      POSTGRES_DB: 01capital
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U zerocaps"]
+      test: ["CMD-SHELL", "pg_isready -U 01capital"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: zerocaps-redis
+    container_name: 01capital-redis
     ports:
       - "6379:6379"
     healthcheck:
@@ -31,11 +31,11 @@ services:
 
   backend:
     build: ../backend
-    container_name: zerocaps-backend
+    container_name: 01capital-backend
     env_file: ../backend/.env
     environment:
       # Override localhost → postgres service name inside the Docker network
-      DATABASE_URL: postgresql+asyncpg://zerocaps:zerocaps@postgres:5432/zerocaps
+      DATABASE_URL: postgresql+asyncpg://01capital:01capital@postgres:5432/01capital
     ports:
       - "8000:8000"
     depends_on:
@@ -48,7 +48,7 @@ services:
 
   frontend:
     build: ../frontend
-    container_name: zerocaps-frontend
+    container_name: 01capital-frontend
     ports:
       - "3000:3000"
     depends_on:

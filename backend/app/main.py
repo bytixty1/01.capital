@@ -1,5 +1,5 @@
 """
-ZeroCaps Backend — FastAPI entry point.
+01 Capital Backend — FastAPI entry point.
 
 Sprint 0 scope: auth scaffold + health endpoint + DB connection only.
 No domain features until discovery validates the direction.
@@ -20,23 +20,23 @@ logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
     format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
 )
-logger = logging.getLogger("zerocaps")
+logger = logging.getLogger("01capital")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info(
-        "ZeroCaps API starting | env=%s | debug=%s",
+        "01 Capital API starting | env=%s | debug=%s",
         settings.environment,
         settings.debug,
     )
     yield
     await engine.dispose()
-    logger.info("ZeroCaps API shutdown complete")
+    logger.info("01 Capital API shutdown complete")
 
 
 app = FastAPI(
-    title="ZeroCaps API",
+    title="01 Capital API",
     description=(
         "Cap table and equity management for Saudi startups. "
         "Built natively around the 2023 Saudi Companies Law."
@@ -62,7 +62,7 @@ app.include_router(api_router)
 async def health_check() -> dict[str, str]:
     return {
         "status": "healthy",
-        "service": "zerocaps-backend",
+        "service": "01capital-backend",
         "environment": settings.environment,
         "version": "0.1.0",
     }

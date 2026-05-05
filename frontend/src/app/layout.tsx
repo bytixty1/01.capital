@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'ZeroCaps',
+  title: '01 Capital',
   description: 'Cap table and equity management for Saudi startups.',
 };
 

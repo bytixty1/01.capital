@@ -8,7 +8,7 @@
 
 ## Context
 
-ZeroCaps is a B2B SaaS product that handles legal-grade data (cap tables, share registers, equity events). The stack must be:
+01 Capital is a B2B SaaS product that handles legal-grade data (cap tables, share registers, equity events). The stack must be:
 
 - Type-safe end-to-end — ownership calculations cannot have runtime type errors
 - Async-native — multiple concurrent DB operations per request (event sourcing pattern)

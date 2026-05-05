@@ -10,7 +10,7 @@
 
 > Hi [Name],
 >
-> [Mutual connection] mentioned you'd be a good person to talk to. I'm Yosef from ZeroOne — we're researching how Saudi founders manage their company's equity (cap tables, founder shares, employee equity, that sort of thing).
+> [Mutual connection] mentioned you'd be a good person to talk to. I'm Yosef from 01 Capital — we're researching how Saudi founders manage their company's equity (cap tables, founder shares, employee equity, that sort of thing).
 >
 > I'm not selling anything. I'm trying to learn what's actually painful for Saudi founders before we build anything specific. 30–45 minutes of your time would help me a lot.
 >
@@ -23,7 +23,7 @@
 
 > السلام عليكم [الاسم]،
 >
-> [الشخص الواسطة] ذكر إنك ممكن تكون من الأشخاص اللي يفيدوني في الموضوع. أنا يوسف من ZeroOne — نشتغل على فهم كيف المؤسسين السعوديين يديرون ملكية شركاتهم (جدول الملكية، أسهم المؤسسين، أسهم الموظفين، وما إلى ذلك).
+> [الشخص الواسطة] ذكر إنك ممكن تكون من الأشخاص اللي يفيدوني في الموضوع. أنا يوسف من 01 Capital — نشتغل على فهم كيف المؤسسين السعوديين يديرون ملكية شركاتهم (جدول الملكية، أسهم المؤسسين، أسهم الموظفين، وما إلى ذلك).
 >
 > ما عندي شي أبيعه. أحاول أفهم وش اللي فعلاً يزعج المؤسسين السعوديين قبل ما نبني أي شي محدد. 30–45 دقيقة من وقتك بتفيدني كثير.
 >
@@ -40,7 +40,7 @@
 
 > Hi [Name],
 >
-> I'm Yosef, co-founder of ZeroOne. We're a Saudi tech company researching cap table and equity management for Saudi startups specifically. Carta and similar tools weren't built for Saudi entity types or the Companies Law — we're trying to understand if that gap matters to founders like you.
+> I'm Yosef, co-founder of 01 Capital. We're a Saudi tech company researching cap table and equity management for Saudi startups specifically. Carta and similar tools weren't built for Saudi entity types or the Companies Law — we're trying to understand if that gap matters to founders like you.
 >
 > I'd love 30 minutes to learn from your experience — no pitch, just questions. I'd be happy to share what I learn from other founders in return.
 >
@@ -54,7 +54,7 @@
 
 > السلام عليكم [الاسم]،
 >
-> أنا يوسف، شريك مؤسس في ZeroOne. شركة تقنية سعودية، نبحث في موضوع جدول الملكية وإدارة أسهم الشركات الناشئة السعودية بالذات. أدوات مثل Carta ما صُممت للأنواع القانونية السعودية ولا لنظام الشركات الجديد — ونحاول نفهم هل هذي الفجوة فعلاً تأثر على مؤسسين زيك.
+> أنا يوسف، شريك مؤسس في 01 Capital. شركة تقنية سعودية، نبحث في موضوع جدول الملكية وإدارة أسهم الشركات الناشئة السعودية بالذات. أدوات مثل Carta ما صُممت للأنواع القانونية السعودية ولا لنظام الشركات الجديد — ونحاول نفهم هل هذي الفجوة فعلاً تأثر على مؤسسين زيك.
 >
 > أتمنى آخذ 30 دقيقة من وقتك أتعلم من تجربتك — ما عندي شي أبيعه، بس أسئلة. وبكل سرور أشاركك ملخص اللي تعلمته من المؤسسين الثانيين.
 >
@@ -72,7 +72,7 @@
 
 > Dear [Name],
 >
-> I'm Yosef Naytah, founder of ZeroOne Tech Solutions. We're building cap table and equity management software designed natively around the 2023 Saudi Companies Law — focused on SJSC, LLC, ESOPs, and the regulatory pathways Saudi startups actually navigate.
+> I'm Yosef Naytah, founder of 01 Capital Tech Solutions. We're building cap table and equity management software designed natively around the 2023 Saudi Companies Law — focused on SJSC, LLC, ESOPs, and the regulatory pathways Saudi startups actually navigate.
 >
 > Before we build, we need a Saudi corporate lawyer's perspective — both as a sanity check on our legal assumptions and, ideally, as an advisor as we grow. I've reviewed [firm name]'s commentary on the new Companies Law and your team's expertise stood out.
 >
@@ -82,7 +82,7 @@
 >
 > Best regards,
 > Yosef Naytah
-> Founder & CEO, ZeroOne Tech Solutions
+> Founder & CEO, 01 Capital Tech Solutions
 > zeroone.techcompany@gmail.com
 > 0557788097
 
@@ -133,7 +133,7 @@ Used in the interview script (Q15) but here in writing in case you want to follo
 ## Tone notes
 
 - **Don't pitch.** The moment you pitch in outreach, the response rate drops 5x.
-- **Be specific about who you are.** "Co-founder of ZeroOne, Saudi tech company" beats "I'm building a startup."
+- **Be specific about who you are.** "Co-founder of 01 Capital, Saudi tech company" beats "I'm building a startup."
 - **Always offer something back.** Sharing what you learned from other founders is the cheapest, most valuable currency you have.
 - **Match formality.** If they're more senior or older, slightly more formal Arabic. If they're peers, conversational is fine.
 - **Don't apologize for taking their time.** It signals weakness. Just thank them clearly.

@@ -27,7 +27,7 @@ export default function LoginPage() {
   return (
     <main style={styles.page}>
       <div style={styles.card}>
-        <span style={styles.eyebrow}>ZeroCaps</span>
+        <span style={styles.eyebrow}>01 Capital</span>
         <h1 style={styles.heading}>Sign in</h1>
 
         <form onSubmit={handleSubmit} style={styles.form}>

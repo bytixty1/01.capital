@@ -1,4 +1,4 @@
-# ZeroCaps Backend — Python Dependencies
+# 01 Capital Backend — Python Dependencies
 
 # Web framework
 fastapi==0.115.12

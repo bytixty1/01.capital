@@ -22,7 +22,7 @@ export default function HomePage() {
           marginBottom: '24px',
         }}
       >
-        ZeroCaps · v0.1.0
+        01 Capital · v0.1.0
       </span>
 
       <h1 style={{ fontSize: '48px', fontWeight: 700, marginBottom: '16px', lineHeight: 1.1 }}>

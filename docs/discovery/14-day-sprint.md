@@ -2,7 +2,7 @@
 
 > The next two weeks. Concrete days, concrete owners, concrete deliverables. No code on features yet — only foundational scaffolding so the engineers don't sit idle while validation runs.
 >
-> **Sprint goal:** at the end of 14 days, ZeroOne has a clear, evidence-backed answer to "Should we build this product?" — and if yes, a sharper definition of what V1 actually is.
+> **Sprint goal:** at the end of 14 days, 01 Capital has a clear, evidence-backed answer to "Should we build this product?" — and if yes, a sharper definition of what V1 actually is.
 
 ---
 
@@ -82,7 +82,7 @@ Each owner has the authority to make tactical decisions in their lane. Strategic
 
 **Abdulelah:**
 - Scaffold the backend: FastAPI app, Postgres connection, Alembic migrations, auth-only routes.
-- Scaffold the frontend: Next.js 15 app, Tailwind config, ZeroOne brand tokens, single login page.
+- Scaffold the frontend: Next.js 15 app, Tailwind config, 01 Capital brand tokens, single login page.
 - No features. Just enough to prove the stack works end-to-end.
 
 ---
@@ -249,7 +249,7 @@ This is the gate. One of three outcomes:
 
 **If Outcome C:**
 - Stop. Take the weekend. Reconvene Monday.
-- Discuss the archived paths from `ZeroOne_Product_Directions_Archive.docx`.
+- Discuss the archived paths from `01 Capital_Product_Directions_Archive.docx`.
 - Don't make the decision while disappointed; make it while sober.
 
 ---

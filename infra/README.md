@@ -14,7 +14,7 @@ docker compose up
 
 # Backend lives on http://localhost:8000
 # Frontend lives on http://localhost:3000
-# Postgres on localhost:5432 (zerocaps/zerocaps)
+# Postgres on localhost:5432 (01capital/01capital)
 # Redis on localhost:6379
 ```
 

@@ -23,7 +23,7 @@ Optional Round 2 (after MVP customer interviews suggest others matter): Eqvista,
 **Setup:**
 - Sign up for the free / trial tier where one exists
 - Create a fake Saudi company profile (you are pretending to be a Saudi LLC founder)
-- Try to set up your real ZeroOne cap table (4 founders, equal-ish splits, simple ESOP intent)
+- Try to set up your real 01 Capital cap table (4 founders, equal-ish splits, simple ESOP intent)
 - Document everything
 
 **What you're looking for:**
@@ -216,4 +216,4 @@ After completing all three, write a synthesis page in `docs/discovery/competitiv
 
 ## Time-saving tip
 
-When signing up to competitor tools, **use a real-looking but throwaway company name** — not "Test123" or "ZeroOne." Use something like "Riyadh Capital Holdings" or "Najd Ventures." Some competitors gate features based on whether the company looks real; using a credible name lets you see more of the product.
+When signing up to competitor tools, **use a real-looking but throwaway company name** — not "Test123" or "01 Capital." Use something like "Riyadh Capital Holdings" or "Najd Ventures." Some competitors gate features based on whether the company looks real; using a credible name lets you see more of the product.

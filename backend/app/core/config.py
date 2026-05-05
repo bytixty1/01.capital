@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
 
     # Database
-    database_url: str = "postgresql+asyncpg://zerocaps:zerocaps@localhost:5432/zerocaps"
+    database_url: str = "postgresql+asyncpg://01capital:01capital@localhost:5432/01capital"
 
     # Auth
     jwt_secret_key: str = "change-me-in-every-environment"

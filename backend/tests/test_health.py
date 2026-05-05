@@ -14,6 +14,6 @@ async def test_health_returns_200(client: AsyncClient) -> None:
 async def test_health_payload(client: AsyncClient) -> None:
     data = (await client.get("/health")).json()
     assert data["status"] == "healthy"
-    assert data["service"] == "zerocaps-backend"
+    assert data["service"] == "01capital-backend"
     assert "environment" in data
     assert "version" in data

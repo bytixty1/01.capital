@@ -1,14 +1,14 @@
-# ZeroCaps — Implementation Plan v0.1
+# 01 Capital — Implementation Plan v0.1
 
 > **Status:** Provisional. This plan governs the build only after the 14-day discovery sprint exits with Outcome A (validated). Until then, the only code allowed is foundational scaffolding (auth, DB connection, brand tokens — see Sprint 0 below).
 >
-> **This document supersedes the old `ZeroOne_Stock_Intelligence_Implementation_Plan.pdf`.** That plan is dead.
+> **This document supersedes the old `01 Capital_Stock_Intelligence_Implementation_Plan.pdf`.** That plan is dead.
 
 ---
 
 ## 1. Executive summary
 
-ZeroCaps is a cap table and equity management platform built natively around the 2023 Saudi Companies Law. The product gives Saudi founders, CFOs, and corporate counsel a single source of truth for company ownership — designed for SJSCs, LLCs, and (later) JSCs, with first-class support for Saudi-specific instruments (sukuk-convertibles, Sharia-compliant ESOPs), procedures (MoC filings, ZATCA exports), and governance constructs (family business charters, ROFR, drag/tag rights).
+01 Capital is a cap table and equity management platform built natively around the 2023 Saudi Companies Law. The product gives Saudi founders, CFOs, and corporate counsel a single source of truth for company ownership — designed for SJSCs, LLCs, and (later) JSCs, with first-class support for Saudi-specific instruments (sukuk-convertibles, Sharia-compliant ESOPs), procedures (MoC filings, ZATCA exports), and governance constructs (family business charters, ROFR, drag/tag rights).
 
 **Core philosophy:** the cap table is a legal document in software form. Reliability, auditability, and legal correctness beat feature richness. Every decision is filtered through "would a Saudi corporate lawyer endorse this?"
 
@@ -118,7 +118,7 @@ Goal: developer can `git clone && docker-compose up` and have a working local en
 - Monorepo structure
 - FastAPI app with health endpoint, Postgres connection, Alembic
 - Next.js 15 app with auth-only flows (login, register, logout, /me)
-- ZeroOne brand tokens applied (dark surfaces, purple accent)
+- 01 Capital brand tokens applied (dark surfaces, purple accent)
 - Docker compose for local dev
 - GitHub Actions CI (lint + test on every PR)
 - Initial ADRs (0001, 0002, 0003)
@@ -136,7 +136,7 @@ Goal: founder can create their company, add themselves and their co-founders, se
 - Cap table view (table format, percentages, basic visualization)
 - Audit log of events
 
-**Deliverable:** ZeroOne can model its own cap table in the tool.
+**Deliverable:** 01 Capital can model its own cap table in the tool.
 **Gate:** at least one design partner (from discovery interviews) confirms the basic model fits their company.
 
 ### Sprint 2 — Capital changes
@@ -158,7 +158,7 @@ Goal: founder can create their company, add themselves and their co-founders, se
 - Termination handling
 - Quarterly CMA disclosure pack export
 
-**Deliverable:** ZeroOne can issue ESOP grants to its first hires using the tool.
+**Deliverable:** 01 Capital can issue ESOP grants to its first hires using the tool.
 
 ### Sprint 4 — Filings tracker
 
@@ -267,8 +267,8 @@ Ali's CPO role expands as the product needs to roadmap beyond initial feedback l
 
 - 30+ paying customers
 - 70%+ MRR retention month-over-month
-- 1+ ministry / government program officially recommends ZeroCaps to startups
-- 1+ Saudi VC firm officially uses ZeroCaps for portfolio cap table tracking
+- 1+ ministry / government program officially recommends 01 Capital to startups
+- 1+ Saudi VC firm officially uses 01 Capital for portfolio cap table tracking
 - Technical foundation can support 1000+ active companies without re-architecture
 
 ---

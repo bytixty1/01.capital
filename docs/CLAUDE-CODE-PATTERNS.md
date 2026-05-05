@@ -1,4 +1,4 @@
-# Working with Claude Code on ZeroCaps
+# Working with Claude Code on 01 Capital
 
 > Patterns for getting good work out of Claude Code (or any agentic IDE) on this project. Memory limitations mean you'll need to re-orient the agent at the start of every session — these patterns make that fast and effective.
 

@@ -6,7 +6,7 @@
 
 ## What this project is
 
-ZeroCaps is **cap table and equity management software** for Saudi startups, built natively around the 2023 Saudi Companies Law. It is a B2B SaaS product designed for compliance-grade legal correctness, not a consumer or fintech-trading product.
+01 Capital is **cap table and equity management software** for Saudi startups, built natively around the 2023 Saudi Companies Law. It is a B2B SaaS product designed for compliance-grade legal correctness, not a consumer or fintech-trading product.
 
 The repository was previously used for a different project (a TASI stock analysis platform) which has been deprecated. Do not reference, restore, or reimplement anything from that direction. The pivot is documented in `docs/decisions/0001-pivot-to-cap-table.md`.
 
@@ -122,7 +122,7 @@ Do not introduce new frameworks, libraries, or services without an ADR. "It woul
 ## Repository structure
 
 ```
-ZeroCaps/
+01 Capital/
 ├── CLAUDE.md                      # This file
 ├── CONSULTANT_SPEC.md             # How AI consultants work with the team
 ├── README.md                      # Repo entry point for humans
