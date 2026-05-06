@@ -9,7 +9,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error((err as { detail?: string }).detail ?? 'Request failed');
+    const detail = (err as { detail?: string | Array<{ msg: string }> }).detail;
+    let message = 'Request failed';
+    if (typeof detail === 'string') message = detail;
+    else if (Array.isArray(detail) && detail.length > 0)
+      message = detail.map(d => d.msg).join(', ');
+    throw new Error(message);
   }
   return res.json() as Promise<T>;
 }
