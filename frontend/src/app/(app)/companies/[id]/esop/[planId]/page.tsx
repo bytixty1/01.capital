@@ -2,18 +2,23 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { api, EsopPlanResponse, GrantResponse } from '@/lib/api';
+import { api, EsopPlanResponse, GrantResponse, StakeholderResponse } from '@/lib/api';
 
 export default function EsopPlanPage() {
   const { id: companyId, planId } = useParams<{ id: string; planId: string }>();
   const [plan, setPlan] = useState<EsopPlanResponse | null>(null);
   const [grants, setGrants] = useState<GrantResponse[]>([]);
+  const [stakeholders, setStakeholders] = useState<StakeholderResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([api.esop.getPlan(companyId, planId), api.esop.listGrants(companyId, planId)])
-      .then(([p, g]) => { setPlan(p); setGrants(g); })
+    Promise.all([
+      api.esop.getPlan(companyId, planId),
+      api.esop.listGrants(companyId, planId),
+      api.stakeholders.list(companyId),
+    ])
+      .then(([p, g, s]) => { setPlan(p); setGrants(g); setStakeholders(s); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [companyId, planId]);
@@ -23,6 +28,7 @@ export default function EsopPlanPage() {
   if (!plan) return null;
 
   const available = Number(plan.total_pool) - Number(plan.allocated);
+  const stakeMap = Object.fromEntries(stakeholders.map(s => [s.id, s.name_en]));
 
   const s = styles;
   return (
@@ -66,7 +72,7 @@ export default function EsopPlanPage() {
             <tbody>
               {grants.map(g => (
                 <tr key={g.id} style={s.row}>
-                  <td style={s.td}>{g.stakeholder_id}</td>
+                  <td style={s.td}>{stakeMap[g.stakeholder_id] ?? g.stakeholder_id}</td>
                   <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>{Number(g.quantity).toLocaleString()}</td>
                   <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>{g.grant_date}</td>
                   <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>

@@ -51,7 +51,7 @@ export default function MembersPage() {
                 </select>
               </td>
               <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-tertiary)' }}>
-                {new Date(m.created_at).toLocaleDateString('en-SA')}
+                {m.created_at.slice(0, 10)}
               </td>
               <td style={{ ...s.td, textAlign: 'right' as const }}>
                 <button onClick={() => { if (confirm('Remove this member?')) api.members.remove(companyId, m.id).then(() => setMembers(prev => prev.filter(x => x.id !== m.id))).catch(e => alert(e.message)); }} style={s.removeBtn}>Remove</button>

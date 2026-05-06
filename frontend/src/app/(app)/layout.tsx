@@ -4,68 +4,73 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 
-function IconGrid({ size = 16 }: { size?: number }) {
+// ── Icons ─────────────────────────────────────────────────────────────────────
+
+function Ico({ d, size = 16 }: { d: string; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-      <rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor" />
-      <rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5" />
-      <rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5" />
-      <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.2" />
+      <path d={d} stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-function IconBuilding({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-      <rect x="2" y="4" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.3" />
-      <path d="M5 4V3a3 3 0 0 1 6 0v1" stroke="currentColor" strokeWidth="1.3" />
-      <rect x="6" y="9" width="4" height="5" rx="0.5" fill="currentColor" opacity="0.5" />
-    </svg>
-  );
-}
+const ICONS = {
+  grid: 'M1 1h5.5v5.5H1V1zm8.5 0H15v5.5H9.5V1zM1 9.5h5.5V15H1V9.5zm8.5 0H15V15H9.5V9.5z',
+  users: 'M11 14v-1a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v1M7 7A2.5 2.5 0 1 0 7 2a2.5 2.5 0 0 0 0 5zm5 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm2 7v-1a3 3 0 0 0-2-2.83',
+  table: 'M2 3h12v10H2V3zm0 3.5h12M6 3v10',
+  chart: 'M1 12l4-4 3 3 4-5 3 3',
+  document: 'M9 1H3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9 1zm0 0v5h5',
+  tool: 'M12.5 3.5a2 2 0 0 0-2.83 0L3 10.17V13h2.83l6.67-6.67a2 2 0 0 0 0-2.83z',
+  shield: 'M8 1L2 4v4c0 3.31 2.58 6.41 6 7 3.42-.59 6-3.69 6-7V4L8 1z',
+  arrowLeft: 'M10 13L5 8l5-5',
+  menu: 'M2 4h12M2 8h12M2 12h12',
+  close: 'M4 4l8 8M12 4l-8 8',
+  logout: 'M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3m3-3 3-3-3-3m3 3H6',
+};
 
-function IconMenu({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
-      <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
+// ── NavLink ───────────────────────────────────────────────────────────────────
 
-function IconClose({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
-      <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function NavLink({ href, label, icon, active }: { href: string; label: string; icon: React.ReactNode; active: boolean }) {
+function NavLink({
+  href, label, icon, active, indent = false,
+}: {
+  href: string; label: string; icon: string; active: boolean; indent?: boolean;
+}) {
   return (
     <a
       href={href}
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        padding: '8px 10px',
+        display: 'flex', alignItems: 'center', gap: '9px',
+        padding: indent ? '6px 10px 6px 32px' : '7px 10px',
         borderRadius: '7px',
         color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
-        background: active ? 'var(--bg-elevated)' : 'transparent',
-        textDecoration: 'none',
-        fontSize: '13px',
+        background: active ? 'rgba(166,125,250,0.1)' : 'transparent',
+        textDecoration: 'none', fontSize: '13px',
         fontWeight: active ? 500 : 400,
         transition: 'all 120ms ease',
+        borderLeft: active && !indent ? '2px solid var(--brand-purple)' : '2px solid transparent',
       }}
     >
-      <span style={{ color: active ? 'var(--brand-purple)' : 'var(--text-tertiary)', display: 'flex' }}>
-        {icon}
+      <span style={{ color: active ? 'var(--brand-purple)' : 'var(--text-tertiary)', display: 'flex', flexShrink: 0 }}>
+        <Ico d={ICONS[icon as keyof typeof ICONS]} />
       </span>
       {label}
     </a>
   );
 }
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p style={{
+      fontSize: '10px', fontWeight: 600, color: 'var(--text-tertiary)',
+      textTransform: 'uppercase', letterSpacing: '0.08em',
+      padding: '0 10px', margin: '16px 0 4px',
+    }}>
+      {children}
+    </p>
+  );
+}
+
+// ── Layout ────────────────────────────────────────────────────────────────────
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
@@ -74,247 +79,159 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div style={styles.loadingScreen}>
-        <div style={styles.loadingDot} />
+      <div style={{ minHeight: '100vh', background: 'var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 6, height: 6, background: 'var(--brand-purple)', borderRadius: '50%' }} />
       </div>
     );
   }
 
   if (!user) return null;
 
-  const isDashboard = pathname === '/dashboard';
+  // Detect company context from URL
+  const companyMatch = pathname.match(/^\/companies\/([^/]+)/);
+  const activeCompanyId = companyMatch?.[1];
+  const inCompany = !!activeCompanyId && activeCompanyId !== 'new';
 
-  const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: <IconGrid /> },
-  ];
+  const is = (path: string) => pathname === path;
+  const startsWith = (path: string) => pathname.startsWith(path);
 
   const sidebarContent = (
-    <>
-      <div style={styles.brand}>
-        <div style={styles.logoMark}>
-          <IconGrid size={14} />
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Brand */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '18px 16px', borderBottom: '1px solid var(--border-default)' }}>
+        <div style={{
+          width: 28, height: 28,
+          background: 'rgba(166,125,250,0.12)', border: '1px solid rgba(166,125,250,0.2)',
+          borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'var(--brand-purple)',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor" />
+            <rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5" />
+            <rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5" />
+            <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.2" />
+          </svg>
         </div>
-        <span style={styles.brandName}>01 Capital</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>01 Capital</span>
       </div>
 
-      <div style={styles.navSection}>
-        <p style={styles.navSectionLabel}>Navigation</p>
-        {navItems.map(item => (
-          <NavLink
-            key={item.href}
-            href={item.href}
-            label={item.label}
-            icon={item.icon}
-            active={pathname === item.href}
-          />
-        ))}
+      {/* Nav */}
+      <div style={{ flex: 1, padding: '8px', overflowY: 'auto' }}>
+        <NavLink href="/dashboard" label="Dashboard" icon="grid" active={is('/dashboard')} />
 
-        {!isDashboard && (
+        {inCompany && (
           <>
-            <p style={{ ...styles.navSectionLabel, marginTop: '20px' }}>This company</p>
-            <NavLink href="#cap-table" label="Cap table" icon={<IconBuilding />} active={false} />
+            <SectionLabel>Company</SectionLabel>
+            <NavLink
+              href={`/companies/${activeCompanyId}`}
+              label="Overview"
+              icon="table"
+              active={is(`/companies/${activeCompanyId}`)}
+            />
+            <NavLink
+              href={`/companies/${activeCompanyId}/stakeholders`}
+              label="Stakeholders"
+              icon="users"
+              active={startsWith(`/companies/${activeCompanyId}/stakeholders`)}
+            />
+            <NavLink
+              href={`/companies/${activeCompanyId}/esop`}
+              label="ESOP plans"
+              icon="chart"
+              active={startsWith(`/companies/${activeCompanyId}/esop`)}
+            />
+            <NavLink
+              href={`/companies/${activeCompanyId}/instruments`}
+              label="Instruments"
+              icon="tool"
+              active={startsWith(`/companies/${activeCompanyId}/instruments`)}
+            />
+            <NavLink
+              href={`/companies/${activeCompanyId}/filings`}
+              label="Filings"
+              icon="document"
+              active={startsWith(`/companies/${activeCompanyId}/filings`)}
+            />
+            <NavLink
+              href={`/companies/${activeCompanyId}/members`}
+              label="Members"
+              icon="shield"
+              active={startsWith(`/companies/${activeCompanyId}/members`)}
+            />
           </>
         )}
       </div>
 
-      <div style={styles.sidebarFooter}>
-        <div style={styles.userCard}>
-          <div style={styles.userAvatar}>
+      {/* User footer */}
+      <div style={{ padding: '10px 8px', borderTop: '1px solid var(--border-default)' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '10px',
+          padding: '8px 10px', borderRadius: 7,
+          background: 'var(--bg-elevated)', marginBottom: 4,
+        }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+            background: 'rgba(166,125,250,0.2)', border: '1px solid rgba(166,125,250,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 12, fontWeight: 600, color: 'var(--brand-purple)',
+          }}>
             {user.email.charAt(0).toUpperCase()}
           </div>
-          <div style={styles.userInfo}>
-            <p style={styles.userName}>{user.full_name ?? 'User'}</p>
-            <p style={styles.userEmail}>{user.email}</p>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.full_name || user.email.split('@')[0]}
+            </p>
+            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.email}
+            </p>
           </div>
         </div>
-        <button onClick={logout} style={styles.logoutBtn}>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M5 2H3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-            <path d="M9 10l3-3-3-3M12 7H5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+        <button
+          onClick={logout}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: 'none', border: 'none', color: 'var(--text-tertiary)',
+            fontSize: 12, cursor: 'pointer', padding: '6px 10px',
+            borderRadius: 6, width: '100%', textAlign: 'left',
+          }}
+        >
+          <Ico d={ICONS.logout} size={14} />
           Sign out
         </button>
       </div>
-    </>
+    </div>
   );
 
   return (
     <div className="app-shell">
-      {/* Desktop sidebar */}
-      <nav className="app-sidebar">
-        {sidebarContent}
-      </nav>
+      <nav className="app-sidebar">{sidebarContent}</nav>
 
-      {/* Mobile top bar */}
+      {/* Mobile bar */}
       <div className="app-mobile-bar">
-        <span style={styles.mobileBrand}>01 Capital</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>01 Capital</span>
         <button
           onClick={() => setMobileOpen(o => !o)}
-          style={styles.hamburger}
-          aria-label="Toggle menu"
+          style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 4, display: 'flex' }}
         >
-          {mobileOpen ? <IconClose /> : <IconMenu />}
+          <Ico d={mobileOpen ? ICONS.close : ICONS.menu} size={20} />
         </button>
       </div>
 
-      {/* Mobile overlay + drawer */}
-      <div
-        className={`app-mobile-overlay${mobileOpen ? ' open' : ''}`}
-        onClick={() => setMobileOpen(false)}
-      >
-        <nav style={styles.mobileNav} onClick={e => e.stopPropagation()}>
+      {/* Mobile drawer */}
+      <div className={`app-mobile-overlay${mobileOpen ? ' open' : ''}`} onClick={() => setMobileOpen(false)}>
+        <nav
+          onClick={e => e.stopPropagation()}
+          style={{
+            position: 'absolute', top: 0, left: 0, bottom: 0, width: 260,
+            background: 'var(--bg-surface)', borderRight: '1px solid var(--border-default)',
+            paddingTop: 52,
+          }}
+        >
           {sidebarContent}
         </nav>
       </div>
 
-      <main className="app-content">
-        {children}
-      </main>
+      <main className="app-content">{children}</main>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  loadingScreen: {
-    minHeight: '100vh',
-    background: 'var(--bg-base)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingDot: {
-    width: '6px',
-    height: '6px',
-    background: 'var(--brand-purple)',
-    borderRadius: '50%',
-  },
-  brand: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '20px 16px',
-    borderBottom: '1px solid var(--border-default)',
-  },
-  logoMark: {
-    width: '28px',
-    height: '28px',
-    background: 'rgba(166,125,250,0.12)',
-    border: '1px solid rgba(166,125,250,0.2)',
-    borderRadius: '7px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'var(--brand-purple)',
-  },
-  brandName: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: 'var(--text-primary)',
-    letterSpacing: '-0.01em',
-  },
-  navSection: {
-    flex: 1,
-    padding: '16px 8px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
-  },
-  navSectionLabel: {
-    fontSize: '10px',
-    fontWeight: 600,
-    color: 'var(--text-tertiary)',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.08em',
-    padding: '0 10px',
-    marginBottom: '6px',
-  },
-  sidebarFooter: {
-    padding: '12px 8px',
-    borderTop: '1px solid var(--border-default)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  userCard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '8px 10px',
-    borderRadius: '7px',
-    background: 'var(--bg-elevated)',
-  },
-  userAvatar: {
-    width: '28px',
-    height: '28px',
-    background: 'rgba(166,125,250,0.2)',
-    border: '1px solid rgba(166,125,250,0.25)',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '12px',
-    fontWeight: 600,
-    color: 'var(--brand-purple)',
-    flexShrink: 0,
-  },
-  userInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-  userName: {
-    fontSize: '12px',
-    fontWeight: 500,
-    color: 'var(--text-primary)',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap' as const,
-  },
-  userEmail: {
-    fontSize: '11px',
-    color: 'var(--text-tertiary)',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap' as const,
-  },
-  logoutBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    background: 'none',
-    border: 'none',
-    color: 'var(--text-tertiary)',
-    fontSize: '12px',
-    cursor: 'pointer',
-    padding: '6px 10px',
-    borderRadius: '6px',
-    width: '100%',
-    textAlign: 'left' as const,
-    transition: 'color 120ms ease',
-  },
-  mobileBrand: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: 'var(--text-primary)',
-  },
-  hamburger: {
-    background: 'none',
-    border: 'none',
-    color: 'var(--text-secondary)',
-    cursor: 'pointer',
-    padding: '4px',
-    display: 'flex',
-    alignItems: 'center',
-  },
-  mobileNav: {
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    bottom: 0,
-    width: '260px',
-    background: 'var(--bg-surface)',
-    borderRight: '1px solid var(--border-default)',
-    display: 'flex',
-    flexDirection: 'column',
-    paddingTop: '52px',
-  },
-};

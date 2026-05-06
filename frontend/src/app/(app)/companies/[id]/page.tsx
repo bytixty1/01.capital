@@ -89,9 +89,14 @@ export default function CompanyPage() {
       <div id="cap-table" style={styles.section}>
         <div style={styles.sectionHeader}>
           <h2 style={styles.sectionTitle}>Cap table</h2>
-          <a href={`/companies/${id}/cap-table/issue`} style={styles.secondaryCta}>
-            Issue shares
-          </a>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <a href={`/companies/${id}/cap-table/transfer`} style={styles.tertiaryLink}>
+              Transfer
+            </a>
+            <a href={`/companies/${id}/cap-table/issue`} style={styles.secondaryCta}>
+              Issue shares
+            </a>
+          </div>
         </div>
 
         {capTable.holdings.length === 0 ? (
@@ -221,6 +226,12 @@ const styles: Record<string, React.CSSProperties> = {
   sectionTitle: { fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' },
   secondaryCta: {
     color: 'var(--brand-purple)',
+    fontSize: '13px',
+    textDecoration: 'none',
+    fontWeight: 500,
+  },
+  tertiaryLink: {
+    color: 'var(--text-secondary)',
     fontSize: '13px',
     textDecoration: 'none',
   },
