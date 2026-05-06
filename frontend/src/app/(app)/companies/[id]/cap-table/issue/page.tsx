@@ -10,13 +10,14 @@ export default function IssueSharesPage() {
   const [stakeholderId, setStakeholderId] = useState('');
   const [shareClass, setShareClass] = useState('ordinary');
   const [quantity, setQuantity] = useState('');
-  const [eventDate, setEventDate] = useState(new Date().toISOString().slice(0, 10));
+  const [eventDate, setEventDate] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingStakeholders, setLoadingStakeholders] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setEventDate(new Date().toISOString().slice(0, 10));
     api.stakeholders
       .list(companyId)
       .then(s => {

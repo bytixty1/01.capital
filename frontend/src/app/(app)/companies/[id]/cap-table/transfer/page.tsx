@@ -11,13 +11,14 @@ export default function TransferSharesPage() {
   const [toId, setToId] = useState('');
   const [shareClass, setShareClass] = useState('ordinary');
   const [quantity, setQuantity] = useState('');
-  const [eventDate, setEventDate] = useState(new Date().toISOString().slice(0, 10));
+  const [eventDate, setEventDate] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingStakeholders, setLoadingStakeholders] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setEventDate(new Date().toISOString().slice(0, 10));
     api.stakeholders.list(companyId)
       .then(s => { setStakeholders(s); if (s.length > 0) { setFromId(s[0].id); setToId(s.length > 1 ? s[1].id : s[0].id); } })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load'))
