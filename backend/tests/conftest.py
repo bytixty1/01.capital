@@ -15,7 +15,9 @@ from app.core.database import Base, get_db
 from app.main import app
 
 # Use a separate test DB so dev data is never touched.
-TEST_DB_URL = settings.database_url.replace("/01capital", "/01capital_test")
+# rpartition("/") splits at the LAST slash, isolating just the db name.
+_db_base, _, _ = settings.database_url.rpartition("/")
+TEST_DB_URL = f"{_db_base}/01capital_test"
 
 
 @pytest.fixture
