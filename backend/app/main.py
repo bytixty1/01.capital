@@ -1,9 +1,4 @@
-"""
-01 Capital Backend — FastAPI entry point.
-
-Sprint 0 scope: auth scaffold + health endpoint + DB connection only.
-No domain features until discovery validates the direction.
-"""
+"""01 Capital Backend — FastAPI entry point."""
 
 import logging
 from collections.abc import AsyncGenerator
@@ -13,6 +8,10 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from limits.storage import MemoryStorage
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 
 from app.api import api_router
@@ -24,6 +23,8 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
 )
 logger = logging.getLogger("01capital")
+
+limiter = Limiter(key_func=lambda request: request.client.host if request.client else "unknown")
 
 
 @asynccontextmanager
@@ -57,6 +58,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(SlowAPIMiddleware)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 app.include_router(api_router)
 

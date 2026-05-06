@@ -15,8 +15,14 @@ alembic==1.15.2
 bcrypt==4.3.0
 PyJWT==2.10.1
 
-# Cache (when needed in later sprints)
+# Cache
 redis==6.2.0
+
+# Rate limiting
+slowapi==0.1.9
+
+# Date utilities
+python-dateutil==2.9.0.post0
 
 # Observability
 structlog==25.1.0

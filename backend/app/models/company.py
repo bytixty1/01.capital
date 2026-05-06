@@ -9,7 +9,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 
-from sqlalchemy import Date, DateTime, Numeric, String, func
+from sqlalchemy import Boolean, Date, DateTime, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -49,6 +49,13 @@ class Company(Base):
 
     incorporation_date: Mapped[date | None] = mapped_column(Date)
     fiscal_year_start: Mapped[int | None] = mapped_column()  # month 1-12
+
+    # AoA governance flags (Saudi Companies Law 2023, Articles 168–210)
+    has_rofr: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    rofr_days: Mapped[int | None] = mapped_column()  # pre-emption window in days
+    has_drag_tag: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    has_tag_along: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    profit_allocation_notes: Mapped[str | None] = mapped_column(Text)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

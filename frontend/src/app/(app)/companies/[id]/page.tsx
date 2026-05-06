@@ -44,6 +44,19 @@ export default function CompanyPage() {
         </a>
       </div>
 
+      {/* Section nav */}
+      <div style={styles.sectionNav}>
+        {[
+          { label: 'Cap table', href: `#cap-table` },
+          { label: 'ESOP', href: `/companies/${id}/esop` },
+          { label: 'Instruments', href: `/companies/${id}/instruments` },
+          { label: 'Filings', href: `/companies/${id}/filings` },
+          { label: 'Members', href: `/companies/${id}/members` },
+        ].map(({ label, href }) => (
+          <a key={label} href={href} style={styles.navPill}>{label}</a>
+        ))}
+      </div>
+
       {/* Capital summary */}
       <div style={styles.statsRow}>
         <div style={styles.stat}>
@@ -73,7 +86,7 @@ export default function CompanyPage() {
       </div>
 
       {/* Cap table */}
-      <div style={styles.section}>
+      <div id="cap-table" style={styles.section}>
         <div style={styles.sectionHeader}>
           <h2 style={styles.sectionTitle}>Cap table</h2>
           <a href={`/companies/${id}/cap-table/issue`} style={styles.secondaryCta}>
@@ -140,6 +153,8 @@ const styles: Record<string, React.CSSProperties> = {
   page: { maxWidth: '960px' },
   back: { marginBottom: '24px' },
   backLink: { color: 'var(--text-secondary)', fontSize: '13px', textDecoration: 'none' },
+  sectionNav: { display: 'flex', gap: '8px', marginBottom: '28px', flexWrap: 'wrap' as const },
+  navPill: { padding: '5px 12px', background: 'var(--bg-elevated)', border: '1px solid var(--border-default)', borderRadius: '20px', color: 'var(--text-secondary)', fontSize: '12px', textDecoration: 'none' },
   header: {
     display: 'flex',
     alignItems: 'flex-start',

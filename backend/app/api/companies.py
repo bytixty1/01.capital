@@ -1,7 +1,6 @@
-"""Company, stakeholder, and cap table API routes."""
+"""Company, stakeholder, cap table, and member API routes."""
 
 import uuid
-from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -15,13 +14,23 @@ from app.models.company_member import CompanyMember, MemberRole
 from app.models.stakeholder import Stakeholder
 from app.models.user import User
 from app.schemas.cap_table import (
+    CapitalDecreaseRequest,
+    CapitalIncreaseRequest,
     CapTableEventResponse,
     CapTableResponse,
     IssueSharesRequest,
+    TransferSharesRequest,
 )
 from app.schemas.company import CompanyResponse, CreateCompanyRequest, UpdateCompanyRequest
 from app.schemas.stakeholder import CreateStakeholderRequest, StakeholderResponse
-from app.services.cap_table import apply_share_issuance, get_cap_table
+from app.services.cap_table import (
+    apply_capital_decrease,
+    apply_capital_increase,
+    apply_share_issuance,
+    apply_share_transfer,
+    get_cap_table,
+)
+from app.services.filing_detector import detect_and_create_filings
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
@@ -51,7 +60,7 @@ async def create_company(
 ) -> Company:
     company = Company(**body.model_dump())
     db.add(company)
-    await db.flush()  # get id before adding member
+    await db.flush()
 
     member = CompanyMember(
         company_id=company.id,
@@ -86,6 +95,81 @@ async def update_company(
     await db.commit()
     await db.refresh(company)
     return company
+
+
+# ── Members ──────────────────────────────────────────────────────────────────
+
+
+@router.get("/{company_id}/members", response_model=list[dict])
+async def list_members(
+    member: CompanyMember = Depends(get_company_member),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:
+    result = await db.execute(
+        select(CompanyMember, User)
+        .join(User, CompanyMember.user_id == User.id)
+        .where(CompanyMember.company_id == member.company_id)
+    )
+    return [
+        {
+            "id": str(row.CompanyMember.id),
+            "user_id": str(row.CompanyMember.user_id),
+            "email": row.User.email,
+            "full_name": row.User.full_name,
+            "role": row.CompanyMember.role,
+            "created_at": row.CompanyMember.created_at.isoformat(),
+        }
+        for row in result.all()
+    ]
+
+
+@router.patch("/{company_id}/members/{member_id}", response_model=dict)
+async def update_member_role(
+    member_id: uuid.UUID,
+    body: dict,
+    admin: CompanyMember = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    result = await db.execute(
+        select(CompanyMember).where(
+            CompanyMember.id == member_id,
+            CompanyMember.company_id == admin.company_id,
+        )
+    )
+    target = result.scalar_one_or_none()
+    if target is None:
+        raise HTTPException(status_code=404, detail="Member not found")
+    if target.id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot change your own role")
+
+    new_role = body.get("role")
+    if new_role not in [r.value for r in MemberRole]:
+        raise HTTPException(status_code=422, detail="Invalid role")
+
+    target.role = new_role
+    await db.commit()
+    return {"id": str(target.id), "role": target.role}
+
+
+@router.delete("/{company_id}/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_member(
+    member_id: uuid.UUID,
+    admin: CompanyMember = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    result = await db.execute(
+        select(CompanyMember).where(
+            CompanyMember.id == member_id,
+            CompanyMember.company_id == admin.company_id,
+        )
+    )
+    target = result.scalar_one_or_none()
+    if target is None:
+        raise HTTPException(status_code=404, detail="Member not found")
+    if target.id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot remove yourself")
+    await db.delete(target)
+    await db.commit()
 
 
 # ── Stakeholders ─────────────────────────────────────────────────────────────
@@ -143,7 +227,6 @@ async def issue_shares(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> CapTableEvent:
-    # Verify stakeholder belongs to this company
     result = await db.execute(
         select(Stakeholder).where(
             Stakeholder.id == body.stakeholder_id,
@@ -151,7 +234,7 @@ async def issue_shares(
         )
     )
     if result.scalar_one_or_none() is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Stakeholder not found")
+        raise HTTPException(status_code=404, detail="Stakeholder not found")
 
     event = CapTableEvent(
         company_id=member.company_id,
@@ -166,13 +249,183 @@ async def issue_shares(
         created_by=current_user.id,
     )
     db.add(event)
+    await db.flush()
 
     await apply_share_issuance(
-        db,
+        db, company_id=member.company_id,
+        stakeholder_id=body.stakeholder_id,
+        share_class=body.share_class, quantity=body.quantity,
+    )
+
+    company_result = await db.execute(select(Company).where(Company.id == member.company_id))
+    company = company_result.scalar_one()
+    await detect_and_create_filings(
+        db, company_id=member.company_id, entity_type=company.entity_type,
+        event_id=event.id, event_type=EventType.SHARE_ISSUANCE, event_date=body.event_date,
+    )
+
+    await db.commit()
+    await db.refresh(event)
+    return event
+
+
+@router.post(
+    "/{company_id}/cap-table/transfer",
+    response_model=CapTableEventResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def transfer_shares(
+    body: TransferSharesRequest,
+    member: CompanyMember = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> CapTableEvent:
+    # Verify both stakeholders belong to this company
+    for sid in (body.from_stakeholder_id, body.to_stakeholder_id):
+        r = await db.execute(
+            select(Stakeholder).where(Stakeholder.id == sid, Stakeholder.company_id == member.company_id)
+        )
+        if r.scalar_one_or_none() is None:
+            raise HTTPException(status_code=404, detail=f"Stakeholder {sid} not found")
+
+    event = CapTableEvent(
         company_id=member.company_id,
+        event_type=EventType.SHARE_TRANSFER,
+        event_date=body.event_date,
+        payload={
+            "from_stakeholder_id": str(body.from_stakeholder_id),
+            "to_stakeholder_id": str(body.to_stakeholder_id),
+            "share_class": body.share_class,
+            "quantity": str(body.quantity),
+        },
+        notes=body.notes,
+        created_by=current_user.id,
+    )
+    db.add(event)
+    await db.flush()
+
+    await apply_share_transfer(
+        db, company_id=member.company_id,
+        from_stakeholder_id=body.from_stakeholder_id,
+        to_stakeholder_id=body.to_stakeholder_id,
+        share_class=body.share_class, quantity=body.quantity,
+    )
+
+    company_result = await db.execute(select(Company).where(Company.id == member.company_id))
+    company = company_result.scalar_one()
+    await detect_and_create_filings(
+        db, company_id=member.company_id, entity_type=company.entity_type,
+        event_id=event.id, event_type=EventType.SHARE_TRANSFER, event_date=body.event_date,
+    )
+
+    await db.commit()
+    await db.refresh(event)
+    return event
+
+
+@router.post(
+    "/{company_id}/cap-table/capital-increase",
+    response_model=CapTableEventResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def capital_increase(
+    body: CapitalIncreaseRequest,
+    member: CompanyMember = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> CapTableEvent:
+    event = CapTableEvent(
+        company_id=member.company_id,
+        event_type=EventType.CAPITAL_INCREASE,
+        event_date=body.event_date,
+        payload={
+            "new_authorized_capital": str(body.new_authorized_capital) if body.new_authorized_capital else None,
+            "new_paid_up_capital": str(body.new_paid_up_capital) if body.new_paid_up_capital else None,
+            "share_class": body.share_class,
+            "shares_issued": str(body.shares_issued),
+            "stakeholder_id": str(body.stakeholder_id) if body.stakeholder_id else None,
+        },
+        notes=body.notes,
+        created_by=current_user.id,
+    )
+    db.add(event)
+    await db.flush()
+
+    # Update company capital figures
+    company_result = await db.execute(select(Company).where(Company.id == member.company_id))
+    company = company_result.scalar_one()
+    if body.new_authorized_capital is not None:
+        company.authorized_capital = body.new_authorized_capital
+    if body.new_paid_up_capital is not None:
+        company.paid_up_capital = body.new_paid_up_capital
+
+    await apply_capital_increase(
+        db, company_id=member.company_id,
         stakeholder_id=body.stakeholder_id,
         share_class=body.share_class,
-        quantity=body.quantity,
+        shares_issued=body.shares_issued,
+    )
+
+    await detect_and_create_filings(
+        db, company_id=member.company_id, entity_type=company.entity_type,
+        event_id=event.id, event_type=EventType.CAPITAL_INCREASE, event_date=body.event_date,
+    )
+
+    await db.commit()
+    await db.refresh(event)
+    return event
+
+
+@router.post(
+    "/{company_id}/cap-table/capital-decrease",
+    response_model=CapTableEventResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def capital_decrease(
+    body: CapitalDecreaseRequest,
+    member: CompanyMember = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> CapTableEvent:
+    r = await db.execute(
+        select(Stakeholder).where(
+            Stakeholder.id == body.stakeholder_id,
+            Stakeholder.company_id == member.company_id,
+        )
+    )
+    if r.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Stakeholder not found")
+
+    event = CapTableEvent(
+        company_id=member.company_id,
+        event_type=EventType.CAPITAL_DECREASE,
+        event_date=body.event_date,
+        payload={
+            "stakeholder_id": str(body.stakeholder_id),
+            "share_class": body.share_class,
+            "quantity": str(body.quantity),
+            "new_paid_up_capital": str(body.new_paid_up_capital) if body.new_paid_up_capital else None,
+        },
+        notes=body.notes,
+        created_by=current_user.id,
+    )
+    db.add(event)
+    await db.flush()
+
+    company_result = await db.execute(select(Company).where(Company.id == member.company_id))
+    company = company_result.scalar_one()
+    if body.new_paid_up_capital is not None:
+        company.paid_up_capital = body.new_paid_up_capital
+
+    await apply_capital_decrease(
+        db, company_id=member.company_id,
+        stakeholder_id=body.stakeholder_id,
+        share_class=body.share_class, quantity=body.quantity,
+    )
+
+    await detect_and_create_filings(
+        db, company_id=member.company_id, entity_type=company.entity_type,
+        event_id=event.id, event_type=EventType.CAPITAL_DECREASE, event_date=body.event_date,
     )
 
     await db.commit()
@@ -191,3 +444,12 @@ async def list_events(
         .order_by(CapTableEvent.event_date.desc(), CapTableEvent.created_at.desc())
     )
     return list(result.scalars().all())
+
+
+@router.get("/{company_id}/exports/zatca")
+async def export_zatca(
+    member: CompanyMember = Depends(get_company_member),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    from app.services.zatca import build_zatca_export
+    return await build_zatca_export(db, member.company_id)
