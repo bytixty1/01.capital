@@ -68,10 +68,16 @@ app.include_router(api_router)
 
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-    logger.warning("Validation error | path=%s | errors=%s", request.url.path, exc.errors())
+    # Pydantic v2 ctx may contain raw Exception objects — convert to strings so
+    # JSONResponse can serialise them without TypeError.
+    errors = exc.errors()
+    for err in errors:
+        if "ctx" in err and isinstance(err["ctx"].get("error"), Exception):
+            err["ctx"] = {"error": str(err["ctx"]["error"])}
+    logger.warning("Validation error | path=%s | errors=%s", request.url.path, errors)
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": exc.errors()},
+        content={"detail": errors},
     )
 
 
