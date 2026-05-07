@@ -1,37 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { setToken } from '@/lib/auth';
 import { Logo } from '@/components/Logo';
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+function VerifyContent() {
+  const searchParams = useSearchParams();
+  const email = searchParams.get('email') || '';
+
+  const [otp, setOtp] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!email) {
+      setError('Email address is missing. Please go back to registration.');
+      return;
+    }
+    if (!otp.trim()) {
+      setError('Please enter the verification code');
+      return;
+    }
+    if (otp.length !== 6) {
+      setError('Verification code must be 6 digits');
+      return;
+    }
+
     setError(null);
-
-    // Validation
-    if (!email.trim()) {
-      setError('Email address is required');
-      return;
-    }
-    if (!password.trim()) {
-      setError('Password is required');
-      return;
-    }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
-      return;
-    }
-
     setLoading(true);
     try {
-      const { access_token } = await api.auth.login(email, password);
+      const { access_token } = await api.auth.verifyEmail(email, otp);
       if (!access_token) {
         setError('Invalid response from server');
         return;
@@ -39,14 +40,14 @@ export default function LoginPage() {
       setToken(access_token);
       window.location.href = '/dashboard';
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed';
+      const message = err instanceof Error ? err.message : 'Verification failed';
       // Provide helpful error messages
-      if (message.includes('not found') || message.includes('Invalid credentials')) {
-        setError('Email or password is incorrect. Please try again.');
-      } else if (message.includes('not verified')) {
-        setError('Email not verified. Please check your email for the verification link.');
-      } else if (message.includes('not active')) {
-        setError('Your account has been deactivated. Contact support.');
+      if (message.includes('Invalid OTP') || message.includes('invalid')) {
+        setError('Invalid verification code. For demo, use: 000000');
+      } else if (message.includes('not found')) {
+        setError('User not found. Please register first.');
+      } else if (message.includes('already')) {
+        setError('This email is already verified. Please sign in instead.');
       } else {
         setError(message);
       }
@@ -55,6 +56,66 @@ export default function LoginPage() {
     }
   }
 
+  return (
+    <div className="glass-panel" style={styles.card}>
+      <div style={styles.logoRow}>
+        <Logo size={20} />
+        <span style={styles.logoText}>01 Capital</span>
+      </div>
+
+      <h1 style={styles.heading}>Verify your email</h1>
+      <p style={styles.sub}>
+        We sent a verification code to <strong>{email || 'your email'}</strong>. <br />
+        (For demo purposes, use OTP: 000000)
+      </p>
+
+      <form onSubmit={handleSubmit} style={styles.form}>
+        <div style={styles.field}>
+          <label style={styles.label}>Verification Code</label>
+          <input
+            type="text"
+            value={otp}
+            onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            required
+            autoComplete="one-time-code"
+            placeholder="000000"
+            style={{ ...styles.input, textAlign: 'center', letterSpacing: '0.2em', fontSize: '18px' }}
+          />
+        </div>
+
+        {error && (
+          <div style={styles.errorBox}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+              <circle cx="7" cy="7" r="6" stroke="#ef4444" strokeWidth="1.5" />
+              <path d="M7 4v3.5" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" />
+              <circle cx="7" cy="10" r="0.75" fill="#ef4444" />
+            </svg>
+            {error}
+          </div>
+        )}
+
+        <button type="submit" disabled={loading || otp.length !== 6} style={styles.button}>
+          {loading ? (
+            <span style={styles.loadingSpinner}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
+                <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+                <path d="M8 2a6 6 0 0 1 6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              Verifying…
+            </span>
+          ) : 'Verify & Sign in'}
+        </button>
+      </form>
+
+      <p style={styles.footer}>
+        Didn't receive the code?{' '}
+        <button type="button" onClick={() => alert('Demo: just use 000000')} style={styles.link}>Resend</button>
+      </p>
+    </div>
+  );
+}
+
+export default function VerifyPage() {
   return (
     <main style={styles.page} data-auth-page="true">
       {/* Left Panel — Brand */}
@@ -69,64 +130,9 @@ export default function LoginPage() {
       {/* Right Panel — Form */}
       <div style={styles.formPanel}>
         <div className="glass-panel" style={styles.card}>
-          <h1 style={styles.heading}>Welcome back</h1>
-          <p style={styles.sub}>Sign in to your cap table dashboard</p>
-
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.field}>
-              <label style={styles.label}>Email address</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                placeholder="you@company.com"
-                style={styles.input}
-              />
-            </div>
-
-            <div style={styles.field}>
-              <label style={styles.label}>Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                placeholder="••••••••"
-                style={styles.input}
-              />
-            </div>
-
-            {error && (
-              <div style={styles.errorBox}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
-                  <circle cx="7" cy="7" r="6" stroke="#ef4444" strokeWidth="1.5" />
-                  <path d="M7 4v3.5" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" />
-                  <circle cx="7" cy="10" r="0.75" fill="#ef4444" />
-                </svg>
-                {error}
-              </div>
-            )}
-
-            <button type="submit" disabled={loading} style={styles.button}>
-              {loading ? (
-                <span style={styles.loadingSpinner}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
-                    <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
-                    <path d="M8 2a6 6 0 0 1 6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                  Signing in…
-                </span>
-              ) : 'Sign in'}
-            </button>
-          </form>
-
-          <p style={styles.footer}>
-            No account yet?{' '}
-            <a href="/register" style={styles.link}>Create one free</a>
-          </p>
+          <Suspense fallback={<p style={{ color: 'var(--text-tertiary)' }}>Loading...</p>}>
+            <VerifyContent />
+          </Suspense>
         </div>
       </div>
     </main>
@@ -176,6 +182,15 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: '420px',
     padding: '48px',
   },
+  logoRow: {
+    display: 'none',
+  },
+  logoText: {
+    color: 'var(--text-primary)',
+    fontWeight: 600,
+    fontSize: '15px',
+    letterSpacing: '-0.01em',
+  },
   heading: {
     fontSize: '24px',
     fontWeight: 600,
@@ -187,11 +202,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
     color: 'var(--text-secondary)',
     marginBottom: '28px',
+    lineHeight: 1.6,
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: '14px',
   },
   field: {
     display: 'flex',
@@ -214,6 +230,7 @@ const styles: Record<string, React.CSSProperties> = {
     outline: 'none',
     width: '100%',
     transition: 'border-color 150ms ease',
+    boxSizing: 'border-box' as const,
   },
   errorBox: {
     display: 'flex',
@@ -237,7 +254,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     cursor: 'pointer',
     letterSpacing: '-0.01em',
-    transition: 'all 150ms ease',
+    transition: 'opacity 150ms ease',
   },
   loadingSpinner: {
     display: 'flex',
@@ -246,14 +263,19 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
   },
   footer: {
-    marginTop: '20px',
+    marginTop: '24px',
     fontSize: '13px',
     color: 'var(--text-tertiary)',
     textAlign: 'center',
   },
   link: {
+    background: 'none',
+    border: 'none',
     color: 'var(--brand-purple)',
     textDecoration: 'none',
     fontWeight: 500,
+    cursor: 'pointer',
+    padding: 0,
+    fontSize: '13px',
   },
 };

@@ -3,9 +3,10 @@ import { getToken } from './auth';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const { headers, ...restInit } = init || {};
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-    ...init,
+    ...restInit,
+    headers: { 'Content-Type': 'application/json', ...headers },
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
@@ -27,6 +28,7 @@ function authHeaders(): Record<string, string> {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type TokenResponse = { access_token: string; token_type: string };
+export type RegisterResponse = { message: string; email: string };
 
 export type UserResponse = {
   id: string;
@@ -167,9 +169,14 @@ export type MemberResponse = {
 export const api = {
   auth: {
     register: (email: string, password: string, fullName?: string) =>
-      request<TokenResponse>('/api/auth/register', {
+      request<RegisterResponse>('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ email, password, full_name: fullName }),
+      }),
+    verifyEmail: (email: string, otp: string) =>
+      request<TokenResponse>('/api/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify({ email, otp }),
       }),
     login: (email: string, password: string) =>
       request<TokenResponse>('/api/auth/login', {
@@ -303,5 +310,12 @@ export const api = {
       fetch(`${API_BASE}/api/companies/${companyId}/members/${memberId}`, {
         method: 'DELETE', headers: authHeaders(),
       }),
+  },
+
+  integrations: {
+    moc: {
+      fetchCompany: (crNumber: string) =>
+        request<any>(`/api/integrations/moc/cr/${crNumber}`, { headers: authHeaders() }),
+    },
   },
 };

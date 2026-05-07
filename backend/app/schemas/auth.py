@@ -22,6 +22,14 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+class VerifyEmailRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+class RegisterResponse(BaseModel):
+    message: str
+    email: str
+
 
 class TokenResponse(BaseModel):
     access_token: str

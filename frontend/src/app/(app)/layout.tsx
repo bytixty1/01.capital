@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { Logo } from '@/components/Logo';
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -99,19 +100,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Brand */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '18px 16px', borderBottom: '1px solid var(--border-default)' }}>
-        <div style={{
-          width: 28, height: 28,
-          background: 'rgba(166,125,250,0.12)', border: '1px solid rgba(166,125,250,0.2)',
-          borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--brand-purple)',
-        }}>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor" />
-            <rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5" />
-            <rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5" />
-            <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.2" />
-          </svg>
-        </div>
+        <Logo size={24} />
         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>01 Capital</span>
       </div>
 

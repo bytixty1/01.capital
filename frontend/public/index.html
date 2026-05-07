@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>01 Capital — Saudi Cap Table & Equity Management</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-base: #0a0a0c;
+      --bg-surface: #131316;
+      --bg-elevated: #1a1a1f;
+      --border-default: #2e2e35;
+      --text-primary: #ededf0;
+      --text-secondary: #a8a8b3;
+      --text-tertiary: #6e6e7a;
+      --brand-purple: #a67dfa;
+      --brand-purple-hover: #b28ffc;
+      --brand-purple-active: #9367ed;
+      --pos: #4ade80;
+      --neg: #f87171;
+      --warn: #facc15;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── Left Vertical Navigation ───────────────────────────────────── */
+    .nav-sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 120px;
+      height: 100vh;
+      background: transparent;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 0;
+    }
+
+    .nav-logo-large {
+      position: absolute;
+      top: 60px;
+      width: 180px;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-logo-large svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 20px 60px rgba(166, 125, 250, 0.15));
+    }
+
+    .nav-timeline {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 50px;
+      margin-top: 200px;
+      position: relative;
+    }
+
+    .nav-timeline::before {
+      content: '';
+      position: absolute;
+      width: 2px;
+      height: calc(100% + 100px);
+      background: linear-gradient(to bottom, transparent, var(--border-default), transparent);
+      left: 50%;
+      top: -50px;
+      transform: translateX(-50%);
+      z-index: -1;
+    }
+
+    .nav-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: transparent;
+      border: 2px solid var(--text-tertiary);
+      cursor: pointer;
+      transition: all 300ms ease;
+      position: relative;
+    }
+
+    .nav-dot:hover {
+      border-color: var(--brand-purple);
+      transform: scale(1.2);
+    }
+
+    .nav-dot.active {
+      background: var(--brand-purple);
+      border-color: var(--brand-purple);
+      transform: scale(1.4);
+      box-shadow: 0 0 20px rgba(166, 125, 250, 0.6);
+    }
+
+    .nav-dot-label {
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      margin-left: 30px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: all 300ms ease;
+      pointer-events: none;
+    }
+
+    .nav-dot:hover .nav-dot-label,
+    .nav-dot.active .nav-dot-label {
+      opacity: 1;
+      color: var(--text-primary);
+    }
+
+    /* ── Main Content ───────────────────────────────────────────────── */
+    main {
+      margin-left: 120px;
+      position: relative;
+    }
+
+    .section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Hero Section */
+    #hero {
+      background: var(--bg-base);
+      padding: 120px 80px;
+    }
+
+    .hero-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 100px;
+      align-items: center;
+    }
+
+    .hero-content h1 {
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-content p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      line-height: 1.8;
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--brand-purple);
+      color: #fff;
+      padding: 14px 32px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .hero-cta:hover {
+      background: var(--brand-purple-hover);
+      transform: translateY(-2px);
+    }
+
+    .hero-visual {
+      position: relative;
+      height: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #canvas-3d {
+      width: 100%;
+      height: 100%;
+      max-width: 500px;
+      max-height: 500px;
+    }
+
+    /* Feature Sections */
+    .feature-section {
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-default);
+    }
+
+    .feature-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .feature-header {
+      text-align: center;
+      margin-bottom: 80px;
+    }
+
+    .feature-header h2 {
+      font-size: 40px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .feature-header p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 28px;
+      margin-bottom: 40px;
+    }
+
+    .feature-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: 12px;
+      padding: 40px;
+      transition: all 200ms ease;
+    }
+
+    .feature-card:hover {
+      border-color: var(--brand-purple);
+      transform: translateY(-4px);
+    }
+
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-tertiary);
+      line-height: 1.8;
+    }
+
+    /* CTA Section */
+    .cta-section {
+      background: linear-gradient(135deg, rgba(166, 125, 250, 0.1) 0%, rgba(166, 125, 250, 0.05) 100%);
+      border: 1px solid rgba(166, 125, 250, 0.2);
+      border-radius: 16px;
+      padding: 80px 60px;
+      text-align: center;
+    }
+
+    .cta-section h2 {
+      font-size: 40px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .cta-section p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      background: var(--brand-purple);
+      color: #fff;
+      padding: 14px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-primary:hover {
+      background: var(--brand-purple-hover);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-secondary);
+      padding: 14px 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border-default);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--brand-purple);
+      color: var(--brand-purple);
+    }
+
+    /* Footer */
+    footer {
+      margin-left: 0;
+      padding: 40px 80px;
+      border-top: 1px solid var(--border-default);
+      text-align: center;
+      color: var(--text-tertiary);
+      font-size: 12px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .section {
+        padding: 60px 40px;
+      }
+
+      .nav-sidebar {
+        width: 80px;
+      }
+
+      main {
+        margin-left: 80px;
+      }
+
+      footer {
+        padding: 40px 40px;
+        margin-left: 0;
+      }
+
+      .hero-container {
+        gap: 60px;
+      }
+
+      .hero-content h1 {
+        font-size: 40px;
+      }
+
+      .feature-header h2 {
+        font-size: 32px;
+      }
+
+      #hero {
+        padding: 100px 40px;
+      }
+
+      .cta-section {
+        padding: 60px 40px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-sidebar {
+        display: none;
+      }
+
+      main {
+        margin-left: 0;
+      }
+
+      footer {
+        margin-left: 0;
+        padding: 40px 20px;
+      }
+
+      .section {
+        padding: 40px 20px;
+      }
+
+      .hero-container {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+
+      .hero-content h1 {
+        font-size: 28px;
+      }
+
+      .hero-visual {
+        height: 300px;
+      }
+
+      #canvas-3d {
+        max-width: 300px;
+        max-height: 300px;
+      }
+
+      .feature-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .feature-card {
+        padding: 24px;
+      }
+
+      .feature-header h2 {
+        font-size: 24px;
+      }
+
+      .cta-buttons {
+        flex-direction: column;
+      }
+
+      .btn-primary, .btn-secondary {
+        width: 100%;
+      }
+
+      #hero {
+        padding: 60px 20px;
+      }
+
+      .cta-section {
+        padding: 40px 20px;
+      }
+    }
+
+    /* Scroll indicator */
+    .scroll-indicator {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--text-tertiary);
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateX(-50%) translateY(0);
+      }
+      50% {
+        transform: translateX(-50%) translateY(10px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Left Vertical Navigation -->
+  <nav class="nav-sidebar">
+    <div class="nav-logo-large">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
+        <path fill="#a67dfa" d="M 895.31 680.36 C 901.84 675.61 909.43 669.72 914.99 663.90 Q 925.67 652.74 931.58 643.78 C 949.34 616.87 958.52 585.20 961.38 552.97 C 962.92 535.56 962.79 521.15 961.94 504.03 Q 960.97 484.53 956.19 464.30 C 949.59 436.34 937.98 410.36 919.20 389.81 Q 911.88 381.79 905.76 377.16 A 0.42 0.42 0.0 0 1 905.85 376.44 L 965.84 351.32 A 3.72 3.70 -41.2 0 1 969.11 351.53 L 976.01 355.51 A 2.25 2.24 15.1 0 1 977.13 357.45 Q 976.97 512.99 976.99 628.25 C 976.99 637.90 978.12 646.17 986.44 651.32 C 990.79 654.01 995.27 656.19 1000.72 658.16 Q 1011.54 662.07 1026.03 667.30 A 2.29 2.27 -80.2 0 1 1027.53 669.45 L 1027.53 680.20 A 0.67 0.66 90.0 0 1 1026.87 680.87 L 895.47 680.87 A 0.28 0.28 0.0 0 1 895.31 680.36 Z"/>
+        <path fill="#a67dfa" d="M 657.92 525.26 C 658.01 560.42 663.66 595.82 679.47 627.32 C 689.42 647.14 704.03 665.58 722.21 678.34 Q 733.65 686.36 745.71 691.74 A 0.22 0.22 0.0 0 1 745.60 692.16 Q 707.48 689.08 676.02 668.80 Q 657.83 657.07 643.29 638.24 Q 624.09 613.37 615.92 580.05 Q 613.03 568.22 612.31 561.75 Q 611.53 554.72 611.39 553.91 C 610.39 547.86 610.40 543.80 609.95 536.96 Q 609.53 530.50 609.51 525.39 Q 609.50 520.27 609.89 513.82 C 610.30 506.98 610.27 502.92 611.24 496.86 Q 611.37 496.05 612.12 489.02 Q 612.80 482.54 615.63 470.70 Q 623.62 437.33 642.69 412.36 Q 657.13 393.45 675.25 381.63 Q 706.61 361.18 744.71 357.90 A 0.22 0.22 0.0 0 1 744.82 358.32 Q 732.79 363.76 721.39 371.84 C 703.28 384.70 688.77 403.22 678.92 423.09 C 663.28 454.67 657.83 490.10 657.92 525.26 Z"/>
+        <path fill="#a67dfa" d="M 730.08 427.20 A 0.19 0.19 0.0 0 1 729.85 426.92 C 734.09 420.30 739.11 414.85 744.04 410.00 Q 763.62 390.77 791.60 386.64 Q 808.96 384.08 824.50 386.10 Q 832.79 387.17 844.03 390.47 C 872.89 398.94 892.76 423.36 903.04 451.46 C 908.62 466.75 912.20 482.17 913.23 497.77 C 913.66 504.30 914.50 509.16 914.58 515.76 Q 914.69 525.46 914.67 530.82 C 914.63 539.09 913.88 544.91 912.88 555.49 C 908.85 598.09 889.43 641.23 847.05 657.86 Q 836.51 662.00 822.50 663.45 Q 804.29 665.34 785.33 661.38 C 762.86 656.69 742.90 641.33 730.01 622.47 A 0.12 0.12 0.0 0 1 730.17 622.31 Q 742.45 630.16 757.08 632.18 C 781.10 635.49 803.53 626.30 817.80 606.97 Q 829.83 590.66 835.18 568.87 Q 838.53 555.20 839.27 533.50 C 840.11 508.80 837.77 483.95 828.44 461.11 C 820.44 441.53 805.08 424.37 783.68 419.48 Q 766.78 415.61 750.61 418.87 Q 746.90 419.62 739.57 422.26 C 736.62 423.32 732.91 426.16 730.08 427.20 Z"/>
+      </svg>
+    </div>
+
+    <div class="nav-timeline">
+      <div class="nav-dot active" data-section="hero">
+        <span class="nav-dot-label">Overview</span>
+      </div>
+      <div class="nav-dot" data-section="cap-table">
+        <span class="nav-dot-label">Cap Table</span>
+      </div>
+      <div class="nav-dot" data-section="esop">
+        <span class="nav-dot-label">ESOP</span>
+      </div>
+      <div class="nav-dot" data-section="compliance">
+        <span class="nav-dot-label">Compliance</span>
+      </div>
+      <div class="nav-dot" data-section="instruments">
+        <span class="nav-dot-label">Instruments</span>
+      </div>
+      <div class="nav-dot" data-section="pricing">
+        <span class="nav-dot-label">Pricing</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Hero Section -->
+    <section id="hero" class="section">
+      <div class="hero-container">
+        <div class="hero-content">
+          <p style="color: var(--brand-purple); font-size: 12px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px;">Equity Management • Cap Table</p>
+          <h1>Build and manage your cap table</h1>
+          <p>Create a flawless cap table in minutes using our safe and secure software. Designed natively around Saudi Companies Law.</p>
+          <a href="/dashboard" class="hero-cta">
+            Get started →
+          </a>
+        </div>
+        <div class="hero-visual">
+          <canvas id="canvas-3d"></canvas>
+        </div>
+      </div>
+      <div class="scroll-indicator">
+        <span>Scroll to explore</span>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M10 15l5-5M10 15l-5-5M10 3v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Cap Table Section -->
+    <section id="cap-table" class="section feature-section">
+      <div class="feature-container">
+        <div class="feature-header">
+          <h2>Cap Table Management</h2>
+          <p>Track every share, every stakeholder, and every transaction with complete transparency and accuracy</p>
+        </div>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h3>Real-time Ownership</h3>
+            <p>See exactly who owns what, updated instantly as equity events occur. No manual calculations or spreadsheets.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Event-sourced Audit Log</h3>
+            <p>Every share issuance, transfer, and capital change is immutably recorded for legal compliance and transparency.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Legal-grade Accuracy</h3>
+            <p>Built on Saudi Companies Law. Multi-class shares, ROFR, drag/tag rights, and all governance rules baked in.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Multi-stakeholder Support</h3>
+            <p>Manage founders, investors, employees, and entities. Track natural persons and legal entities separately.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Percentage Ownership</h3>
+            <p>Automatic dilution tracking through fundraising rounds. See impact before and after each event.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Share Transfers</h3>
+            <p>Record transfers between stakeholders with ROFR enforcement for LLCs and full audit trail.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ESOP Section -->
+    <section id="esop" class="section feature-section">
+      <div class="feature-container">
+        <div class="feature-header">
+          <h2>ESOP & Employee Equity</h2>
+          <p>Align your team with equity grants, vesting schedules, and transparent tracking</p>
+        </div>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h3>Plan Creation</h3>
+            <p>Set up multiple ESOP plans with individual share pools, cliff periods, and total vesting terms.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Vesting Engine</h3>
+            <p>Automatic vesting calculation. Cliff + graded monthly vesting. Supports 4-year + 1-year cliff by default.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Exercise Tracking</h3>
+            <p>Employees can exercise options at any time. Track exercisable, vested, and unvested shares per grant.</p>
+          </div>
+          <div class="feature-card">
+            <h3>CMA Disclosures</h3>
+            <p>Generate quarterly ESOP disclosure packs for regulatory compliance with Saudi Capital Market Authority.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Employee Portal</h3>
+            <p>Employees log in to see their grants, vesting progress, and exercisable shares at a glance.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Dilution Impact</h3>
+            <p>See how ESOP grants dilute founder ownership. Model different scenarios before committing.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Compliance Section -->
+    <section id="compliance" class="section feature-section">
+      <div class="feature-container">
+        <div class="feature-header">
+          <h2>Compliance & Filings</h2>
+          <p>Stay ahead of regulatory requirements. We surface what's required, you decide when to file</p>
+        </div>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h3>MoC Filing Tracker</h3>
+            <p>Automatically detect Ministry of Commerce filing requirements triggered by cap table events. Never miss a deadline.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Draft Documents</h3>
+            <p>Generate watermarked drafts of resolutions, AoA amendments, and partner register updates. Review with counsel first.</p>
+          </div>
+          <div class="feature-card">
+            <h3>ZATCA Exports</h3>
+            <p>Structured JSON exports aligned with Zakat-year reporting requirements for tax authorities.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Governance Flags</h3>
+            <p>Track ROFR, drag/tag, tag/along rights, and profit allocation rules from your Articles of Association.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Audit Log</h3>
+            <p>Complete immutable record of every state-changing event. Export for legal review or audits anytime.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Role-based Access</h3>
+            <p>Admin, Editor, Viewer, and Employee roles. Control who can modify cap table or view sensitive data.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Instruments Section -->
+    <section id="instruments" class="section feature-section">
+      <div class="feature-container">
+        <div class="feature-header">
+          <h2>Sophisticated Instruments</h2>
+          <p>Handle real fundraising scenarios with convertible sukuk, phantom shares, and warrants</p>
+        </div>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h3>Sukuk Convertibles</h3>
+            <p>Model Sharia-compliant convertible sukuk instruments. Track conversion terms and trigger events.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Phantom Shares</h3>
+            <p>Issue phantom share awards that track value without diluting ownership. Perfect for early employees.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Warrants</h3>
+            <p>Track warrant grants with exercise prices, expiry dates, and conversion ratios.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Anti-dilution</h3>
+            <p>Model weighted-average and full-ratchet anti-dilution provisions for preferred rounds.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Liquidation Prefs</h3>
+            <p>Track preferred share liquidation preferences. Model distribution scenarios on exit.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Scenario Modeling</h3>
+            <p>Test different fundraising scenarios and see how instruments affect ownership and value.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="section feature-section">
+      <div class="feature-container">
+        <div class="feature-header">
+          <h2>Simple, transparent pricing</h2>
+          <p>Scale your equity management as your company grows. No surprises, no hidden fees</p>
+        </div>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h3 style="font-size: 20px; margin-bottom: 8px;">Founder</h3>
+            <p style="color: var(--brand-purple); font-weight: 600; font-size: 22px; margin-bottom: 16px;">SAR 0<span style="font-size: 12px; color: var(--text-tertiary);">/month</span></p>
+            <p style="margin-bottom: 24px; font-size: 13px; color: var(--text-secondary);">Perfect for early-stage startups and founders testing the platform.</p>
+            <ul style="font-size: 13px; color: var(--text-tertiary); line-height: 2.2; list-style: none;">
+              <li>1 company</li>
+              <li>Up to 20 stakeholders</li>
+              <li>Basic cap table</li>
+              <li>Community support</li>
+            </ul>
+          </div>
+          <div class="feature-card" style="border-color: var(--brand-purple); background: rgba(166,125,250,0.08);">
+            <h3 style="font-size: 20px; margin-bottom: 8px;">Growth</h3>
+            <p style="color: var(--brand-purple); font-weight: 600; font-size: 22px; margin-bottom: 16px;">SAR 299<span style="font-size: 12px; color: var(--text-tertiary);">/month</span></p>
+            <p style="margin-bottom: 24px; font-size: 13px; color: var(--text-secondary);">For scaling teams managing multiple companies and rounds.</p>
+            <ul style="font-size: 13px; color: var(--text-tertiary); line-height: 2.2; list-style: none;">
+              <li>Up to 5 companies</li>
+              <li>Unlimited stakeholders</li>
+              <li>ESOP & instruments</li>
+              <li>Compliance filings</li>
+              <li>Priority support</li>
+            </ul>
+          </div>
+          <div class="feature-card">
+            <h3 style="font-size: 20px; margin-bottom: 8px;">Enterprise</h3>
+            <p style="color: var(--brand-purple); font-weight: 600; font-size: 22px; margin-bottom: 16px;">Custom</p>
+            <p style="margin-bottom: 24px; font-size: 13px; color: var(--text-secondary);">For portfolio companies, VCs, and ecosystem players.</p>
+            <ul style="font-size: 13px; color: var(--text-tertiary); line-height: 2.2; list-style: none;">
+              <li>Unlimited companies</li>
+              <li>API access</li>
+              <li>Custom integrations</li>
+              <li>Dedicated support</li>
+              <li>SLA guarantees</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section id="cta" class="section">
+      <div class="feature-container">
+        <div class="cta-section">
+          <h2>Ready to manage your equity?</h2>
+          <p>Join Saudi founders and investors building the future with transparency and compliance at their core.</p>
+          <div class="cta-buttons">
+            <a href="/register" class="btn-primary">Start free trial</a>
+            <a href="#cap-table" class="btn-secondary">Learn more</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 01 Capital. All rights reserved. | <a href="#" style="color: var(--brand-purple); text-decoration: none;">Privacy</a> | <a href="#" style="color: var(--brand-purple); text-decoration: none;">Terms</a></p>
+    <p style="margin-top: 16px; font-size: 11px; color: var(--text-tertiary);">DRAFT — Review all cap table data with legal counsel before relying on it for legal purposes.</p>
+  </footer>
+
+  <script>
+    // ── 3D Saudi Riyal Bill Animation ──────────────────────────────
+    const canvas = document.getElementById('canvas-3d');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    let rotationX = 0.3;
+    let rotationY = 0;
+    let scrollProgress = 0;
+
+    function draw() {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      ctx.fillStyle = 'transparent';
+      ctx.clearRect(0, 0, w, h);
+
+      // Update rotation based on scroll
+      rotationY = scrollProgress * Math.PI * 2;
+
+      // 3D bill projection
+      const scale = 100;
+      const billWidth = 200;
+      const billHeight = 100;
+
+      // Simple 3D rotation and drawing
+      ctx.save();
+      ctx.translate(w / 2, h / 2);
+
+      // Draw rotating rectangle (bill representation)
+      ctx.fillStyle = `rgba(166, 125, 250, ${0.3 + scrollProgress * 0.3})`;
+      ctx.strokeStyle = `rgba(166, 125, 250, ${0.5 + scrollProgress * 0.3})`;
+      ctx.lineWidth = 2;
+
+      // Rotate based on scroll
+      ctx.rotate(rotationY);
+      ctx.rotate(rotationX);
+
+      // Bill-like shape with perspective
+      const depth = Math.cos(rotationY) * 20;
+      ctx.fillRect(-billWidth/2, -billHeight/2, billWidth, billHeight);
+      ctx.strokeRect(-billWidth/2, -billHeight/2, billWidth, billHeight);
+
+      // Add some details
+      ctx.font = '10px monospace';
+      ctx.fillStyle = `rgba(166, 125, 250, ${0.6 + scrollProgress * 0.2})`;
+      ctx.textAlign = 'center';
+      ctx.fillText('500 SAR', 0, -5);
+      ctx.fillText('Central Bank', 0, 15);
+
+      // Particle effect
+      for (let i = 0; i < 5; i++) {
+        const angle = (Date.now() / 1000 + i) * 0.5;
+        const px = Math.cos(angle) * 150;
+        const py = Math.sin(angle) * 100;
+        ctx.fillStyle = `rgba(166, 125, 250, ${0.2 * (1 - scrollProgress)})`;
+        ctx.fillRect(px - 4, py - 4, 8, 8);
+      }
+
+      ctx.restore();
+
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+
+    // ── Left Sidebar Navigation ────────────────────────────────────
+    const navDots = document.querySelectorAll('.nav-dot');
+
+    navDots.forEach(dot => {
+      dot.addEventListener('click', () => {
+        const sectionId = dot.getAttribute('data-section');
+        const section = document.getElementById(sectionId);
+        if (section) {
+          section.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
+
+    function updateActiveNavDot() {
+      const sections = ['hero', 'cap-table', 'esop', 'compliance', 'instruments', 'pricing', 'cta'];
+      let current = 'hero';
+
+      for (const sectionId of sections) {
+        const section = document.getElementById(sectionId);
+        if (section) {
+          const rect = section.getBoundingClientRect();
+          if (rect.top <= window.innerHeight / 2) {
+            current = sectionId;
+          }
+        }
+      }
+
+      navDots.forEach(dot => {
+        const sectionId = dot.getAttribute('data-section');
+        if (sectionId === current) {
+          dot.classList.add('active');
+        } else {
+          dot.classList.remove('active');
+        }
+      });
+    }
+
+    window.addEventListener('scroll', updateActiveNavDot);
+    updateActiveNavDot();
+
+    // ── Scroll Progress Tracking for 3D Animation ──────────────────
+    function updateScrollProgress() {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      scrollProgress = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+    }
+
+    window.addEventListener('scroll', updateScrollProgress);
+    updateScrollProgress();
+  </script>
+</body>
+</html>

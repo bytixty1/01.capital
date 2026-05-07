@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.models.company import CompanyStatus, EntityType
 
@@ -25,6 +25,14 @@ class CreateCompanyRequest(BaseModel):
     has_drag_tag: bool = False
     has_tag_along: bool = False
     profit_allocation_notes: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def empty_strings_to_none(cls, values: dict) -> dict:
+        for k, v in values.items():
+            if v == "":
+                values[k] = None
+        return values
 
 
 class UpdateCompanyRequest(BaseModel):

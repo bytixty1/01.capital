@@ -50,143 +50,140 @@ export default function IssueSharesPage() {
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.back}>
-        <a href={`/companies/${companyId}`} style={styles.backLink}>← Back to company</a>
+    <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <div>
+        <a href={`/companies/${companyId}`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s ease' }}>
+          ← Back to company
+        </a>
       </div>
 
-      <h1 style={styles.heading}>Issue shares</h1>
-      <p style={styles.sub}>
-        This creates an immutable share issuance event and updates the cap table.
-        All events are drafted — review with legal counsel before treating as official.
-      </p>
+      <div>
+        <h1 style={{ fontSize: '32px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+          Issue shares
+        </h1>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+          This creates an immutable share issuance event and updates the cap table.
+          All events are drafted — review with legal counsel before treating as official.
+        </p>
+      </div>
 
       {loadingStakeholders ? (
-        <p style={styles.muted}>Loading stakeholders…</p>
+        <p style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>Loading stakeholders...</p>
       ) : stakeholders.length === 0 ? (
-        <div style={styles.noStakeholders}>
-          <p style={styles.muted}>No stakeholders yet.</p>
-          <a href={`/companies/${companyId}/stakeholders/new`} style={styles.link}>
+        <div className="glass-panel" style={{ padding: '48px 24px', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>No stakeholders yet. You must add a stakeholder before issuing shares.</p>
+          <a href={`/companies/${companyId}/stakeholders/new`} style={{ color: 'var(--brand-purple)', fontSize: '14px', textDecoration: 'none', fontWeight: 500 }}>
             Add a stakeholder first →
           </a>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <label style={styles.label}>
-            Stakeholder *
-            <select
-              value={stakeholderId}
-              onChange={e => setStakeholderId(e.target.value)}
-              required
-              style={styles.input}
-            >
-              {stakeholders.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.name_en}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className="glass-panel">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                Stakeholder *
+              </label>
+              <select
+                value={stakeholderId}
+                onChange={e => setStakeholderId(e.target.value)}
+                required
+                className="glass-input"
+                style={{ width: '100%' }}
+              >
+                {stakeholders.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.name_en}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <label style={styles.label}>
-            Share class *
-            <input
-              type="text"
-              value={shareClass}
-              onChange={e => setShareClass(e.target.value)}
-              required
-              placeholder="ordinary"
-              style={{ ...styles.input, fontFamily: 'var(--font-mono)' }}
-            />
-          </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                Share class *
+              </label>
+              <input
+                type="text"
+                value={shareClass}
+                onChange={e => setShareClass(e.target.value)}
+                required
+                className="glass-input"
+                placeholder="e.g. ordinary"
+                style={{ fontFamily: 'var(--font-mono)' }}
+              />
+            </div>
 
-          <label style={styles.label}>
-            Number of shares *
-            <input
-              type="number"
-              value={quantity}
-              onChange={e => setQuantity(e.target.value)}
-              required
-              min="1"
-              step="1"
-              style={{ ...styles.input, fontFamily: 'var(--font-mono)' }}
-            />
-          </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                Number of shares *
+              </label>
+              <input
+                type="number"
+                value={quantity}
+                onChange={e => setQuantity(e.target.value)}
+                required
+                min="1"
+                step="1"
+                className="glass-input"
+                style={{ fontFamily: 'var(--font-mono)' }}
+                placeholder="1000"
+              />
+            </div>
 
-          <label style={styles.label}>
-            Event date *
-            <input
-              type="date"
-              value={eventDate}
-              onChange={e => setEventDate(e.target.value)}
-              required
-              style={{ ...styles.input, fontFamily: 'var(--font-mono)' }}
-            />
-          </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                Event date *
+              </label>
+              <input
+                type="date"
+                value={eventDate}
+                onChange={e => setEventDate(e.target.value)}
+                required
+                className="glass-input"
+                style={{ fontFamily: 'var(--font-mono)' }}
+              />
+            </div>
 
-          <label style={styles.label}>
-            Notes
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              rows={3}
-              placeholder="Board resolution reference, context…"
-              style={{ ...styles.input, resize: 'vertical' as const }}
-            />
-          </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                Notes (optional)
+              </label>
+              <textarea
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                rows={3}
+                placeholder="Board resolution reference, context..."
+                className="glass-input"
+                style={{ resize: 'vertical' }}
+              />
+            </div>
 
-          {error && <p style={styles.error}>{error}</p>}
+            {error && (
+              <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '6px', color: 'var(--neg)', fontSize: '13px' }}>
+                {error}
+              </div>
+            )}
 
-          <div style={styles.actions}>
-            <a href={`/companies/${companyId}`} style={styles.cancel}>Cancel</a>
-            <button type="submit" disabled={loading} style={styles.submit}>
-              {loading ? 'Issuing…' : 'Issue shares'}
-            </button>
-          </div>
-        </form>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center', marginTop: '16px', paddingTop: '20px', borderTop: '1px solid var(--glass-border)' }}>
+              <a href={`/companies/${companyId}`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s ease' }}>
+                Cancel
+              </a>
+              <button 
+                type="submit" 
+                disabled={loading} 
+                style={{
+                  background: 'var(--brand-purple)', color: '#fff', border: 'none', borderRadius: '8px',
+                  padding: '10px 20px', fontSize: '14px', fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.7 : 1, transition: 'all 0.2s ease', boxShadow: '0 0 20px -5px rgba(139, 92, 246, 0.4)'
+                }}
+              >
+                {loading ? 'Issuing...' : 'Issue shares'}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
     </div>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  page: { maxWidth: '480px' },
-  back: { marginBottom: '24px' },
-  backLink: { color: 'var(--text-secondary)', fontSize: '13px', textDecoration: 'none' },
-  heading: { fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' },
-  sub: { fontSize: '13px', color: 'var(--text-tertiary)', marginBottom: '32px' },
-  form: { display: 'flex', flexDirection: 'column', gap: '16px' },
-  label: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    fontSize: '13px',
-    color: 'var(--text-secondary)',
-  },
-  input: {
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-default)',
-    borderRadius: 'var(--radius-md)',
-    color: 'var(--text-primary)',
-    fontSize: '13px',
-    padding: '10px 12px',
-    outline: 'none',
-    width: '100%',
-  },
-  error: { color: 'var(--neg)', fontSize: '13px' },
-  muted: { color: 'var(--text-tertiary)', fontSize: '13px' },
-  link: { color: 'var(--brand-purple)', fontSize: '13px', textDecoration: 'none' },
-  noStakeholders: { display: 'flex', flexDirection: 'column', gap: '12px', padding: '32px 0' },
-  actions: { display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center', marginTop: '8px' },
-  cancel: { color: 'var(--text-secondary)', fontSize: '13px', textDecoration: 'none' },
-  submit: {
-    background: 'var(--brand-purple)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 'var(--radius-md)',
-    padding: '10px 20px',
-    fontSize: '14px',
-    fontWeight: 500,
-    cursor: 'pointer',
-  },
-};

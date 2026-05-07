@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { api } from '@/lib/api';
-import { setToken } from '@/lib/auth';
-import AnimatedBackground from '@/components/AnimatedBackground';
+import { Logo } from '@/components/Logo';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -15,37 +14,69 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // Validation
+    if (!fullName.trim()) {
+      setError('Full name is required');
+      return;
+    }
+    if (!email.trim()) {
+      setError('Email address is required');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    if (!password.trim()) {
+      setError('Password is required');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      setError('Password must contain uppercase, lowercase, and numbers');
+      return;
+    }
+
     setLoading(true);
     try {
-      const { access_token } = await api.auth.register(email, password, fullName || undefined);
-      setToken(access_token);
-      window.location.href = '/';
+      await api.auth.register(email, password, fullName || undefined);
+      // Redirect to verification flow
+      window.location.href = `/verify?email=${encodeURIComponent(email)}`;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      const message = err instanceof Error ? err.message : 'Registration failed';
+      // Provide helpful error messages
+      if (message.includes('already')) {
+        setError('This email is already registered. Please sign in instead.');
+      } else if (message.includes('invalid')) {
+        setError('Invalid email address. Please check and try again.');
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main style={styles.page}>
-      <AnimatedBackground />
-
-      <div style={styles.card}>
-        <div style={styles.logoRow}>
-          <div style={styles.logoMark}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <rect x="2" y="2" width="7" height="7" rx="1.5" fill="#a67dfa" />
-              <rect x="11" y="2" width="7" height="7" rx="1.5" fill="#a67dfa" opacity="0.5" />
-              <rect x="2" y="11" width="7" height="7" rx="1.5" fill="#a67dfa" opacity="0.5" />
-              <rect x="11" y="11" width="7" height="7" rx="1.5" fill="#a67dfa" opacity="0.2" />
-            </svg>
-          </div>
-          <span style={styles.logoText}>01 Capital</span>
+    <main style={styles.page} data-auth-page="true">
+      {/* Left Panel — Brand */}
+      <div style={styles.brandPanel} data-auth-brand-panel="true">
+        <div style={styles.brandContent}>
+          <Logo size={120} />
+          <h2 style={styles.brandTitle}>01 Capital</h2>
+          <p style={styles.brandSub}>Saudi-native cap table management for founders</p>
         </div>
+      </div>
 
-        <h1 style={styles.heading}>Create your account</h1>
-        <p style={styles.sub}>Saudi-native cap table management for founders</p>
+      {/* Right Panel — Form */}
+      <div style={styles.formPanel}>
+        <div className="glass-panel" style={styles.card}>
+          <h1 style={styles.heading}>Create your account</h1>
+          <p style={styles.sub}>Start managing equity in minutes</p>
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.field}>
@@ -87,39 +118,39 @@ export default function RegisterPage() {
             />
           </div>
 
-          {error && (
-            <div style={styles.errorBox}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
-                <circle cx="7" cy="7" r="6" stroke="#f87171" strokeWidth="1.5" />
-                <path d="M7 4v3.5" stroke="#f87171" strokeWidth="1.5" strokeLinecap="round" />
-                <circle cx="7" cy="10" r="0.75" fill="#f87171" />
-              </svg>
-              {error}
-            </div>
-          )}
-
-          <button type="submit" disabled={loading} style={styles.button}>
-            {loading ? (
-              <span style={styles.loadingSpinner}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
-                  <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
-                  <path d="M8 2a6 6 0 0 1 6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+            {error && (
+              <div style={styles.errorBox}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+                  <circle cx="7" cy="7" r="6" stroke="#ef4444" strokeWidth="1.5" />
+                  <path d="M7 4v3.5" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" />
+                  <circle cx="7" cy="10" r="0.75" fill="#ef4444" />
                 </svg>
-                Creating account…
-              </span>
-            ) : 'Create account'}
-          </button>
-        </form>
+                {error}
+              </div>
+            )}
 
-        <p style={styles.terms}>
-          By creating an account, you agree this is a <strong>DRAFT</strong> tool — review all
-          equity data with legal counsel.
-        </p>
+            <button type="submit" disabled={loading} style={styles.button}>
+              {loading ? (
+                <span style={styles.loadingSpinner}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
+                    <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+                    <path d="M8 2a6 6 0 0 1 6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  Creating account…
+                </span>
+              ) : 'Create account'}
+            </button>
+          </form>
 
-        <p style={styles.footer}>
-          Already have an account?{' '}
-          <a href="/login" style={styles.link}>Sign in</a>
-        </p>
+          <p style={styles.terms}>
+            By creating an account, you agree this is a <strong>DRAFT</strong> tool — review all equity data with legal counsel.
+          </p>
+
+          <p style={styles.footer}>
+            Already have an account?{' '}
+            <a href="/login" style={styles.link}>Sign in</a>
+          </p>
+        </div>
       </div>
     </main>
   );
@@ -128,64 +159,62 @@ export default function RegisterPage() {
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: '100vh',
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    background: 'var(--bg-base)',
+  },
+  brandPanel: {
+    background: 'var(--bg-surface)',
+    borderRight: '1px solid var(--border-default)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '24px',
-    background: 'var(--bg-base)',
-    position: 'relative',
+    padding: '80px 40px',
+  },
+  brandContent: {
+    textAlign: 'center',
+  },
+  brandTitle: {
+    fontSize: '32px',
+    fontWeight: 700,
+    color: 'var(--text-primary)',
+    marginTop: '28px',
+    marginBottom: '8px',
+    letterSpacing: '-0.02em',
+  },
+  brandSub: {
+    fontSize: '14px',
+    color: 'var(--text-secondary)',
+  },
+  formPanel: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '60px 40px',
   },
   card: {
     position: 'relative',
     zIndex: 1,
     width: '100%',
-    maxWidth: '400px',
-    background: 'rgba(19, 19, 22, 0.85)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    border: '1px solid var(--border-default)',
-    borderRadius: '16px',
-    padding: '40px',
-    boxShadow: '0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(166,125,250,0.08)',
-  },
-  logoRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '28px',
-  },
-  logoMark: {
-    width: '32px',
-    height: '32px',
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-default)',
-    borderRadius: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: {
-    color: 'var(--text-primary)',
-    fontWeight: 600,
-    fontSize: '15px',
-    letterSpacing: '-0.01em',
+    maxWidth: '420px',
+    padding: '48px',
   },
   heading: {
-    fontSize: '22px',
+    fontSize: '24px',
     fontWeight: 600,
     color: 'var(--text-primary)',
-    marginBottom: '6px',
+    marginBottom: '8px',
     letterSpacing: '-0.02em',
   },
   sub: {
-    fontSize: '13px',
-    color: 'var(--text-tertiary)',
+    fontSize: '14px',
+    color: 'var(--text-secondary)',
     marginBottom: '28px',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '14px',
+    gap: '16px',
   },
   field: {
     display: 'flex',
@@ -213,8 +242,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    background: 'rgba(248, 113, 113, 0.08)',
-    border: '1px solid rgba(248, 113, 113, 0.2)',
+    background: 'rgba(239, 68, 68, 0.08)',
+    border: '1px solid rgba(239, 68, 68, 0.2)',
     borderRadius: '8px',
     padding: '10px 12px',
     fontSize: '13px',
@@ -231,7 +260,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     cursor: 'pointer',
     letterSpacing: '-0.01em',
-    transition: 'opacity 150ms ease',
+    transition: 'all 150ms ease',
   },
   loadingSpinner: {
     display: 'flex',

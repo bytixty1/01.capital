@@ -28,7 +28,7 @@ export default function NewStakeholderPage() {
         cr_number: type === 'legal_entity' ? crNumber || undefined : undefined,
         email: email || undefined,
       });
-      window.location.href = `/companies/${companyId}`;
+      window.location.href = `/companies/${companyId}/stakeholders`;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add stakeholder');
     } finally {
@@ -37,133 +37,141 @@ export default function NewStakeholderPage() {
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.back}>
-        <a href={`/companies/${companyId}`} style={styles.backLink}>← Back to company</a>
+    <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <div>
+        <a href={`/companies/${companyId}`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s ease' }}>
+          ← Back to company
+        </a>
       </div>
 
-      <h1 style={styles.heading}>Add stakeholder</h1>
-      <p style={styles.sub}>A stakeholder is a person or entity that holds (or will hold) shares.</p>
+      <div>
+        <h1 style={{ fontSize: '32px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+          Add stakeholder
+        </h1>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+          A stakeholder is a person or entity that holds (or will hold) shares in the company.
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <label style={styles.label}>
-          Stakeholder type
-          <select
-            value={type}
-            onChange={e => setType(e.target.value as StakeholderType)}
-            style={styles.input}
-          >
-            <option value="natural_person">Natural person (individual)</option>
-            <option value="legal_entity">Legal entity (company / fund)</option>
-          </select>
-        </label>
+      <div className="glass-panel">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              Stakeholder type *
+            </label>
+            <select
+              value={type}
+              onChange={e => setType(e.target.value as StakeholderType)}
+              className="glass-input"
+              style={{ width: '100%' }}
+            >
+              <option value="natural_person">Natural person (individual)</option>
+              <option value="legal_entity">Legal entity (company / fund)</option>
+            </select>
+          </div>
 
-        <label style={styles.label}>
-          Full name (English) *
-          <input
-            type="text"
-            value={nameEn}
-            onChange={e => setNameEn(e.target.value)}
-            required
-            style={styles.input}
-          />
-        </label>
-
-        <label style={styles.label}>
-          Full name (Arabic)
-          <input
-            type="text"
-            value={nameAr}
-            onChange={e => setNameAr(e.target.value)}
-            dir="rtl"
-            style={{ ...styles.input, textAlign: 'right' }}
-          />
-        </label>
-
-        {type === 'natural_person' && (
-          <label style={styles.label}>
-            Nationality (ISO 3-letter code)
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              Full name (English) *
+            </label>
             <input
               type="text"
-              value={nationality}
-              onChange={e => setNationality(e.target.value.toUpperCase())}
-              maxLength={3}
-              placeholder="SAU"
-              style={{ ...styles.input, fontFamily: 'var(--font-mono)' }}
+              value={nameEn}
+              onChange={e => setNameEn(e.target.value)}
+              required
+              className="glass-input"
+              placeholder="e.g. John Doe"
             />
-          </label>
-        )}
+          </div>
 
-        {type === 'legal_entity' && (
-          <label style={styles.label}>
-            CR number
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              Full name (Arabic)
+            </label>
             <input
               type="text"
-              value={crNumber}
-              onChange={e => setCrNumber(e.target.value)}
-              style={{ ...styles.input, fontFamily: 'var(--font-mono)' }}
+              value={nameAr}
+              onChange={e => setNameAr(e.target.value)}
+              dir="rtl"
+              className="glass-input"
+              style={{ textAlign: 'right' }}
+              placeholder="مثال: جون دو"
             />
-          </label>
-        )}
+          </div>
 
-        <label style={styles.label}>
-          Email (optional)
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            style={styles.input}
-          />
-        </label>
+          {type === 'natural_person' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                Nationality (ISO 3-letter code) *
+              </label>
+              <input
+                type="text"
+                value={nationality}
+                onChange={e => setNationality(e.target.value.toUpperCase())}
+                maxLength={3}
+                required
+                className="glass-input"
+                style={{ fontFamily: 'var(--font-mono)' }}
+                placeholder="SAU"
+              />
+            </div>
+          )}
 
-        {error && <p style={styles.error}>{error}</p>}
+          {type === 'legal_entity' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                CR number *
+              </label>
+              <input
+                type="text"
+                value={crNumber}
+                onChange={e => setCrNumber(e.target.value)}
+                required
+                className="glass-input"
+                style={{ fontFamily: 'var(--font-mono)' }}
+                placeholder="1010XXXXXX"
+              />
+            </div>
+          )}
 
-        <div style={styles.actions}>
-          <a href={`/companies/${companyId}`} style={styles.cancel}>Cancel</a>
-          <button type="submit" disabled={loading} style={styles.submit}>
-            {loading ? 'Adding…' : 'Add stakeholder'}
-          </button>
-        </div>
-      </form>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              Email (optional)
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="glass-input"
+              placeholder="stakeholder@example.com"
+            />
+          </div>
+
+          {error && (
+            <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '6px', color: 'var(--neg)', fontSize: '13px' }}>
+              {error}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center', marginTop: '16px', paddingTop: '20px', borderTop: '1px solid var(--glass-border)' }}>
+            <a href={`/companies/${companyId}/stakeholders`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s ease' }}>
+              Cancel
+            </a>
+            <button 
+              type="submit" 
+              disabled={loading} 
+              style={{
+                background: 'var(--brand-purple)', color: '#fff', border: 'none', borderRadius: '8px',
+                padding: '10px 20px', fontSize: '14px', fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.7 : 1, transition: 'all 0.2s ease', boxShadow: '0 0 20px -5px rgba(139, 92, 246, 0.4)'
+              }}
+            >
+              {loading ? 'Adding...' : 'Add stakeholder'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  page: { maxWidth: '480px' },
-  back: { marginBottom: '24px' },
-  backLink: { color: 'var(--text-secondary)', fontSize: '13px', textDecoration: 'none' },
-  heading: { fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' },
-  sub: { fontSize: '13px', color: 'var(--text-tertiary)', marginBottom: '32px' },
-  form: { display: 'flex', flexDirection: 'column', gap: '16px' },
-  label: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    fontSize: '13px',
-    color: 'var(--text-secondary)',
-  },
-  input: {
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-default)',
-    borderRadius: 'var(--radius-md)',
-    color: 'var(--text-primary)',
-    fontSize: '13px',
-    padding: '10px 12px',
-    outline: 'none',
-    width: '100%',
-  },
-  error: { color: 'var(--neg)', fontSize: '13px' },
-  actions: { display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center', marginTop: '8px' },
-  cancel: { color: 'var(--text-secondary)', fontSize: '13px', textDecoration: 'none' },
-  submit: {
-    background: 'var(--brand-purple)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 'var(--radius-md)',
-    padding: '10px 20px',
-    fontSize: '14px',
-    fontWeight: 500,
-    cursor: 'pointer',
-  },
-};
