@@ -47,6 +47,17 @@
   /* Typography */
   --font-sans: 'Inter', 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-ar: 'Rubik', 'IBM Plex Sans Arabic', sans-serif;
+
+  /* Brand aliases (matches new design tokens) */
+  --brand: var(--brand-purple);
+  --brand-hover: var(--brand-purple-hover);
+  --brand-soft: var(--brand-purple-subtle);
+  --serif: var(--font-serif);
+  --sans: var(--font-sans);
+  --mono: var(--font-mono);
+  --ar: var(--font-ar);
 
   /* Spacing scale */
   --space-1: 4px;
