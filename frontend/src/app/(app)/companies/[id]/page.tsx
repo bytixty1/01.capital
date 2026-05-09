@@ -46,7 +46,7 @@ export default function CompanyPage() {
             }}>
               {company.entity_type}
             </span>
-            <h1 style={{ fontSize: '32px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: '34px', fontWeight: 400, color: 'var(--text-primary)', marginBottom: '4px', fontFamily: 'var(--font-serif)', letterSpacing: '-0.01em' }}>
               {company.name_en}
             </h1>
             {company.name_ar && <p style={{ fontSize: '16px', color: 'var(--text-secondary)', direction: 'rtl' }}>{company.name_ar}</p>}

@@ -67,7 +67,7 @@ export default function MembersPage() {
 const styles: Record<string, React.CSSProperties> = {
   page: { maxWidth: '720px' }, back: { marginBottom: '24px' },
   backLink: { color: 'var(--text-secondary)', fontSize: '13px', textDecoration: 'none' },
-  heading: { fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' },
+  heading: { fontSize: '28px', fontWeight: 400, fontFamily: 'var(--font-serif)', color: 'var(--text-primary)', marginBottom: '6px' },
   sub: { fontSize: '13px', color: 'var(--text-tertiary)', marginBottom: '32px' },
   muted: { color: 'var(--text-tertiary)', fontSize: '13px' }, error: { color: 'var(--neg)', fontSize: '13px' },
   table: { width: '100%', borderCollapse: 'collapse' as const, background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' },

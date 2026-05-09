@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { setToken } from '@/lib/auth';
-import { Logo } from '@/components/Logo';
+import { AuthBrandPanel } from '@/components/AuthBrandPanel';
 
 function VerifyContent() {
   const searchParams = useSearchParams();
@@ -58,11 +58,6 @@ function VerifyContent() {
 
   return (
     <div className="glass-panel" style={styles.card}>
-      <div style={styles.logoRow}>
-        <Logo size={20} />
-        <span style={styles.logoText}>01 Capital</span>
-      </div>
-
       <h1 style={styles.heading}>Verify your email</h1>
       <p style={styles.sub}>
         We sent a verification code to <strong>{email || 'your email'}</strong>. <br />
@@ -118,14 +113,7 @@ function VerifyContent() {
 export default function VerifyPage() {
   return (
     <main style={styles.page} data-auth-page="true">
-      {/* Left Panel — Brand */}
-      <div style={styles.brandPanel} data-auth-brand-panel="true">
-        <div style={styles.brandContent}>
-          <Logo size={120} />
-          <h2 style={styles.brandTitle}>01 Capital</h2>
-          <p style={styles.brandSub}>Saudi-native cap table management for founders</p>
-        </div>
-      </div>
+      <AuthBrandPanel tagline="One step away from your cap table" />
 
       {/* Right Panel — Form */}
       <div style={styles.formPanel}>
@@ -146,29 +134,6 @@ const styles: Record<string, React.CSSProperties> = {
     gridTemplateColumns: '1fr 1fr',
     background: 'var(--bg-base)',
   },
-  brandPanel: {
-    background: 'var(--bg-surface)',
-    borderRight: '1px solid var(--border-default)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '80px 40px',
-  },
-  brandContent: {
-    textAlign: 'center',
-  },
-  brandTitle: {
-    fontSize: '32px',
-    fontWeight: 700,
-    color: 'var(--text-primary)',
-    marginTop: '28px',
-    marginBottom: '8px',
-    letterSpacing: '-0.02em',
-  },
-  brandSub: {
-    fontSize: '14px',
-    color: 'var(--text-secondary)',
-  },
   formPanel: {
     display: 'flex',
     alignItems: 'center',
@@ -181,15 +146,6 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     maxWidth: '420px',
     padding: '48px',
-  },
-  logoRow: {
-    display: 'none',
-  },
-  logoText: {
-    color: 'var(--text-primary)',
-    fontWeight: 600,
-    fontSize: '15px',
-    letterSpacing: '-0.01em',
   },
   heading: {
     fontSize: '24px',

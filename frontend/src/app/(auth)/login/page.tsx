@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { setToken } from '@/lib/auth';
-import { Logo } from '@/components/Logo';
+import { AuthBrandPanel } from '@/components/AuthBrandPanel';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -57,14 +57,7 @@ export default function LoginPage() {
 
   return (
     <main style={styles.page} data-auth-page="true">
-      {/* Left Panel — Brand */}
-      <div style={styles.brandPanel} data-auth-brand-panel="true">
-        <div style={styles.brandContent}>
-          <Logo size={120} />
-          <h2 style={styles.brandTitle}>01 Capital</h2>
-          <p style={styles.brandSub}>Saudi-native cap table management for founders</p>
-        </div>
-      </div>
+      <AuthBrandPanel />
 
       {/* Right Panel — Form */}
       <div style={styles.formPanel}>
@@ -139,29 +132,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     background: 'var(--bg-base)',
-  },
-  brandPanel: {
-    background: 'var(--bg-surface)',
-    borderRight: '1px solid var(--border-default)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '80px 40px',
-  },
-  brandContent: {
-    textAlign: 'center',
-  },
-  brandTitle: {
-    fontSize: '32px',
-    fontWeight: 700,
-    color: 'var(--text-primary)',
-    marginTop: '28px',
-    marginBottom: '8px',
-    letterSpacing: '-0.02em',
-  },
-  brandSub: {
-    fontSize: '14px',
-    color: 'var(--text-secondary)',
   },
   formPanel: {
     display: 'flex',

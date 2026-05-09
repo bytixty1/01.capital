@@ -238,8 +238,8 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px',
   },
   heading: {
-    fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)',
-    fontFamily: 'var(--font-mono)', marginBottom: '4px',
+    fontSize: '30px', fontWeight: 400, color: 'var(--text-primary)',
+    fontFamily: 'var(--font-serif)', marginBottom: '4px', letterSpacing: '-0.01em',
   },
   sub: { fontSize: '13px', color: 'var(--text-tertiary)' },
   cta: {

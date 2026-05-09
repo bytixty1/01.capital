@@ -99,9 +99,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const sidebarContent = (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Brand */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '18px 16px', borderBottom: '1px solid var(--border-default)' }}>
-        <Logo size={24} />
-        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>01 Capital</span>
+      <div style={{ padding: '16px', borderBottom: '1px solid var(--border-default)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+          <Logo size={22} />
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>01 Capital</p>
+            <p style={{ fontSize: 10, color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)', marginTop: 1 }}>Cap Table</p>
+          </div>
+        </div>
       </div>
 
       {/* Nav */}
@@ -192,8 +197,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="app-shell">
-      <nav className="app-sidebar">{sidebarContent}</nav>
+    <div className="app-shell" style={{ position: 'relative' }}>
+      {/* Subtle blob background for app shell */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '-10%', right: '10%', width: 500, height: 500, background: 'rgba(139,92,246,0.06)', borderRadius: '50%', filter: 'blur(120px)', animation: 'blob-drift-1 18s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', bottom: '-5%', left: '20%', width: 400, height: 400, background: 'rgba(217,70,239,0.04)', borderRadius: '50%', filter: 'blur(100px)', animation: 'blob-drift-2 22s ease-in-out infinite' }} />
+      </div>
+      <nav className="app-sidebar" style={{ position: 'relative', zIndex: 1 }}>{sidebarContent}</nav>
 
       {/* Mobile bar */}
       <div className="app-mobile-bar">
@@ -220,7 +230,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
       </div>
 
-      <main className="app-content">{children}</main>
+      <main className="app-content" style={{ position: 'relative', zIndex: 1 }}>{children}</main>
     </div>
   );
 }

@@ -494,7 +494,7 @@ const styles: Record<string, React.CSSProperties> = {
   back: { marginBottom: '28px' },
   backLink: { color: 'var(--text-secondary)', fontSize: '13px', textDecoration: 'none' },
   titleRow: { marginBottom: '28px' },
-  heading: { fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' },
+  heading: { fontSize: '28px', fontWeight: 400, fontFamily: 'var(--font-serif)', color: 'var(--text-primary)', marginBottom: '4px' },
   sub: { fontSize: '13px', color: 'var(--text-tertiary)' },
 
   steps: { display: 'flex', alignItems: 'center', gap: '0', marginBottom: '28px' },

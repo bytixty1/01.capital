@@ -49,7 +49,7 @@ const styles: Record<string, React.CSSProperties> = {
   page: { maxWidth: '720px' }, back: { marginBottom: '24px' },
   backLink: { color: 'var(--text-secondary)', fontSize: '13px', textDecoration: 'none' },
   header: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' },
-  heading: { fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' },
+  heading: { fontSize: '28px', fontWeight: 400, fontFamily: 'var(--font-serif)', color: 'var(--text-primary)', marginBottom: '4px' },
   sub: { fontSize: '13px', color: 'var(--text-tertiary)' },
   cta: { background: 'var(--brand-purple)', color: '#fff', textDecoration: 'none', padding: '9px 16px', borderRadius: 'var(--radius-md)', fontSize: '13px', fontWeight: 500 },
   muted: { color: 'var(--text-tertiary)', fontSize: '13px' }, error: { color: 'var(--neg)', fontSize: '13px' },
