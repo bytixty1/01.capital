@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api, StakeholderResponse } from '@/lib/api';
@@ -21,9 +22,9 @@ export default function StakeholdersPage() {
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
       <div style={{ marginBottom: '8px' }}>
-        <a href={`/companies/${companyId}`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s ease' }}>
+        <Link href={`/companies/${companyId}`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s ease' }}>
           ← Back to Company
-        </a>
+        </Link>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
@@ -35,13 +36,13 @@ export default function StakeholdersPage() {
             Individuals and entities that hold or will hold shares in this company.
           </p>
         </div>
-        <a href={`/companies/${companyId}/stakeholders/new`} style={{ 
-          background: 'var(--brand-purple)', color: '#fff', textDecoration: 'none', 
-          padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, 
+        <Link href={`/companies/${companyId}/stakeholders/new`} style={{
+          background: 'var(--brand-purple)', color: '#fff', textDecoration: 'none',
+          padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 500,
           boxShadow: '0 0 20px -5px rgba(139, 92, 246, 0.4)', transition: 'all 0.2s ease'
         }}>
           + Add stakeholder
-        </a>
+        </Link>
       </div>
 
       {loading && <p style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>Loading stakeholders...</p>}
@@ -56,9 +57,9 @@ export default function StakeholdersPage() {
             <h3 style={{ fontSize: '16px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '4px' }}>No stakeholders yet</h3>
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', maxWidth: '320px', margin: '0 auto' }}>Add the founders and investors who hold shares in this company.</p>
           </div>
-          <a href={`/companies/${companyId}/stakeholders/new`} style={{ color: 'var(--brand-purple)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, marginTop: '8px' }}>
+          <Link href={`/companies/${companyId}/stakeholders/new`} style={{ color: 'var(--brand-purple)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, marginTop: '8px' }}>
             Add first stakeholder →
-          </a>
+          </Link>
         </div>
       )}
 
@@ -97,12 +98,12 @@ export default function StakeholdersPage() {
                     {st.email ?? '—'}
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'right' }}>
-                    <a
+                    <Link
                       href={`/companies/${companyId}/cap-table/issue`}
                       style={{ color: 'var(--brand-purple)', fontSize: '13px', textDecoration: 'none', fontWeight: 500 }}
                     >
                       Issue shares
-                    </a>
+                    </Link>
                   </td>
                 </tr>
               ))}

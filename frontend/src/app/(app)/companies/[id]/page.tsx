@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api, CapTableResponse, CompanyResponse } from '@/lib/api';
@@ -32,9 +33,9 @@ export default function CompanyPage() {
       {/* Header Section */}
       <div>
         <div style={{ marginBottom: '24px' }}>
-          <a href="/dashboard" style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s ease' }}>
+          <Link href="/dashboard" style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s ease' }}>
             ← Back to Dashboard
-          </a>
+          </Link>
         </div>
         
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
@@ -51,13 +52,13 @@ export default function CompanyPage() {
             </h1>
             {company.name_ar && <p style={{ fontSize: '16px', color: 'var(--text-secondary)', direction: 'rtl' }}>{company.name_ar}</p>}
           </div>
-          <a href={`/companies/${id}/stakeholders/new`} style={{
+          <Link href={`/companies/${id}/stakeholders/new`} style={{
             background: 'var(--brand-purple)', color: '#fff', textDecoration: 'none',
             padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 500,
             boxShadow: '0 0 20px -5px rgba(139, 92, 246, 0.4)', transition: 'all 0.2s ease'
           }}>
             + Add stakeholder
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -70,14 +71,14 @@ export default function CompanyPage() {
           { label: 'Filings', href: `/companies/${id}/filings`, active: false },
           { label: 'Members', href: `/companies/${id}/members`, active: false },
         ].map(({ label, href, active }) => (
-          <a key={label} href={href} style={{ 
-            padding: '8px 16px', background: active ? 'rgba(255, 255, 255, 0.1)' : 'transparent', 
-            border: `1px solid ${active ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'}`, 
-            borderRadius: '24px', color: active ? 'var(--text-primary)' : 'var(--text-secondary)', 
+          <Link key={label} href={href} style={{
+            padding: '8px 16px', background: active ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+            border: `1px solid ${active ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'}`,
+            borderRadius: '24px', color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
             fontSize: '13px', fontWeight: active ? 500 : 400, textDecoration: 'none', transition: 'all 0.2s ease'
           }}>
             {label}
-          </a>
+          </Link>
         ))}
       </div>
 
@@ -114,12 +115,12 @@ export default function CompanyPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--glass-border)' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>Cap table</h2>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <a href={`/companies/${id}/cap-table/transfer`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
+            <Link href={`/companies/${id}/cap-table/transfer`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
               Transfer
-            </a>
-            <a href={`/companies/${id}/cap-table/issue`} style={{ color: 'var(--brand-purple)', fontSize: '14px', textDecoration: 'none', fontWeight: 500 }}>
+            </Link>
+            <Link href={`/companies/${id}/cap-table/issue`} style={{ color: 'var(--brand-purple)', fontSize: '14px', textDecoration: 'none', fontWeight: 500 }}>
               Issue shares
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -129,9 +130,9 @@ export default function CompanyPage() {
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', maxWidth: '300px' }}>No shares issued yet. Build your cap table by adding stakeholders and issuing equity.</p>
-            <a href={`/companies/${id}/cap-table/issue`} style={{ color: 'var(--brand-purple)', fontSize: '14px', textDecoration: 'none', fontWeight: 500 }}>
+            <Link href={`/companies/${id}/cap-table/issue`} style={{ color: 'var(--brand-purple)', fontSize: '14px', textDecoration: 'none', fontWeight: 500 }}>
               Issue shares to your first stakeholder →
-            </a>
+            </Link>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>

@@ -1,8 +1,4 @@
-"""User model — authentication and identity only.
-
-Domain-specific roles (company admin, viewer, etc.) are added in Sprint 6
-once the multi-tenancy model is locked (ADR-0005).
-"""
+"""User model — authentication and identity only."""
 
 import uuid
 from datetime import datetime
@@ -25,6 +21,11 @@ class User(Base):
     full_name: Mapped[str | None] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # MFA (TOTP via authenticator app — Sprint 1 security baseline)
+    mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    mfa_secret: Mapped[str | None] = mapped_column(String(64))  # encrypted base32 TOTP secret
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

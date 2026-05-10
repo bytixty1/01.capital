@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import { Inter, JetBrains_Mono, Instrument_Serif, Rubik } from 'next/font/google';
+import { Montserrat, JetBrains_Mono, Instrument_Serif, Rubik } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({
+const montserrat = Montserrat({
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-sans',
   display: 'swap',
 });
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable} ${rubik.variable}`}>
+    <html lang="en" className={`${montserrat.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable} ${rubik.variable}`}>
       <body>{children}</body>
     </html>
   );

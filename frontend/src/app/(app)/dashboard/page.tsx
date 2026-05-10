@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api, CompanyResponse } from '@/lib/api';
 
@@ -86,7 +87,7 @@ export default function DashboardPage() {
             <p style={styles.sub}>Total paid-up capital across all companies</p>
           )}
         </div>
-        <a href="/companies/new" style={styles.cta}>+ New company</a>
+        <Link href="/companies/new" style={styles.cta}>+ New company</Link>
       </div>
 
       {/* Stats strip */}
@@ -162,7 +163,7 @@ export default function DashboardPage() {
           </div>
           <p style={styles.emptyTitle}>No companies yet</p>
           <p style={styles.emptyText}>Create your first company to start managing your equity cap table.</p>
-          <a href="/companies/new" style={styles.ctaEmpty}>Create your first company →</a>
+          <Link href="/companies/new" style={styles.ctaEmpty}>Create your first company →</Link>
         </div>
       )}
 
@@ -174,7 +175,7 @@ export default function DashboardPage() {
           </div>
           <div style={styles.grid}>
             {companies.map(c => (
-              <a key={c.id} href={`/companies/${c.id}`} style={styles.card}>
+              <Link key={c.id} href={`/companies/${c.id}`} style={styles.card}>
                 <div style={styles.cardTop}>
                   <span style={styles.entityBadge}>{c.entity_type}</span>
                   <div style={{ ...styles.statusDot, background: c.status === 'active' ? 'var(--pos)' : 'var(--text-tertiary)' }} />
@@ -207,18 +208,18 @@ export default function DashboardPage() {
                     <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
-              </a>
+              </Link>
             ))}
 
             {/* Add new card */}
-            <a href="/companies/new" style={styles.addCard}>
+            <Link href="/companies/new" style={styles.addCard}>
               <div style={styles.addIcon}>
                 <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
                   <path d="M8 2v12M2 8h12" stroke="var(--brand-purple)" strokeWidth="1.6" strokeLinecap="round" />
                 </svg>
               </div>
               <p style={styles.addLabel}>Add company</p>
-            </a>
+            </Link>
           </div>
         </>
       )}

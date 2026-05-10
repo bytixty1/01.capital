@@ -21,8 +21,33 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db),
 ) -> User:
     try:
-        user_id_str = decode_access_token(credentials.credentials)
-        user_id = uuid.UUID(user_id_str)
+        payload = decode_access_token(credentials.credentials)
+        user_id = uuid.UUID(payload["sub"])
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None or not user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
+    # If MFA is enabled, token must have been issued after MFA verification
+    if user.mfa_enabled and not payload.get("mfa", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="MFA verification required",
+        )
+    return user
+
+
+async def get_partial_user(
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """Like get_current_user but accepts partial (pre-MFA) tokens. Use only for /mfa/verify."""
+    try:
+        payload = decode_access_token(credentials.credentials)
+        user_id = uuid.UUID(payload["sub"])
     except Exception:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 

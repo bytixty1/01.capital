@@ -14,9 +14,9 @@ The repository was previously used for a different project (a TASI stock analysi
 
 ## Current phase
 
-**Discovery — not build.** The team is in a 14-day customer-discovery sprint. The only code allowed during this phase is foundational scaffolding (auth, DB connection, brand tokens). **Do not implement features** until the discovery sprint exits with Outcome A (validated). See `docs/discovery/14-day-sprint.md` for the active plan.
+**Build — Sprint 1 active.** Discovery sprint concluded. ADR-0004 (Accepted, 2026-05-06) authorises build. The implementation plan in `docs/product/implementation-plan.md` is the active plan.
 
-If asked to "build feature X" while still in discovery phase: stop and check the sprint status. Push back on the request if it conflicts with the discovery-first discipline.
+Do not add features outside the current sprint scope without an ADR. If asked to build something not in the current sprint, flag it and ask for explicit override.
 
 ---
 
@@ -79,6 +79,21 @@ Do not skip steps 2-5 even if the user's request seems simple. The constraints t
 - Architecture decisions, dependency additions, schema changes, security choices → write an ADR in `docs/decisions/`
 - Use `docs/decisions/TEMPLATE.md`
 - ADRs are short (one page), specific, and dated
+
+### 9. Security baseline before real customer data
+- MFA (TOTP) required for all users before any real cap table data is entered
+- Role-based access control (RBAC): admin / viewer / employee — never mix permissions
+- National IDs, IBANs, and other PII must be encrypted at the field level in the DB, not just at rest
+- Audit log of every login, export, and document access — not just cap table state changes
+- No real customer data in the system until: MFA live, RBAC live, field encryption live
+- External penetration test before first paying customer
+
+### 10. Document generation is core, not optional
+- PDF export of cap table (current state + fully diluted) is a Sprint 3 deliverable
+- All generated documents carry "DRAFT — REVIEW WITH LEGAL COUNSEL" watermark until a lawyer signs off
+- Bilingual output (EN + AR) required from the first document template — not a V2 addition
+- Documents must be legally formatted for Saudi corporate law, not generic PDFs
+- Secondary transactions (investor buying directly from one shareholder) must be supported before document generation ships
 
 ---
 
@@ -233,4 +248,4 @@ When in doubt about anything not covered here:
 - For *legal* questions (is this allowed under Saudi law, do we need lawyer review): defer to the user and flag for legal advisor review. Do not invent legal interpretations.
 - For *technical* questions (how should this be architected, which library): propose with clear reasoning, ask the user to confirm, document in an ADR.
 
-This file last updated: 2026-05-05. If significantly out of date, ask the user for a refresh.
+This file last updated: 2026-05-10. If significantly out of date, ask the user for a refresh.

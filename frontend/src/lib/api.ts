@@ -27,7 +27,7 @@ function authHeaders(): Record<string, string> {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type TokenResponse = { access_token: string; token_type: string };
+export type TokenResponse = { access_token: string; token_type: string; mfa_required?: boolean };
 export type RegisterResponse = { message: string; email: string };
 
 export type UserResponse = {
@@ -35,7 +35,10 @@ export type UserResponse = {
   email: string;
   full_name: string | null;
   is_active: boolean;
+  mfa_enabled: boolean;
 };
+
+export type MFASetupResponse = { secret: string; otpauth_uri: string };
 
 export type EntityType = 'LLC' | 'SJSC' | 'JSC';
 
@@ -185,6 +188,21 @@ export const api = {
       }),
     me: () =>
       request<UserResponse>('/api/auth/me', { headers: authHeaders() }),
+    mfaSetup: () =>
+      request<MFASetupResponse>('/api/auth/mfa/setup', { method: 'POST', headers: authHeaders() }),
+    mfaQrUrl: () => `${API_BASE}/api/auth/mfa/qr`,
+    mfaEnable: (code: string) =>
+      request<{ mfa_enabled: boolean }>('/api/auth/mfa/enable', {
+        method: 'POST', headers: authHeaders(), body: JSON.stringify({ code }),
+      }),
+    mfaVerify: (code: string) =>
+      request<TokenResponse>('/api/auth/mfa/verify', {
+        method: 'POST', headers: authHeaders(), body: JSON.stringify({ code }),
+      }),
+    mfaDisable: (code: string) =>
+      request<{ mfa_enabled: boolean }>('/api/auth/mfa/disable', {
+        method: 'POST', headers: authHeaders(), body: JSON.stringify({ code }),
+      }),
   },
 
   companies: {

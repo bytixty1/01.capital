@@ -34,6 +34,24 @@ class RegisterResponse(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    mfa_required: bool = False
+
+
+class MFASetupResponse(BaseModel):
+    secret: str
+    otpauth_uri: str
+
+
+class MFAVerifyRequest(BaseModel):
+    code: str
+
+    @field_validator("code")
+    @classmethod
+    def code_six_digits(cls, v: str) -> str:
+        v = v.strip()
+        if not v.isdigit() or len(v) != 6:
+            raise ValueError("Code must be exactly 6 digits")
+        return v
 
 
 class UserResponse(BaseModel):
@@ -41,5 +59,6 @@ class UserResponse(BaseModel):
     email: str
     full_name: str | None
     is_active: bool
+    mfa_enabled: bool = False
 
     model_config = {"from_attributes": True}

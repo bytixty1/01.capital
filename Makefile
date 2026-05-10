@@ -1,4 +1,4 @@
-.PHONY: help up build down destroy logs logs-backend logs-db \
+.PHONY: help dev up build down destroy logs logs-backend logs-db \
         backend frontend migrate migrate-new \
         test test-cov type-check install build-frontend
 
@@ -29,27 +29,34 @@ logs-backend: ## Tail backend logs only
 logs-db: ## Tail postgres logs only
 	cd infra && docker compose logs -f postgres
 
-# ── Local dev (requires running postgres) ──────────────────────────────────────
+# ── Local dev ─────────────────────────────────────────────────────────────────
 
-backend: ## Run backend locally with hot reload
-	cd backend && uvicorn app.main:app --reload --port 8000
+dev: ## Start backend + frontend together (Ctrl-C stops both)
+	@echo "Starting backend on :8000 and frontend on :3000 ..."
+	@trap 'kill 0' INT; \
+	  (cd backend && .venv/bin/uvicorn app.main:app --reload --port 8000) & \
+	  (cd frontend && npm run dev) & \
+	  wait
 
-frontend: ## Run frontend locally with hot reload
+backend: ## Run backend only with hot reload
+	cd backend && .venv/bin/uvicorn app.main:app --reload --port 8000
+
+frontend: ## Run frontend only with hot reload
 	cd frontend && npm run dev
 
 # ── Database ───────────────────────────────────────────────────────────────────
 
 migrate: ## Apply all pending migrations
-	cd backend && alembic upgrade head
+	cd backend && .venv/bin/alembic upgrade head
 
 migrate-down: ## Roll back one migration
-	cd backend && alembic downgrade -1
+	cd backend && .venv/bin/alembic downgrade -1
 
 migrate-new: ## Generate a migration (usage: make migrate-new name="describe change")
-	cd backend && alembic revision --autogenerate -m "$(name)"
+	cd backend && .venv/bin/alembic revision --autogenerate -m "$(name)"
 
 migrate-history: ## Show migration history
-	cd backend && alembic history --verbose
+	cd backend && .venv/bin/alembic history --verbose
 
 # ── Testing ────────────────────────────────────────────────────────────────────
 

@@ -14,6 +14,9 @@ alembic==1.15.2
 # Auth
 bcrypt==4.3.0
 PyJWT==2.10.1
+pyotp==2.9.0
+qrcode[pil]==8.1.0
+cryptography==44.0.3
 
 # Cache
 redis==6.2.0

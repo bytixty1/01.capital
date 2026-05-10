@@ -27,7 +27,7 @@ This workspace is for building cap table and equity management software for Saud
 
 - **Pivot from stock platform to cap table software**: see `docs/decisions/0001-pivot-to-cap-table.md`
 - **Saudi-first**: Companies Law 2023 is the legal substrate. SJSC + LLC + future entity types as they're added to the law.
-- **Discovery before build**: no feature code until validation gates pass. See `docs/discovery/14-day-sprint.md`.
+- **Build phase active**: ADR-0004 accepted 2026-05-06. Sprint 1 is live. See `docs/product/implementation-plan.md` for the active sprint plan.
 - **English for team docs, bilingual for research and customer-facing artifacts**
 
 ## Technical stack
@@ -55,6 +55,9 @@ This workspace is for building cap table and equity management software for Saud
 - Saudi data residency: when in doubt, default to Saudi-hosted infrastructure.
 - Document retention follows Saudi corporate law minimums (typically 10 years for corporate records).
 - Never auto-generate legal documents (resolutions, share certificates) without a clear "DRAFT — REVIEW WITH LEGAL COUNSEL" watermark.
+- Field-level encryption for PII (national IDs, IBANs) — not just DB-at-rest encryption.
+- No real customer cap table data in production until MFA and RBAC are live.
+- Audit log covers: logins, document exports, cap table views, admin actions — not just state changes.
 
 ## Build sequencing rules
 
@@ -63,6 +66,9 @@ This workspace is for building cap table and equity management software for Saud
 - After thin slice: add one capability per sprint. Resist parallel feature work.
 - Do not introduce a new external service (Redis, S3, etc.) without an ADR justifying it.
 - Do not touch ESOP, vesting, or option features until the basic cap table works end to end.
+- Document generation (PDF cap table, share certificates) is Sprint 3 — not an afterthought.
+- Security baseline (MFA + RBAC + field encryption) must be live before first real customer data.
+- Secondary transactions (shareholder-to-shareholder transfers) are Sprint 2 scope — not just company-issued shares.
 
 ## Current implementation preference
 

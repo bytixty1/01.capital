@@ -65,7 +65,7 @@ async def apply_share_transfer(
     from_holding = await _get_holding(db, company_id, from_stakeholder_id, share_class)
     if from_holding is None or from_holding.quantity < quantity:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Insufficient shares: holder has {from_holding.quantity if from_holding else 0}",
         )
     from_holding.quantity = from_holding.quantity - quantity

@@ -31,6 +31,25 @@ export default function LandingPage() {
     const bubble = document.querySelector<HTMLElement>('.lp-cursor-bubble')!;
     if (!dot || !bubble) return;
 
+    // Language toggle
+    let isArMode = false;
+    const langToggle = document.getElementById('lp-lang-toggle');
+    const langActiveLabel = document.getElementById('lp-lang-active-label');
+    const langOtherLabel = document.getElementById('lp-lang-other-label');
+    function toggleLang() {
+      isArMode = !isArMode;
+      if (isArMode) {
+        document.body.classList.add('lp-ar-mode');
+        if (langActiveLabel) langActiveLabel.textContent = 'AR';
+        if (langOtherLabel) langOtherLabel.textContent = 'EN';
+      } else {
+        document.body.classList.remove('lp-ar-mode');
+        if (langActiveLabel) langActiveLabel.textContent = 'EN';
+        if (langOtherLabel) langOtherLabel.textContent = 'AR';
+      }
+    }
+    langToggle?.addEventListener('click', toggleLang);
+
     const BUBBLE_R = 100;
     let mx = -2000, my = -2000, cdx = -2000, cdy = -2000, cbx = -2000, cby = -2000;
     let active = false, hasMoved = false;
@@ -66,18 +85,38 @@ export default function LandingPage() {
           const nx = Math.max(r.left, Math.min(cbx, r.right));
           const ny = Math.max(r.top, Math.min(cby, r.bottom));
           const dist = Math.hypot(cbx - nx, cby - ny);
-          if (dist > BUBBLE_R + 40) {
-            ar.style.clipPath = 'circle(0px at 0 0)';
-            (ar.style as CSSStyleDeclaration & { webkitClipPath: string }).webkitClipPath = 'circle(0px at 0 0)';
-            en.style.webkitMaskImage = ''; en.style.maskImage = ''; return;
-          }
           const lx = cbx - r.left, ly = cby - r.top;
           const cp = `circle(${BUBBLE_R}px at ${lx}px ${ly}px)`;
-          ar.style.clipPath = cp;
-          (ar.style as CSSStyleDeclaration & { webkitClipPath: string }).webkitClipPath = cp;
           const mask = `radial-gradient(circle ${BUBBLE_R}px at ${lx}px ${ly}px, transparent 99%, #000 100%)`;
-          en.style.webkitMaskImage = mask; en.style.maskImage = mask;
-          en.style.maskRepeat = 'no-repeat'; en.style.webkitMaskRepeat = 'no-repeat';
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const arS = ar.style as any, enS = en.style as any;
+
+          if (!isArMode) {
+            // EN mode: bubble reveals AR text over EN
+            if (dist > BUBBLE_R + 40) {
+              ar.style.clipPath = 'circle(0px at 0 0)';
+              arS.webkitClipPath = 'circle(0px at 0 0)';
+              enS.webkitMaskImage = ''; en.style.maskImage = '';
+            } else {
+              ar.style.clipPath = cp; arS.webkitClipPath = cp;
+              enS.webkitMaskImage = mask; en.style.maskImage = mask;
+              en.style.maskRepeat = 'no-repeat'; enS.webkitMaskRepeat = 'no-repeat';
+            }
+          } else {
+            // AR mode: bubble reveals EN text over AR
+            if (dist > BUBBLE_R + 40) {
+              en.style.clipPath = 'circle(0px at 0 0)';
+              enS.webkitClipPath = 'circle(0px at 0 0)';
+              en.style.opacity = '0';
+              arS.webkitMaskImage = ''; ar.style.maskImage = '';
+            } else {
+              en.style.clipPath = cp; enS.webkitClipPath = cp;
+              en.style.opacity = '1';
+              arS.webkitMaskImage = mask; ar.style.maskImage = mask;
+              ar.style.maskRepeat = 'no-repeat'; arS.webkitMaskRepeat = 'no-repeat';
+            }
+          }
         });
       }
       rafId = requestAnimationFrame(frame);
@@ -138,10 +177,11 @@ export default function LandingPage() {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseleave', onLeave);
       window.removeEventListener('scroll', updateActive);
+      langToggle?.removeEventListener('click', toggleLang);
       clearInterval(clockInterval);
       cancelAnimationFrame(rafId);
       io.disconnect();
-      document.body.classList.remove('lp-cursor-active', 'lp-over-link');
+      document.body.classList.remove('lp-cursor-active', 'lp-over-link', 'lp-ar-mode');
     };
   }, []);
 
@@ -202,6 +242,13 @@ export default function LandingPage() {
         .lp-nav-signin:hover { color: var(--text-primary); }
         .lp-nav-cta { display: inline-flex; align-items: center; padding: 7px 16px; border: 1px solid rgba(139,92,246,.5); border-radius: 99px; font-family: var(--font-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--text-primary); text-decoration: none; background: rgba(139,92,246,.1); transition: background .2s, border-color .2s, box-shadow .2s; white-space: nowrap; }
         .lp-nav-cta:hover { background: var(--brand-purple); border-color: var(--brand-purple); box-shadow: 0 0 24px rgba(139,92,246,.4); }
+        .lp-lang-btn { display: inline-flex; align-items: center; padding: 5px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 99px; font-family: var(--font-mono); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--text-secondary); background: rgba(255,255,255,.04); transition: all .2s; cursor: none; gap: 6px; }
+        .lp-lang-btn:hover { color: var(--text-primary); border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.08); }
+        .lp-lang-btn .lp-lang-active { color: var(--text-primary); font-weight: 600; }
+        .lp-lang-btn .lp-lang-sep { color: var(--text-tertiary); font-weight: 300; }
+        /* AR mode: ar text fully visible, en text hidden by default (bubble reveals it) */
+        body.lp-ar-mode .lp-ar { clip-path: circle(2000px at 50% 50%) !important; -webkit-clip-path: circle(2000px at 50% 50%) !important; }
+        body.lp-ar-mode .lp-en { opacity: 0; pointer-events: none; position: relative; z-index: 2; clip-path: circle(0px at 0 0); -webkit-clip-path: circle(0px at 0 0); }
 
         /* LEFT RAIL */
         .lp-rail { position: fixed; left: 32px; top: 50%; transform: translateY(-50%); z-index: 40; display: flex; flex-direction: column; align-items: center; gap: 36px; }
@@ -387,6 +434,12 @@ export default function LandingPage() {
               <span className="lp-pair"><b id="lp-clk-rua">—</b><span>RUH</span></span>
               <span className="lp-pair"><b id="lp-clk-ldn">—</b><span>LDN</span></span>
             </div>
+            <div className="lp-nav-divider" />
+            <button className="lp-lang-btn" id="lp-lang-toggle" aria-label="Toggle language">
+              <span className="lp-lang-active" id="lp-lang-active-label">EN</span>
+              <span className="lp-lang-sep">/</span>
+              <span id="lp-lang-other-label">AR</span>
+            </button>
             <div className="lp-nav-divider" />
             <a className="lp-nav-signin" href="/login">Sign in</a>
             <a className="lp-nav-cta" href="/register">Get started</a>
