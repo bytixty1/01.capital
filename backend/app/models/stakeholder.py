@@ -34,8 +34,8 @@ class Stakeholder(Base):
     name_en: Mapped[str] = mapped_column(String(255), nullable=False)
     name_ar: Mapped[str | None] = mapped_column(String(255))
 
-    # Natural persons: national_id stored encrypted (plain value never logged)
-    national_id: Mapped[str | None] = mapped_column(String(20))
+    # Natural persons: national_id stored AES-GCM encrypted (plain value never logged)
+    national_id: Mapped[str | None] = mapped_column(String(512))
     nationality: Mapped[str | None] = mapped_column(String(3))  # ISO 3166-1 alpha-3
 
     # Legal entities: CR number

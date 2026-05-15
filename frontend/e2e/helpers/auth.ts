@@ -1,5 +1,7 @@
 import { Page } from '@playwright/test';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+
 export async function registerUser(page: Page, email: string, password: string, fullName: string) {
   await page.goto('/register');
   await page.fill('input[placeholder="Mohammed Al-Rashidi"]', fullName);
@@ -9,6 +11,27 @@ export async function registerUser(page: Page, email: string, password: string, 
   await page.waitForURL(/\/verify\?email=/);
 }
 
+/**
+ * Bypasses email OTP verification by calling the dev-only backend endpoint.
+ * Injects the returned token into localStorage and navigates to /dashboard.
+ *
+ * Only works when ENVIRONMENT != production. Never use in tests against live data.
+ */
+export async function verifyEmailViaDevAPI(page: Page, email: string) {
+  const response = await page.request.post(`${API_BASE}/api/auth/dev/verify-email`, {
+    data: { email, otp: '' },
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok()) {
+    throw new Error(`dev/verify-email failed: ${response.status()} ${await response.text()}`);
+  }
+  const { access_token } = await response.json() as { access_token: string };
+  await injectToken(page, access_token);
+  await page.goto('/dashboard');
+  await page.waitForURL('/dashboard');
+}
+
+/** @deprecated Use verifyEmailViaDevAPI instead — backend no longer accepts 000000. */
 export async function verifyOTP(page: Page, otp: string = '000000') {
   await page.fill('input[autocomplete="one-time-code"]', otp);
   await page.click('button[type="submit"]:has-text("Verify & Sign in")');

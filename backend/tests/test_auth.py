@@ -8,7 +8,7 @@ Run with: pytest tests/test_auth.py -v
 import pytest
 from httpx import AsyncClient
 
-from tests.conftest import _register_and_verify
+from tests.conftest import _register_and_verify, seed_otp
 
 
 # ── Register ──────────────────────────────────────────────────────────────────
@@ -64,10 +64,13 @@ async def test_register_invalid_email_is_422(db_client: AsyncClient) -> None:
 # ── Email verification ────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_verify_email_correct_otp_returns_token(db_client: AsyncClient) -> None:
+async def test_verify_email_correct_otp_returns_token(db_client: AsyncClient, db_engine) -> None:
     email = "verify@example.com"
+    known_otp = "123456"
     await db_client.post("/api/auth/register", json={"email": email, "password": "password123"})
-    res = await db_client.post("/api/auth/verify-email", json={"email": email, "otp": "000000"})
+    # Inject a known OTP hash so we can test the real verification path
+    await seed_otp(db_engine, email, known_otp)
+    res = await db_client.post("/api/auth/verify-email", json={"email": email, "otp": known_otp})
     assert res.status_code == 200
     body = res.json()
     assert "access_token" in body

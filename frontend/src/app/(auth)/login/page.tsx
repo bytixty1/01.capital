@@ -85,23 +85,23 @@ export default function LoginPage() {
                   required autoComplete="current-password" placeholder="••••••••" style={s.input} />
               </div>
               {error && <ErrorBox msg={error} />}
-              <button type="submit" disabled={loading} style={s.button}>
+              <button type="submit" disabled={loading} className="btn-primary" style={s.button}>
                 {loading ? <Spinner label="Signing in…" /> : 'Sign in'}
               </button>
             </form>
             <p style={s.footer}>
               No account yet?{' '}
-              <a href="/register" style={s.link}>Create one free</a>
+              <a href="/register" className="link-accent" style={s.link}>Create one free</a>
             </p>
           </>}
 
           {step === 'mfa' && <>
             <div style={s.mfaIconWrap}>
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                <rect width="40" height="40" rx="12" fill="rgba(139,92,246,0.15)" />
-                <rect x="12" y="10" width="16" height="20" rx="3" stroke="var(--brand-purple)" strokeWidth="1.5" />
-                <rect x="16" y="24" width="8" height="3" rx="1.5" fill="var(--brand-purple)" />
-                <circle cx="20" cy="18" r="3" stroke="var(--brand-purple)" strokeWidth="1.5" />
+                <rect width="40" height="40" rx="12" fill="rgba(255,255,255,0.06)" />
+                <rect x="12" y="10" width="16" height="20" rx="3" stroke="var(--text-secondary)" strokeWidth="1.5" />
+                <rect x="16" y="24" width="8" height="3" rx="1.5" fill="var(--text-secondary)" />
+                <circle cx="20" cy="18" r="3" stroke="var(--text-secondary)" strokeWidth="1.5" />
               </svg>
             </div>
             <h1 style={s.heading}>Two-factor authentication</h1>
@@ -173,8 +173,8 @@ const styles: Record<string, React.CSSProperties> = {
   label: { fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', letterSpacing: '0.01em' },
   input: { background: 'var(--bg-elevated)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '14px', padding: '11px 14px', outline: 'none', width: '100%', transition: 'border-color 150ms ease' },
   errorBox: { display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: 'var(--neg)' },
-  button: { marginTop: '4px', background: 'var(--brand-purple)', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', transition: 'all 150ms ease' },
+  button: { marginTop: '4px', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', width: '100%' },
   footer: { marginTop: '20px', fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center' },
-  link: { color: 'var(--brand-purple)', textDecoration: 'none', fontWeight: 500 },
+  link: { textDecoration: 'none', fontWeight: 500 },
   backBtn: { marginTop: '16px', background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: '13px', cursor: 'pointer', padding: 0, display: 'block', margin: '16px auto 0' },
 };

@@ -1,8 +1,10 @@
 """Password hashing, JWT tokens, MFA (TOTP), and field encryption utilities."""
 
+import asyncio
 import base64
 import os
 from datetime import datetime, timedelta, timezone
+from functools import partial
 
 import bcrypt
 import jwt
@@ -20,6 +22,12 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
+
+
+async def verify_password_async(password: str, hashed: str) -> bool:
+    """Run bcrypt.checkpw in a thread pool so it doesn't block the event loop."""
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, partial(bcrypt.checkpw, password.encode(), hashed.encode()))
 
 
 # ── JWT ───────────────────────────────────────────────────────────────────────
@@ -66,11 +74,10 @@ def verify_totp(secret: str, code: str) -> bool:
 # Key is derived from settings.field_encryption_key (32-byte hex in env).
 
 def _get_field_key() -> bytes:
-    key_hex = getattr(settings, "field_encryption_key", None)
-    if key_hex:
-        return bytes.fromhex(key_hex)
-    # Fallback for local dev without key set — not secure for production
-    return b"\x00" * 32
+    key_hex = settings.field_encryption_key
+    if len(key_hex) != 64:
+        raise RuntimeError("FIELD_ENCRYPTION_KEY must be a 64-character hex string (32 bytes)")
+    return bytes.fromhex(key_hex)
 
 
 def encrypt_field(plaintext: str) -> str:

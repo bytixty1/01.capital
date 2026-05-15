@@ -119,7 +119,7 @@ export default function AccountPage() {
         {mfaStep === 'idle' && (
           <div style={{ marginTop: '16px' }}>
             {!user?.mfa_enabled ? (
-              <button onClick={startSetup} disabled={loading} style={s.btnPrimary}>
+              <button onClick={startSetup} disabled={loading} className="btn-primary" style={s.btnPrimary}>
                 {loading ? 'Setting up…' : 'Enable two-factor authentication'}
               </button>
             ) : (
@@ -147,7 +147,7 @@ export default function AccountPage() {
             />
             {msg?.type === 'err' && <p style={s.errText}>{msg.text}</p>}
             <div style={s.btnRow}>
-              <button onClick={confirmEnable} disabled={loading || code.length !== 6} style={s.btnPrimary}>
+              <button onClick={confirmEnable} disabled={loading || code.length !== 6} className="btn-primary" style={s.btnPrimary}>
                 {loading ? 'Enabling…' : 'Enable MFA'}
               </button>
               <button onClick={() => { setMfaStep('idle'); setCode(''); setMsg(null); }} style={s.btnGhost}>
@@ -196,13 +196,13 @@ const styles: Record<string, React.CSSProperties> = {
   badgeOn: { background: 'rgba(16,185,129,0.12)', color: 'var(--pos)', border: '1px solid rgba(16,185,129,0.25)' },
   badgeOff: { background: 'rgba(113,113,122,0.12)', color: 'var(--text-tertiary)', border: '1px solid var(--border-subtle)' },
   row: { display: 'flex', alignItems: 'center', gap: '16px', marginTop: '16px' },
-  avatar: { width: '44px', height: '44px', borderRadius: '50%', background: 'var(--brand-purple-subtle)', color: 'var(--brand-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 600, flexShrink: 0 },
+  avatar: { width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)', border: '1px solid rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 600, flexShrink: 0 },
   name: { fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' },
   email: { fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '2px' },
   alert: { marginTop: '14px', padding: '10px 14px', borderRadius: '8px', fontSize: '13px' },
   alertOk: { background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--pos)' },
   alertErr: { background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: 'var(--neg)' },
-  btnPrimary: { background: 'var(--brand-purple)', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 20px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' },
+  btnPrimary: { border: 'none', borderRadius: '8px', padding: '10px 20px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' },
   btnDanger: { background: 'rgba(239,68,68,0.1)', color: 'var(--neg)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '10px 20px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' },
   btnGhost: { background: 'none', color: 'var(--text-tertiary)', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '10px 20px', fontSize: '13px', cursor: 'pointer' },
   btnRow: { display: 'flex', gap: '10px', marginTop: '16px' },

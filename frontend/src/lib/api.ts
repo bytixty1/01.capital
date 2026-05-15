@@ -17,6 +17,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       message = detail.map(d => d.msg).join(', ');
     throw new Error(message);
   }
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
@@ -74,6 +75,10 @@ export type StakeholderResponse = {
   cr_number: string | null;
   email: string | null;
   created_at: string;
+};
+
+export type StakeholderDetailResponse = StakeholderResponse & {
+  holdings: { share_class: string; quantity: string }[];
 };
 
 export type HoldingResponse = {
@@ -224,17 +229,27 @@ export const api = {
       request<CompanyResponse>(`/api/companies/${id}`, {
         method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body),
       }),
+    delete: (id: string) =>
+      request<void>(`/api/companies/${id}`, {
+        method: 'DELETE', headers: authHeaders(),
+      }),
   },
 
   stakeholders: {
     list: (companyId: string) =>
       request<StakeholderResponse[]>(`/api/companies/${companyId}/stakeholders`, { headers: authHeaders() }),
+    get: (companyId: string, stakeholderId: string) =>
+      request<StakeholderDetailResponse>(`/api/companies/${companyId}/stakeholders/${stakeholderId}`, { headers: authHeaders() }),
     create: (companyId: string, body: {
       stakeholder_type: StakeholderType; name_en: string; name_ar?: string;
       national_id?: string; nationality?: string; cr_number?: string; email?: string;
     }) =>
       request<StakeholderResponse>(`/api/companies/${companyId}/stakeholders`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+      }),
+    delete: (companyId: string, stakeholderId: string) =>
+      request<void>(`/api/companies/${companyId}/stakeholders/${stakeholderId}`, {
+        method: 'DELETE', headers: authHeaders(),
       }),
   },
 
@@ -261,6 +276,13 @@ export const api = {
       event_date: string; notes?: string;
     }) =>
       request<CapTableEventResponse>(`/api/companies/${companyId}/cap-table/capital-increase`, {
+        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+      }),
+    capitalDecrease: (companyId: string, body: {
+      stakeholder_id: string; share_class?: string; quantity: number;
+      event_date: string; notes?: string;
+    }) =>
+      request<CapTableEventResponse>(`/api/companies/${companyId}/cap-table/capital-decrease`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
       }),
     events: (companyId: string) =>
@@ -325,7 +347,7 @@ export const api = {
         method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ role }),
       }),
     remove: (companyId: string, memberId: string) =>
-      fetch(`${API_BASE}/api/companies/${companyId}/members/${memberId}`, {
+      request<void>(`/api/companies/${companyId}/members/${memberId}`, {
         method: 'DELETE', headers: authHeaders(),
       }),
   },

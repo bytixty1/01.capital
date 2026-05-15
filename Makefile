@@ -71,7 +71,13 @@ test-cov: ## Run backend tests with coverage report
 type-check: ## TypeScript type-check (no emit)
 	cd frontend && npm run type-check
 
-install: ## Install frontend dependencies
+install: install-backend install-frontend ## Install all dependencies (frontend and backend)
+
+install-backend: ## Install backend dependencies
+	cd backend && [ -d .venv ] || python3 -m venv .venv
+	cd backend && .venv/bin/pip install -r requirements.txt
+
+install-frontend: ## Install frontend dependencies
 	cd frontend && npm install
 
 build-frontend: ## Production build of frontend

@@ -26,7 +26,7 @@ export default function InstrumentsPage() {
       <div style={s.back}><a href={`/companies/${companyId}`} style={s.backLink}>← Back</a></div>
       <div style={s.header}>
         <div><h1 style={s.heading}>Instruments</h1><p style={s.sub}>Convertible sukuk, phantom shares, and warrants</p></div>
-        <a href={`/companies/${companyId}/instruments/new`} style={s.cta}>+ New instrument</a>
+        <a href={`/companies/${companyId}/instruments/new`} className="btn-primary" style={s.cta}>+ New instrument</a>
       </div>
       {loading && <p style={s.muted}>Loading…</p>}
       {error && <p style={s.error}>{error}</p>}
@@ -60,7 +60,7 @@ const styles: Record<string, React.CSSProperties> = {
   header: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' },
   heading: { fontSize: '28px', fontWeight: 400, fontFamily: 'var(--font-serif)', color: 'var(--text-primary)', marginBottom: '4px' },
   sub: { fontSize: '13px', color: 'var(--text-tertiary)' },
-  cta: { background: 'var(--brand-purple)', color: '#fff', textDecoration: 'none', padding: '9px 16px', borderRadius: 'var(--radius-md)', fontSize: '13px', fontWeight: 500 },
+  cta: { textDecoration: 'none', padding: '9px 16px', borderRadius: 'var(--radius-md)', fontSize: '13px', fontWeight: 500 },
   muted: { color: 'var(--text-tertiary)', fontSize: '13px' }, error: { color: 'var(--neg)', fontSize: '13px' },
   list: { display: 'flex', flexDirection: 'column', gap: '12px' },
   card: { background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', padding: '20px' },

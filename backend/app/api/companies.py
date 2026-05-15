@@ -30,6 +30,7 @@ from app.services.cap_table import (
     apply_share_transfer,
     get_cap_table,
 )
+from app.core.security import encrypt_field
 from app.services.filing_detector import detect_and_create_filings
 
 router = APIRouter(prefix="/companies", tags=["companies"])
@@ -95,6 +96,32 @@ async def update_company(
     await db.commit()
     await db.refresh(company)
     return company
+
+
+@router.delete("/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_company(
+    member: CompanyMember = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """Permanently delete a company and all related data.
+
+    Filings must be deleted first because filings.trigger_event_id FK to
+    cap_table_events lacks ON DELETE CASCADE. After that, deleting the Company
+    row cascades to all other child tables.
+    """
+    from app.models.filing import Filing
+
+    # Delete filings first to avoid FK constraint on trigger_event_id
+    await db.execute(
+        select(Filing).where(Filing.company_id == member.company_id)
+    )
+    from sqlalchemy import delete as sa_delete
+    await db.execute(sa_delete(Filing).where(Filing.company_id == member.company_id))
+
+    result = await db.execute(select(Company).where(Company.id == member.company_id))
+    company = result.scalar_one()
+    await db.delete(company)
+    await db.commit()
 
 
 # ── Members ──────────────────────────────────────────────────────────────────
@@ -198,11 +225,83 @@ async def create_stakeholder(
     member: CompanyMember = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ) -> Stakeholder:
-    stakeholder = Stakeholder(company_id=member.company_id, **body.model_dump())
+    data = body.model_dump()
+    if data.get("national_id"):
+        data["national_id"] = encrypt_field(data["national_id"])
+    stakeholder = Stakeholder(company_id=member.company_id, **data)
     db.add(stakeholder)
     await db.commit()
     await db.refresh(stakeholder)
     return stakeholder
+
+
+@router.get("/{company_id}/stakeholders/{stakeholder_id}")
+async def get_stakeholder(
+    stakeholder_id: uuid.UUID,
+    member: CompanyMember = Depends(get_company_member),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Return a single stakeholder with their holdings."""
+    from app.models.holding import Holding
+
+    result = await db.execute(
+        select(Stakeholder).where(
+            Stakeholder.id == stakeholder_id,
+            Stakeholder.company_id == member.company_id,
+        )
+    )
+    stakeholder = result.scalar_one_or_none()
+    if stakeholder is None:
+        raise HTTPException(status_code=404, detail="Stakeholder not found")
+
+    holdings_result = await db.execute(
+        select(Holding).where(
+            Holding.stakeholder_id == stakeholder_id,
+            Holding.company_id == member.company_id,
+        )
+    )
+    holdings = holdings_result.scalars().all()
+
+    return {
+        "id": str(stakeholder.id),
+        "company_id": str(stakeholder.company_id),
+        "stakeholder_type": stakeholder.stakeholder_type,
+        "name_en": stakeholder.name_en,
+        "name_ar": stakeholder.name_ar,
+        "nationality": stakeholder.nationality,
+        "cr_number": stakeholder.cr_number,
+        "email": stakeholder.email,
+        "created_at": stakeholder.created_at.isoformat(),
+        "holdings": [
+            {
+                "share_class": h.share_class,
+                "quantity": str(h.quantity),
+            }
+            for h in holdings
+        ],
+    }
+
+
+@router.delete(
+    "/{company_id}/stakeholders/{stakeholder_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_stakeholder(
+    stakeholder_id: uuid.UUID,
+    member: CompanyMember = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    result = await db.execute(
+        select(Stakeholder).where(
+            Stakeholder.id == stakeholder_id,
+            Stakeholder.company_id == member.company_id,
+        )
+    )
+    stakeholder = result.scalar_one_or_none()
+    if stakeholder is None:
+        raise HTTPException(status_code=404, detail="Stakeholder not found")
+    await db.delete(stakeholder)
+    await db.commit()
 
 
 # ── Cap Table ─────────────────────────────────────────────────────────────────
@@ -358,6 +457,16 @@ async def capital_increase(
         company.authorized_capital = body.new_authorized_capital
     if body.new_paid_up_capital is not None:
         company.paid_up_capital = body.new_paid_up_capital
+
+    if body.stakeholder_id is not None:
+        r = await db.execute(
+            select(Stakeholder).where(
+                Stakeholder.id == body.stakeholder_id,
+                Stakeholder.company_id == member.company_id,
+            )
+        )
+        if r.scalar_one_or_none() is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Stakeholder not found")
 
     await apply_capital_increase(
         db, company_id=member.company_id,

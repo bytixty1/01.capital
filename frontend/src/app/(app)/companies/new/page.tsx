@@ -315,7 +315,7 @@ export default function NewCompanyPage() {
 
             <div style={s.actions}>
               <a href="/dashboard" style={s.cancelLink}>Cancel</a>
-              <button type="button" onClick={handleStep1Next} style={s.nextBtn}>
+              <button type="button" onClick={handleStep1Next} className="btn-primary" style={s.nextBtn}>
                 Continue to Capital →
               </button>
             </div>
@@ -404,7 +404,7 @@ export default function NewCompanyPage() {
 
             <div style={s.actions}>
               <button type="button" onClick={() => setStep(1)} style={s.backBtn}>← Back</button>
-              <button type="button" onClick={() => setStep(3)} style={s.nextBtn}>
+              <button type="button" onClick={() => setStep(3)} className="btn-primary" style={s.nextBtn}>
                 Continue to Governance →
               </button>
             </div>
@@ -478,7 +478,7 @@ export default function NewCompanyPage() {
 
             <div style={s.actions}>
               <button type="button" onClick={() => setStep(2)} style={s.backBtn}>← Back</button>
-              <button type="submit" disabled={loading} style={s.submitBtn}>
+              <button type="submit" disabled={loading} className="btn-primary" style={s.submitBtn}>
                 {loading ? 'Creating…' : 'Create company'}
               </button>
             </div>
@@ -577,8 +577,8 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--bg-elevated)',
   },
   backBtn: { background: 'none', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)', fontSize: '13px', padding: '9px 16px', cursor: 'pointer' },
-  nextBtn: { background: 'var(--brand-purple)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 20px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' },
-  submitBtn: { background: 'var(--brand-purple)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 20px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' },
+  nextBtn: { border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 20px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' },
+  submitBtn: { border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 20px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' },
   cancelLink: { color: 'var(--text-secondary)', fontSize: '13px', textDecoration: 'none' },
   fetchBtn: { background: 'var(--bg-elevated)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', padding: '0 16px', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' },
 };

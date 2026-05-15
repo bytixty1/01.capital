@@ -122,7 +122,7 @@ export default function RegisterPage() {
               </div>
             )}
 
-            <button type="submit" disabled={loading} style={styles.button}>
+            <button type="submit" disabled={loading} className="btn-primary" style={styles.button}>
               {loading ? (
                 <span style={styles.loadingSpinner}>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
@@ -141,7 +141,7 @@ export default function RegisterPage() {
 
           <p style={styles.footer}>
             Already have an account?{' '}
-            <a href="/login" style={styles.link}>Sign in</a>
+            <a href="/login" className="link-accent" style={styles.link}>Sign in</a>
           </p>
         </div>
       </div>
@@ -221,7 +221,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   button: {
     marginTop: '4px',
-    background: 'var(--brand-purple)',
+    background: 'rgba(255,255,255,0.04)',
     color: '#fff',
     border: 'none',
     borderRadius: '8px',
@@ -252,7 +252,6 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center',
   },
   link: {
-    color: 'var(--brand-purple)',
     textDecoration: 'none',
     fontWeight: 500,
   },

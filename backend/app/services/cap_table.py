@@ -2,35 +2,76 @@
 
 Projects cap_table_events into holdings. Called after every event write
 so the holdings table always reflects current state.
+
+Concurrency model
+-----------------
+- apply_share_issuance / apply_capital_increase: PostgreSQL upsert (INSERT … ON CONFLICT DO UPDATE)
+  handles the first-insert race atomically — two concurrent issuances to the same stakeholder
+  cannot both INSERT; one wins and the other becomes an UPDATE.
+- apply_share_transfer / apply_capital_decrease: SELECT … FOR UPDATE locks the existing row
+  before checking balance, preventing lost-update races on deduction paths.
+- apply_share_transfer destination: also uses upsert so concurrent grants to a new holder are safe.
+All paths must be called inside an open transaction (the FastAPI handler commits after returning).
 """
 
 import uuid
 from decimal import Decimal, ROUND_HALF_UP
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, text
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.cap_table_event import EventType
 from app.models.holding import Holding
 from app.models.stakeholder import Stakeholder
 from app.schemas.cap_table import CapTableResponse, HoldingResponse
 
 
-async def _get_holding(
+async def _get_holding_for_update(
     db: AsyncSession,
     company_id: uuid.UUID,
     stakeholder_id: uuid.UUID,
     share_class: str,
 ) -> Holding | None:
     result = await db.execute(
-        select(Holding).where(
+        select(Holding)
+        .where(
             Holding.company_id == company_id,
             Holding.stakeholder_id == stakeholder_id,
             Holding.share_class == share_class,
         )
+        .with_for_update()
     )
     return result.scalar_one_or_none()
+
+
+async def _upsert_holding_add(
+    db: AsyncSession,
+    company_id: uuid.UUID,
+    stakeholder_id: uuid.UUID,
+    share_class: str,
+    quantity: Decimal,
+) -> None:
+    """Atomically add `quantity` to a holding row, creating it if it does not exist.
+
+    Uses INSERT … ON CONFLICT DO UPDATE so two concurrent first-issuances to the same
+    stakeholder cannot both INSERT — one becomes an UPDATE.
+    """
+    stmt = (
+        pg_insert(Holding)
+        .values(
+            id=uuid.uuid4(),
+            company_id=company_id,
+            stakeholder_id=stakeholder_id,
+            share_class=share_class,
+            quantity=quantity,
+        )
+        .on_conflict_do_update(
+            constraint="uq_holding",
+            set_={"quantity": text("holdings.quantity + EXCLUDED.quantity")},
+        )
+    )
+    await db.execute(stmt)
 
 
 async def apply_share_issuance(
@@ -39,19 +80,8 @@ async def apply_share_issuance(
     stakeholder_id: uuid.UUID,
     share_class: str,
     quantity: Decimal,
-) -> Holding:
-    holding = await _get_holding(db, company_id, stakeholder_id, share_class)
-    if holding is None:
-        holding = Holding(
-            company_id=company_id,
-            stakeholder_id=stakeholder_id,
-            share_class=share_class,
-            quantity=quantity,
-        )
-        db.add(holding)
-    else:
-        holding.quantity = holding.quantity + quantity
-    return holding
+) -> None:
+    await _upsert_holding_add(db, company_id, stakeholder_id, share_class, quantity)
 
 
 async def apply_share_transfer(
@@ -62,25 +92,15 @@ async def apply_share_transfer(
     share_class: str,
     quantity: Decimal,
 ) -> None:
-    from_holding = await _get_holding(db, company_id, from_stakeholder_id, share_class)
+    from_holding = await _get_holding_for_update(db, company_id, from_stakeholder_id, share_class)
     if from_holding is None or from_holding.quantity < quantity:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Insufficient shares: holder has {from_holding.quantity if from_holding else 0}",
         )
     from_holding.quantity = from_holding.quantity - quantity
-
-    to_holding = await _get_holding(db, company_id, to_stakeholder_id, share_class)
-    if to_holding is None:
-        to_holding = Holding(
-            company_id=company_id,
-            stakeholder_id=to_stakeholder_id,
-            share_class=share_class,
-            quantity=quantity,
-        )
-        db.add(to_holding)
-    else:
-        to_holding.quantity = to_holding.quantity + quantity
+    # Upsert for receiver — handles the case where the recipient holds no shares yet
+    await _upsert_holding_add(db, company_id, to_stakeholder_id, share_class, quantity)
 
 
 async def apply_capital_increase(
@@ -101,11 +121,11 @@ async def apply_capital_decrease(
     share_class: str,
     quantity: Decimal,
 ) -> None:
-    holding = await _get_holding(db, company_id, stakeholder_id, share_class)
+    holding = await _get_holding_for_update(db, company_id, stakeholder_id, share_class)
     if holding is None or holding.quantity < quantity:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Insufficient shares for capital decrease",
+            detail="Insufficient shares for capital decrease",
         )
     holding.quantity = holding.quantity - quantity
 

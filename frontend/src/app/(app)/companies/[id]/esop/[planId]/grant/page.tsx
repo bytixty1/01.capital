@@ -50,7 +50,7 @@ export default function IssueGrantPage() {
           <label style={s.label}>Exercise price per share (SAR)<input type="number" value={exercisePrice} onChange={e => setExercisePrice(e.target.value)} min="0" step="0.0001" style={{ ...s.input, fontFamily: 'var(--font-mono)' }} /></label>
           <label style={s.label}>Notes<textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} style={{ ...s.input, resize: 'vertical' as const }} /></label>
           {error && <p style={s.error}>{error}</p>}
-          <div style={s.actions}><a href={`/companies/${companyId}/esop/${planId}`} style={s.cancel}>Cancel</a><button type="submit" disabled={loading} style={s.submit}>{loading ? 'Issuing…' : 'Issue grant'}</button></div>
+          <div style={s.actions}><a href={`/companies/${companyId}/esop/${planId}`} style={s.cancel}>Cancel</a><button type="submit" disabled={loading} className="btn-primary" style={s.submit}>{loading ? 'Issuing…' : 'Issue grant'}</button></div>
         </form>
       )}
     </div>
@@ -68,5 +68,5 @@ const styles: Record<string, React.CSSProperties> = {
   error: { color: 'var(--neg)', fontSize: '13px' }, muted: { color: 'var(--text-tertiary)', fontSize: '13px' },
   actions: { display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center', marginTop: '8px' },
   cancel: { color: 'var(--text-secondary)', fontSize: '13px', textDecoration: 'none' },
-  submit: { background: 'var(--brand-purple)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 20px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' },
+  submit: { border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 20px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' },
 };

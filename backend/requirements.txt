@@ -18,17 +18,11 @@ pyotp==2.9.0
 qrcode[pil]==8.1.0
 cryptography==44.0.3
 
-# Cache
-redis==6.2.0
-
 # Rate limiting
 slowapi==0.1.9
 
 # Date utilities
 python-dateutil==2.9.0.post0
-
-# Observability
-structlog==25.1.0
 
 # Dev / testing
 pytest==8.3.4

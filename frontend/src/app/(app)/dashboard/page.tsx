@@ -87,7 +87,7 @@ export default function DashboardPage() {
             <p style={styles.sub}>Total paid-up capital across all companies</p>
           )}
         </div>
-        <Link href="/companies/new" style={styles.cta}>+ New company</Link>
+        <Link href="/companies/new" className="btn-primary" style={styles.cta}>+ New company</Link>
       </div>
 
       {/* Stats strip */}
@@ -157,13 +157,13 @@ export default function DashboardPage() {
         <div style={styles.empty}>
           <div style={styles.emptyIconWrap}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="var(--brand-purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M9 22V12h6v10" stroke="var(--brand-purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="var(--text-secondary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 22V12h6v10" stroke="var(--text-secondary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
           <p style={styles.emptyTitle}>No companies yet</p>
           <p style={styles.emptyText}>Create your first company to start managing your equity cap table.</p>
-          <Link href="/companies/new" style={styles.ctaEmpty}>Create your first company →</Link>
+          <Link href="/companies/new" className="link-accent" style={styles.ctaEmpty}>Create your first company →</Link>
         </div>
       )}
 
@@ -215,7 +215,7 @@ export default function DashboardPage() {
             <Link href="/companies/new" style={styles.addCard}>
               <div style={styles.addIcon}>
                 <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
-                  <path d="M8 2v12M2 8h12" stroke="var(--brand-purple)" strokeWidth="1.6" strokeLinecap="round" />
+                  <path d="M8 2v12M2 8h12" stroke="var(--text-tertiary)" strokeWidth="1.6" strokeLinecap="round" />
                 </svg>
               </div>
               <p style={styles.addLabel}>Add company</p>
@@ -244,7 +244,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   sub: { fontSize: '13px', color: 'var(--text-tertiary)' },
   cta: {
-    background: 'var(--brand-purple)', color: '#fff', textDecoration: 'none',
+    textDecoration: 'none',
     padding: '10px 18px', borderRadius: 'var(--radius-md)', fontSize: '13px',
     fontWeight: 500, flexShrink: 0, letterSpacing: '0.01em',
   },
@@ -282,12 +282,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   emptyIconWrap: {
     width: '56px', height: '56px', borderRadius: '14px',
-    background: 'rgba(166,125,250,0.1)', border: '1px solid rgba(166,125,250,0.2)',
+    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px',
   },
   emptyTitle: { fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' },
   emptyText: { fontSize: '13px', color: 'var(--text-tertiary)', maxWidth: '340px', lineHeight: '1.6' },
-  ctaEmpty: { color: 'var(--brand-purple)', fontSize: '13px', textDecoration: 'none', marginTop: '4px', fontWeight: 500 },
+  ctaEmpty: { fontSize: '13px', textDecoration: 'none', marginTop: '4px', fontWeight: 500 },
 
   sectionHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' },
   sectionLabel: { fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.08em' },
@@ -305,10 +305,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cardTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' },
   entityBadge: {
-    display: 'inline-block', background: 'rgba(166,125,250,0.12)', color: 'var(--brand-purple)',
+    display: 'inline-block', background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)',
     fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em',
     textTransform: 'uppercase' as const, padding: '3px 8px', borderRadius: '20px',
-    border: '1px solid rgba(166,125,250,0.2)',
+    border: '1px solid rgba(255,255,255,0.1)',
   },
   statusDot: { width: '7px', height: '7px', borderRadius: '50%' },
   cardName: { fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' },

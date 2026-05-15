@@ -10,26 +10,31 @@ that occur when a session-scoped engine's connection pool is used from a
 function-scoped test's event loop.
 """
 
+import hashlib
+import os
 from collections.abc import AsyncGenerator
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-import os
-
 import app.models  # noqa: F401 — registers all models on Base.metadata
-from app.core.config import settings
 from app.core.database import Base, get_db
 from app.main import app
 
-# Use TEST_DATABASE_URL if set (recommended for CI with a dedicated local Postgres).
-# Falls back to the same database as prod — safe only because clean_tables
-# deletes all rows after every test. Set this in backend/.env for local dev:
-#   TEST_DATABASE_URL=postgresql+asyncpg://01capital:01capital@localhost:5432/01capital_test
-_fallback = settings.database_url
-TEST_DB_URL = os.environ.get("TEST_DATABASE_URL", _fallback)
+# TEST_DATABASE_URL must be set explicitly. We refuse to fall back to settings.database_url
+# because a misconfigured run would truncate development or production data.
+TEST_DB_URL = os.environ.get("TEST_DATABASE_URL")
+if TEST_DB_URL is None:
+    raise RuntimeError(
+        "\n\nTEST_DATABASE_URL is not set.\n"
+        "Tests require a dedicated test database to avoid accidentally truncating dev/prod data.\n"
+        "Create one and export:\n"
+        "  createdb -U 01capital 01capital_test\n"
+        "  export TEST_DATABASE_URL=postgresql+asyncpg://01capital:01capital@localhost:5432/01capital_test\n"
+    )
 
 
 @pytest.fixture
@@ -41,12 +46,7 @@ async def client() -> AsyncClient:
 
 @pytest.fixture
 async def db_engine():
-    """Function-scoped engine pointing at the test DB.
-
-    create_all is idempotent — only the very first test actually builds the
-    schema; subsequent tests find the tables already present. We never drop
-    tables here; clean_tables truncates rows between tests instead.
-    """
+    """Function-scoped engine pointing at the test DB."""
     engine = create_async_engine(TEST_DB_URL, echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -91,14 +91,33 @@ async def _register_and_verify(
     password: str = "password123",
     full_name: str | None = None,
 ) -> str:
-    """Register, verify email (OTP 000000), return access token."""
+    """Register a user, bypass email OTP via the dev endpoint, return an access token."""
     body: dict = {"email": email, "password": password}
     if full_name:
         body["full_name"] = full_name
-    await client.post("/api/auth/register", json=body)
-    res = await client.post("/api/auth/verify-email", json={"email": email, "otp": "000000"})
-    assert res.status_code == 200, f"verify-email failed: {res.text}"
+    res = await client.post("/api/auth/register", json=body)
+    assert res.status_code == 201, f"register failed: {res.text}"
+
+    # Use the dev bypass endpoint — it marks the user as verified without OTP and
+    # returns a full token. This endpoint returns 404 in production, so it can
+    # never be used against live data.
+    res = await client.post("/api/auth/dev/verify-email", json={"email": email, "otp": ""})
+    assert res.status_code == 200, f"dev/verify-email failed: {res.text}"
     return res.json()["access_token"]
+
+
+async def seed_otp(engine, email: str, code: str) -> None:
+    """Inject a known OTP hash into the DB so tests can call the real /verify-email endpoint."""
+    digest = hashlib.sha256(code.encode()).hexdigest()
+    expires = datetime.now(timezone.utc) + timedelta(minutes=15)
+    async with engine.begin() as conn:
+        await conn.execute(
+            text(
+                "UPDATE users SET verification_otp_hash = :h, verification_otp_expires_at = :e "
+                "WHERE email = :em"
+            ),
+            {"h": digest, "e": expires, "em": email},
+        )
 
 
 @pytest.fixture

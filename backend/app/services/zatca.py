@@ -11,9 +11,21 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import decrypt_field
 from app.models.company import Company
 from app.models.holding import Holding
 from app.models.stakeholder import Stakeholder
+
+
+def _mask_national_id(encrypted: str | None) -> str | None:
+    """Decrypt the stored ciphertext and return a masked plaintext like ****1234."""
+    if not encrypted:
+        return None
+    try:
+        plaintext = decrypt_field(encrypted)
+        return f"****{plaintext[-4:]}" if len(plaintext) >= 4 else "****"
+    except Exception:
+        return None  # cannot decrypt — omit rather than leak ciphertext
 
 
 async def build_zatca_export(db: AsyncSession, company_id: uuid.UUID) -> dict:
@@ -38,7 +50,7 @@ async def build_zatca_export(db: AsyncSession, company_id: uuid.UUID) -> dict:
             "name_ar": r.Stakeholder.name_ar,
             "type": r.Stakeholder.stakeholder_type,
             "nationality": r.Stakeholder.nationality,
-            "national_id_masked": f"****{r.Stakeholder.national_id[-4:]}" if r.Stakeholder.national_id else None,
+            "national_id_masked": _mask_national_id(r.Stakeholder.national_id),
             "cr_number": r.Stakeholder.cr_number,
             "share_class": r.Holding.share_class,
             "shares_held": str(r.Holding.quantity),

@@ -1,43 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { registerUser, verifyOTP, generateUniqueEmail } from './helpers/auth';
+import { createTestCompanyWithStakeholder } from './helpers/company';
 
-async function createTestCompanyWithStakeholder(page) {
-  await page.goto('/dashboard');
-  await page.click('a:has-text("+ New company")');
-  await page.click('button:has-text("LLC")');
-  const companyName = `InstCo ${Date.now()}`;
-  await page.fill('input[placeholder="Acme Saudi LLC"]', companyName);
-  await page.fill('input[dir="rtl"]', 'الشركة');
-  await page.fill('input[placeholder="10-digit number"]', '1234567895');
-  const dateInput = page.locator('input[type="date"]').first();
-  await dateInput.fill('2023-06-01');
-  await page.click('button:has-text("Continue to Capital")');
-  await page.waitForTimeout(500);
-  await page.fill('input[type="number"]', '1000000');
-  const numberInputs = page.locator('input[type="number"]');
-  await numberInputs.nth(1).fill('500000');
-  await numberInputs.nth(2).fill('100');
-  await page.locator('select').first().selectOption('1');
-  await page.click('button:has-text("Continue to Governance")');
-  await page.waitForTimeout(500);
-  await page.click('button[type="submit"]:has-text("Create company")');
-  await page.waitForURL(/\/companies\/\d+$/);
-
-  const companyId = page.url().match(/\/companies\/(\d+)/)[1];
-
-  // Add stakeholder
-  await page.goto(`/companies/${companyId}/stakeholders/new`);
-  const typeSelect = page.locator('select').first();
-  await typeSelect.selectOption('legal_entity');
-  await page.fill('input[placeholder="e.g. John Doe"]', 'Investor Fund LLC');
-  await page.fill('input[dir="rtl"]', 'صندوق الاستثمار');
-  await page.fill('input[placeholder="1010XXXXXX"]', '1010567890');
-  await page.fill('input[placeholder="stakeholder@example.com"]', 'investor@test.com');
-  await page.click('button[type="submit"]:has-text("Add stakeholder")');
-  await page.waitForURL(`/companies/${companyId}/stakeholders`);
-
-  return companyId;
-}
+const INVESTOR = {
+  type: 'legal_entity' as const,
+  nameEn: 'Investor Fund LLC',
+  nameAr: 'صندوق الاستثمار',
+  crNumber: '1010567890',
+  email: 'investor@test.com',
+};
 
 test.describe('Instruments', () => {
   test.beforeEach(async ({ page }) => {
@@ -47,7 +18,7 @@ test.describe('Instruments', () => {
   });
 
   test('create sukuk convertible instrument', async ({ page }) => {
-    const companyId = await createTestCompanyWithStakeholder(page);
+    const companyId = await createTestCompanyWithStakeholder(page, 'InstCo', INVESTOR);
     await page.goto(`/companies/${companyId}/instruments/new`);
 
     const typeSelect = page.locator('select').first();
@@ -68,7 +39,7 @@ test.describe('Instruments', () => {
   });
 
   test('create phantom instrument', async ({ page }) => {
-    const companyId = await createTestCompanyWithStakeholder(page);
+    const companyId = await createTestCompanyWithStakeholder(page, 'InstCo', INVESTOR);
     await page.goto(`/companies/${companyId}/instruments/new`);
 
     const typeSelect = page.locator('select').first();
@@ -87,7 +58,7 @@ test.describe('Instruments', () => {
   });
 
   test('create warrant instrument', async ({ page }) => {
-    const companyId = await createTestCompanyWithStakeholder(page);
+    const companyId = await createTestCompanyWithStakeholder(page, 'InstCo', INVESTOR);
     await page.goto(`/companies/${companyId}/instruments/new`);
 
     const typeSelect = page.locator('select').first();
@@ -106,7 +77,7 @@ test.describe('Instruments', () => {
   });
 
   test('instrument appears in list after creation', async ({ page }) => {
-    const companyId = await createTestCompanyWithStakeholder(page);
+    const companyId = await createTestCompanyWithStakeholder(page, 'InstCo', INVESTOR);
     const instrumentName = `Sukuk ${Date.now()}`;
 
     await page.goto(`/companies/${companyId}/instruments/new`);

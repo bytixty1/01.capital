@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
+import dynamic from 'next/dynamic';
+
+const FluidBg = dynamic(() => import('@/components/MetaballCanvas'), { ssr: false });
 
 const WORDMARK = (
   <svg style={{ height: 22, width: 'auto', display: 'block' }} viewBox="600 340 820 360" preserveAspectRatio="xMinYMid meet" aria-label="ZeroOne Capital">
@@ -26,11 +29,6 @@ export default function LandingPage() {
       if (arSlot && ar) arSlot.textContent = ar;
     });
 
-    // Custom cursor + glass bubble reveal
-    const dot = document.querySelector<HTMLElement>('.lp-cursor-dot')!;
-    const bubble = document.querySelector<HTMLElement>('.lp-cursor-bubble')!;
-    if (!dot || !bubble) return;
-
     // Language toggle
     let isArMode = false;
     const langToggle = document.getElementById('lp-lang-toggle');
@@ -50,42 +48,48 @@ export default function LandingPage() {
     }
     langToggle?.addEventListener('click', toggleLang);
 
+    // Lens
+    let lensOn = false;
+    let lx = -1000, ly = -1000;
+    const LENS_LERP = 0.10;
+    const lensEl = document.getElementById('lp-lens');
+    const lensBtnEl = document.getElementById('lp-lens-btn');
+    function toggleLens() {
+      lensOn = !lensOn;
+      if (lensOn && hasMoved) { lx = mx; ly = my; }
+      if (lensEl) lensEl.dataset.on = lensOn ? '1' : '0';
+      if (lensBtnEl) lensBtnEl.dataset.on = lensOn ? '1' : '0';
+    }
+    lensBtnEl?.addEventListener('click', toggleLens);
+
+    // Track mouse for AR text reveal (no visible cursor element)
     const BUBBLE_R = 100;
-    let mx = -2000, my = -2000, cdx = -2000, cdy = -2000, cbx = -2000, cby = -2000;
-    let active = false, hasMoved = false;
+    let mx = -2000, my = -2000, hasMoved = false;
     let rafId = 0;
 
     const onMove = (e: MouseEvent) => {
       mx = e.clientX; my = e.clientY;
-      if (!hasMoved) { cdx = cbx = mx; cdy = cby = my; hasMoved = true; }
-      if (!active) { active = true; document.body.classList.add('lp-cursor-active'); }
+      if (!hasMoved) hasMoved = true;
     };
-    const onLeave = () => { active = false; document.body.classList.remove('lp-cursor-active'); };
     window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseleave', onLeave);
-
-    const links = document.querySelectorAll<HTMLElement>('.lp-wrap a,.lp-wrap button');
-    links.forEach(el => {
-      el.addEventListener('mouseenter', () => document.body.classList.add('lp-over-link'));
-      el.addEventListener('mouseleave', () => document.body.classList.remove('lp-over-link'));
-    });
 
     function frame() {
-      cdx += (mx - cdx) * 0.55; cdy += (my - cdy) * 0.55;
-      cbx += (mx - cbx) * 0.16; cby += (my - cby) * 0.16;
-      dot.style.transform = `translate(${cdx}px,${cdy}px) translate(-50%,-50%)`;
-      bubble.style.left = cbx + 'px'; bubble.style.top = cby + 'px';
-
+      if (lensEl && lensOn) {
+        lx += (mx - lx) * LENS_LERP;
+        ly += (my - ly) * LENS_LERP;
+        lensEl.style.left = lx + 'px';
+        lensEl.style.top = ly + 'px';
+      }
       if (hasMoved) {
         document.querySelectorAll<HTMLElement>('.lp-reveal').forEach(host => {
           const ar = host.querySelector<HTMLElement>('.lp-ar');
           const en = host.querySelector<HTMLElement>('.lp-en');
           if (!ar || !en) return;
           const r = host.getBoundingClientRect();
-          const nx = Math.max(r.left, Math.min(cbx, r.right));
-          const ny = Math.max(r.top, Math.min(cby, r.bottom));
-          const dist = Math.hypot(cbx - nx, cby - ny);
-          const lx = cbx - r.left, ly = cby - r.top;
+          const nx = Math.max(r.left, Math.min(mx, r.right));
+          const ny = Math.max(r.top, Math.min(my, r.bottom));
+          const dist = Math.hypot(mx - nx, my - ny);
+          const lx = mx - r.left, ly = my - r.top;
           const cp = `circle(${BUBBLE_R}px at ${lx}px ${ly}px)`;
           const mask = `radial-gradient(circle ${BUBBLE_R}px at ${lx}px ${ly}px, transparent 99%, #000 100%)`;
 
@@ -93,7 +97,6 @@ export default function LandingPage() {
           const arS = ar.style as any, enS = en.style as any;
 
           if (!isArMode) {
-            // EN mode: bubble reveals AR text over EN
             if (dist > BUBBLE_R + 40) {
               ar.style.clipPath = 'circle(0px at 0 0)';
               arS.webkitClipPath = 'circle(0px at 0 0)';
@@ -104,7 +107,6 @@ export default function LandingPage() {
               en.style.maskRepeat = 'no-repeat'; enS.webkitMaskRepeat = 'no-repeat';
             }
           } else {
-            // AR mode: bubble reveals EN text over AR
             if (dist > BUBBLE_R + 40) {
               en.style.clipPath = 'circle(0px at 0 0)';
               enS.webkitClipPath = 'circle(0px at 0 0)';
@@ -175,13 +177,13 @@ export default function LandingPage() {
 
     return () => {
       window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseleave', onLeave);
       window.removeEventListener('scroll', updateActive);
       langToggle?.removeEventListener('click', toggleLang);
+      lensBtnEl?.removeEventListener('click', toggleLens);
       clearInterval(clockInterval);
       cancelAnimationFrame(rafId);
       io.disconnect();
-      document.body.classList.remove('lp-cursor-active', 'lp-over-link', 'lp-ar-mode');
+      document.body.classList.remove('lp-ar-mode');
     };
   }, []);
 
@@ -190,33 +192,13 @@ export default function LandingPage() {
       <style dangerouslySetInnerHTML={{ __html: `
         .lp-wrap { --serif: var(--font-serif); --mono: var(--font-mono); --ar: var(--font-ar); }
         .lp-wrap * { box-sizing: border-box; margin: 0; padding: 0; }
-        .lp-wrap, .lp-wrap a, .lp-wrap button { cursor: none; }
-
-        /* BG */
-        .lp-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: #050507; }
-        .lp-blob { position: absolute; border-radius: 50%; filter: blur(140px); will-change: transform; }
-        .lp-blob-a { width: 80vw; height: 80vw; left: -30vw; top: -25vw; background: radial-gradient(circle, #5b34c8 0%, #2a1858 35%, transparent 70%); opacity: .85; animation: lp-drift1 32s ease-in-out infinite; }
-        .lp-blob-b { width: 70vw; height: 70vw; right: -25vw; top: 5vh; background: radial-gradient(circle, #8b5cf6 0%, #3f1e8c 35%, transparent 70%); opacity: .7; animation: lp-drift2 38s ease-in-out infinite; }
-        .lp-blob-c { width: 60vw; height: 60vw; left: 25vw; bottom: -20vw; background: radial-gradient(circle, #c084fc 0%, #5b34c8 35%, transparent 70%); opacity: .55; animation: lp-drift3 46s ease-in-out infinite; mix-blend-mode: screen; }
-        .lp-blob-d { width: 50vw; height: 50vw; right: 10vw; bottom: 30vh; background: radial-gradient(circle, #1a0f3a 0%, transparent 70%); opacity: .9; animation: lp-drift1 42s ease-in-out reverse infinite; }
-        @keyframes lp-drift1 { 0%,100% { transform: translate(0,0) scale(1) } 50% { transform: translate(15vw,8vh) scale(1.18) } }
-        @keyframes lp-drift2 { 0%,100% { transform: translate(0,0) scale(1) } 50% { transform: translate(-14vw,12vh) scale(.85) } }
-        @keyframes lp-drift3 { 0%,100% { transform: translate(0,0) scale(1) } 50% { transform: translate(-10vw,-12vh) scale(1.12) } }
-        .lp-grain { position: fixed; inset: -50%; z-index: 1; pointer-events: none; opacity: .14; mix-blend-mode: overlay;
+        /* BG — WebGL canvas is rendered by <FluidBg />, background colour is its base */
+        .lp-wrap { background: #050507; }
+        .lp-grain { position: fixed; inset: -50%; z-index: 1; pointer-events: none; opacity: .07; mix-blend-mode: overlay;
           background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.7 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
           background-size: 240px 240px; animation: lp-grain 1.4s steps(6) infinite; }
         @keyframes lp-grain { 0%{transform:translate(0,0)} 20%{transform:translate(-4%,2%)} 40%{transform:translate(3%,-3%)} 60%{transform:translate(-2%,4%)} 80%{transform:translate(4%,-2%)} 100%{transform:translate(0,0)} }
         .lp-vignette { position: fixed; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,.65) 100%); }
-
-        /* CURSOR */
-        .lp-cursor-dot { position: fixed; top: 0; left: 0; width: 6px; height: 6px; background: var(--text-primary); border-radius: 50%; z-index: 200; pointer-events: none; transform: translate(-50%,-50%); mix-blend-mode: difference; transition: width .2s, height .2s; }
-        .lp-cursor-bubble { position: fixed; top: 0; left: 0; width: 200px; height: 200px; border-radius: 50%; z-index: 60; pointer-events: none; transform: translate(-50%,-50%) scale(.85); transition: opacity .3s, transform .3s cubic-bezier(.2,.9,.2,1.1); opacity: 0;
-          background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.14), rgba(139,92,246,.10) 45%, rgba(139,92,246,.04) 75%, transparent 90%);
-          border: 1.2px solid rgba(255,255,255,.32);
-          box-shadow: inset 0 0 28px rgba(255,255,255,.10), 0 0 50px rgba(139,92,246,.30), inset 0 0 0 1px rgba(139,92,246,.18); }
-        .lp-cursor-bubble::after { content: ""; position: absolute; inset: 6%; border-radius: 50%; background: linear-gradient(135deg, rgba(255,255,255,.10), transparent 38%, rgba(255,255,255,.04)); pointer-events: none; }
-        body.lp-cursor-active .lp-cursor-bubble { opacity: 1; transform: translate(-50%,-50%) scale(1); }
-        body.lp-over-link .lp-cursor-dot { width: 14px; height: 14px; }
 
         /* NAV */
         .lp-nav { position: fixed; top: 14px; left: 14px; right: 14px; z-index: 50; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 24px; padding: 12px 22px;
@@ -242,7 +224,7 @@ export default function LandingPage() {
         .lp-nav-signin:hover { color: var(--text-primary); }
         .lp-nav-cta { display: inline-flex; align-items: center; padding: 7px 16px; border: 1px solid rgba(139,92,246,.5); border-radius: 99px; font-family: var(--font-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--text-primary); text-decoration: none; background: rgba(139,92,246,.1); transition: background .2s, border-color .2s, box-shadow .2s; white-space: nowrap; }
         .lp-nav-cta:hover { background: var(--brand-purple); border-color: var(--brand-purple); box-shadow: 0 0 24px rgba(139,92,246,.4); }
-        .lp-lang-btn { display: inline-flex; align-items: center; padding: 5px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 99px; font-family: var(--font-mono); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--text-secondary); background: rgba(255,255,255,.04); transition: all .2s; cursor: none; gap: 6px; }
+        .lp-lang-btn { display: inline-flex; align-items: center; padding: 5px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 99px; font-family: var(--font-mono); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--text-secondary); background: rgba(255,255,255,.04); transition: all .2s; cursor: pointer; gap: 6px; }
         .lp-lang-btn:hover { color: var(--text-primary); border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.08); }
         .lp-lang-btn .lp-lang-active { color: var(--text-primary); font-weight: 600; }
         .lp-lang-btn .lp-lang-sep { color: var(--text-tertiary); font-weight: 300; }
@@ -253,7 +235,7 @@ export default function LandingPage() {
         /* LEFT RAIL */
         .lp-rail { position: fixed; left: 32px; top: 50%; transform: translateY(-50%); z-index: 40; display: flex; flex-direction: column; align-items: center; gap: 36px; }
         .lp-rail::before { content: ""; position: absolute; left: 50%; top: -20px; bottom: -20px; width: 1px; background: linear-gradient(to bottom, transparent, rgba(255,255,255,.08) 12%, rgba(255,255,255,.08) 88%, transparent); transform: translateX(-50%); }
-        .lp-dot { position: relative; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--text-tertiary); background: transparent; transition: all .4s cubic-bezier(.2,.8,.2,1); cursor: none; }
+        .lp-dot { position: relative; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--text-tertiary); background: transparent; transition: all .4s cubic-bezier(.2,.8,.2,1); cursor: pointer; }
         .lp-dot:hover { border-color: var(--brand-purple-hover); }
         .lp-dot[data-active="1"] { background: var(--brand-purple); border-color: var(--brand-purple); transform: scale(1.4); box-shadow: 0 0 22px rgba(139,92,246,.45); }
         .lp-dot .lp-lbl { position: absolute; left: 24px; top: 50%; transform: translateY(-50%); font-family: var(--font-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--text-secondary); white-space: nowrap; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
@@ -368,6 +350,28 @@ export default function LandingPage() {
         .lp-footer ul a { color: var(--text-primary); transition: color .2s; text-decoration: none; }
         .lp-footer ul a:hover { color: var(--brand-purple-hover); }
 
+        /* LENS */
+        .lp-lens { position: fixed; z-index: 98; pointer-events: none; width: 220px; height: 220px; margin: -110px 0 0 -110px; will-change: left, top; opacity: 0; transition: opacity .4s ease; }
+        .lp-lens[data-on="1"] { opacity: 1; }
+        .lp-lens-glass { position: absolute; inset: 0; border-radius: 50%;
+          backdrop-filter: brightness(1.11) contrast(1.05) saturate(1.22) hue-rotate(-6deg);
+          -webkit-backdrop-filter: brightness(1.11) contrast(1.05) saturate(1.22) hue-rotate(-6deg);
+          mask-image: radial-gradient(circle at center, black 0%, black 42%, rgba(0,0,0,.72) 60%, rgba(0,0,0,.28) 76%, transparent 100%);
+          -webkit-mask-image: radial-gradient(circle at center, black 0%, black 42%, rgba(0,0,0,.72) 60%, rgba(0,0,0,.28) 76%, transparent 100%); }
+        .lp-lens-hi { position: absolute; inset: 0; border-radius: 50%;
+          background: radial-gradient(ellipse 58% 44% at 28% 24%, rgba(255,255,255,.065) 0%, transparent 100%);
+          mask-image: radial-gradient(circle at center, black 0%, black 42%, rgba(0,0,0,.6) 62%, transparent 100%);
+          -webkit-mask-image: radial-gradient(circle at center, black 0%, black 42%, rgba(0,0,0,.6) 62%, transparent 100%); }
+        .lp-lens-rim { position: absolute; inset: 0; border-radius: 50%;
+          border: 1px solid rgba(255,255,255,.06);
+          mask-image: radial-gradient(circle at center, transparent 82%, rgba(0,0,0,.45) 92%, transparent 100%);
+          -webkit-mask-image: radial-gradient(circle at center, transparent 82%, rgba(0,0,0,.45) 92%, transparent 100%); }
+        /* Lens toggle button */
+        .lp-lens-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); cursor: pointer; transition: all .2s; color: var(--text-secondary); flex-shrink: 0; }
+        .lp-lens-btn:hover { border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.08); color: var(--text-primary); }
+        .lp-lens-btn[data-on="1"] { border-color: rgba(139,92,246,.5); background: rgba(139,92,246,.15); color: var(--brand-purple-hover); box-shadow: 0 0 12px rgba(139,92,246,.2); }
+        @media (hover: none) { .lp-lens, .lp-lens-btn { display: none; } }
+
         /* FADE UP */
         .lp-fade { opacity: 0; transform: translateY(24px); transition: opacity .9s ease, transform .9s cubic-bezier(.2,.8,.2,1); }
         .lp-fade.lp-in { opacity: 1; transform: translateY(0); }
@@ -393,26 +397,22 @@ export default function LandingPage() {
           .lp-bay { padding: 80px 20px 60px; }
           .lp-lawgrid { grid-template-columns: 1fr; }
           .lp-footer { grid-template-columns: 1fr 1fr; padding: 40px 20px; }
-          .lp-wrap, .lp-wrap a, .lp-wrap button { cursor: auto; }
-          .lp-cursor-dot, .lp-cursor-bubble { display: none; }
           .lp-nav-right { gap: 8px; }
         }
       `}} />
 
       <div className="lp-wrap">
-        {/* Background */}
-        <div className="lp-bg" aria-hidden="true">
-          <div className="lp-blob lp-blob-a" />
-          <div className="lp-blob lp-blob-b" />
-          <div className="lp-blob lp-blob-c" />
-          <div className="lp-blob lp-blob-d" />
-        </div>
+        {/* Background — WebGL domain-warped flow field */}
+        <FluidBg />
         <div className="lp-grain" aria-hidden="true" />
         <div className="lp-vignette" aria-hidden="true" />
 
-        {/* Cursor */}
-        <div className="lp-cursor-dot" aria-hidden="true" />
-        <div className="lp-cursor-bubble" aria-hidden="true" />
+        {/* Glass lens — follows cursor, toggled via nav button */}
+        <div id="lp-lens" className="lp-lens" data-on="0" aria-hidden="true">
+          <div className="lp-lens-glass" />
+          <div className="lp-lens-hi" />
+          <div className="lp-lens-rim" />
+        </div>
 
         {/* Nav */}
         <nav className="lp-nav">
@@ -439,6 +439,12 @@ export default function LandingPage() {
               <span className="lp-lang-active" id="lp-lang-active-label">EN</span>
               <span className="lp-lang-sep">/</span>
               <span id="lp-lang-other-label">AR</span>
+            </button>
+            <button className="lp-lens-btn" id="lp-lens-btn" data-on="0" aria-label="Toggle lens">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.2">
+                <circle cx="6.5" cy="6.5" r="5.5" />
+                <circle cx="6.5" cy="6.5" r="2" />
+              </svg>
             </button>
             <div className="lp-nav-divider" />
             <a className="lp-nav-signin" href="/login">Sign in</a>

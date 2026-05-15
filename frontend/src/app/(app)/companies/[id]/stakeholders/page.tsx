@@ -36,10 +36,9 @@ export default function StakeholdersPage() {
             Individuals and entities that hold or will hold shares in this company.
           </p>
         </div>
-        <Link href={`/companies/${companyId}/stakeholders/new`} style={{
-          background: 'var(--brand-purple)', color: '#fff', textDecoration: 'none',
+        <Link href={`/companies/${companyId}/stakeholders/new`} className="btn-primary" style={{
+          textDecoration: 'none',
           padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 500,
-          boxShadow: '0 0 20px -5px rgba(139, 92, 246, 0.4)', transition: 'all 0.2s ease'
         }}>
           + Add stakeholder
         </Link>
@@ -57,7 +56,7 @@ export default function StakeholdersPage() {
             <h3 style={{ fontSize: '16px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '4px' }}>No stakeholders yet</h3>
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', maxWidth: '320px', margin: '0 auto' }}>Add the founders and investors who hold shares in this company.</p>
           </div>
-          <Link href={`/companies/${companyId}/stakeholders/new`} style={{ color: 'var(--brand-purple)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, marginTop: '8px' }}>
+          <Link href={`/companies/${companyId}/stakeholders/new`} className="link-accent" style={{ fontSize: '14px', textDecoration: 'none', fontWeight: 500, marginTop: '8px' }}>
             Add first stakeholder →
           </Link>
         </div>
@@ -79,8 +78,13 @@ export default function StakeholdersPage() {
               {stakeholders.map(st => (
                 <tr key={st.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                   <td style={tdStyle}>
-                    <p style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{st.name_en}</p>
-                    {st.name_ar && <p style={{ fontSize: '13px', color: 'var(--text-secondary)', direction: 'rtl', marginTop: '2px' }}>{st.name_ar}</p>}
+                    <Link
+                      href={`/companies/${companyId}/stakeholders/${st.id}`}
+                      style={{ textDecoration: 'none', transition: 'color 0.2s ease' }}
+                    >
+                      <p style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{st.name_en}</p>
+                      {st.name_ar && <p style={{ fontSize: '13px', color: 'var(--text-secondary)', direction: 'rtl', marginTop: '2px' }}>{st.name_ar}</p>}
+                    </Link>
                   </td>
                   <td style={tdStyle}>
                     <span style={{ 
@@ -98,12 +102,21 @@ export default function StakeholdersPage() {
                     {st.email ?? '—'}
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'right' }}>
-                    <Link
-                      href={`/companies/${companyId}/cap-table/issue`}
-                      style={{ color: 'var(--brand-purple)', fontSize: '13px', textDecoration: 'none', fontWeight: 500 }}
-                    >
-                      Issue shares
-                    </Link>
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                      <Link
+                        href={`/companies/${companyId}/stakeholders/${st.id}`}
+                        style={{ fontSize: '13px', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}
+                      >
+                        View
+                      </Link>
+                      <Link
+                        href={`/companies/${companyId}/cap-table/issue?stakeholder=${st.id}`}
+                        className="link-accent"
+                        style={{ fontSize: '13px', textDecoration: 'none', fontWeight: 500 }}
+                      >
+                        Issue shares
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -133,4 +146,3 @@ const tdStyle: React.CSSProperties = {
   color: 'var(--text-primary)',
   verticalAlign: 'middle',
 };
-

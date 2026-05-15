@@ -67,10 +67,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
-      {/* Blob bg */}
+      {/* Blob bg — near-invisible, pure depth only */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '-10%', right: '10%', width: 500, height: 500, background: 'rgba(139,92,246,0.06)', borderRadius: '50%', filter: 'blur(120px)', animation: 'blob-drift-1 18s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', bottom: '-5%', left: '20%', width: 400, height: 400, background: 'rgba(217,70,239,0.04)', borderRadius: '50%', filter: 'blur(100px)', animation: 'blob-drift-2 22s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', top: '-10%', right: '10%', width: 500, height: 500, background: 'rgba(255,255,255,0.012)', borderRadius: '50%', filter: 'blur(120px)' }} />
+        <div style={{ position: 'absolute', bottom: '-5%', left: '20%', width: 400, height: 400, background: 'rgba(255,255,255,0.008)', borderRadius: '50%', filter: 'blur(100px)' }} />
       </div>
 
       {/* Primary navbar */}
@@ -99,9 +99,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Link href="/dashboard" style={{
             ...monoSm, textDecoration: 'none',
-            color: pathname === '/dashboard' ? 'var(--text-primary)' : 'var(--text-secondary)',
+            color: pathname === '/dashboard' ? 'var(--text-primary)' : 'var(--text-tertiary)',
             transition: 'color 0.2s',
-          }}>
+          }}
+          onMouseEnter={e => { if (pathname !== '/dashboard') (e.currentTarget as HTMLElement).style.color = 'var(--brand-purple)'; }}
+          onMouseLeave={e => { if (pathname !== '/dashboard') (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)'; }}
+          >
             Dashboard
           </Link>
           {inCompany && companyName && (
@@ -119,9 +122,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
             <div style={{
               width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-              background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.3)',
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: 'var(--brand-purple)',
+              fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: 'var(--text-primary)',
             }}>
               {user.email.charAt(0).toUpperCase()}
             </div>
@@ -144,7 +147,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               ...monoSm, background: 'none', border: 'none', cursor: 'pointer', padding: 0,
               color: 'var(--text-tertiary)', transition: 'color 0.2s',
             }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--brand-purple)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
           >
             Sign out

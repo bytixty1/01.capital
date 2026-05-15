@@ -1,11 +1,16 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { api, StakeholderResponse } from '@/lib/api';
 
 export default function IssueSharesPage() {
   const { id: companyId } = useParams<{ id: string }>();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedStakeholder = searchParams.get('stakeholder');
+
   const [stakeholders, setStakeholders] = useState<StakeholderResponse[]>([]);
   const [stakeholderId, setStakeholderId] = useState('');
   const [shareClass, setShareClass] = useState('ordinary');
@@ -22,11 +27,16 @@ export default function IssueSharesPage() {
       .list(companyId)
       .then(s => {
         setStakeholders(s);
-        if (s.length > 0) setStakeholderId(s[0].id);
+        // Pre-select from query param or default to first
+        if (preselectedStakeholder && s.find(st => st.id === preselectedStakeholder)) {
+          setStakeholderId(preselectedStakeholder);
+        } else if (s.length > 0) {
+          setStakeholderId(s[0].id);
+        }
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load stakeholders'))
       .finally(() => setLoadingStakeholders(false));
-  }, [companyId]);
+  }, [companyId, preselectedStakeholder]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,7 +51,7 @@ export default function IssueSharesPage() {
         event_date: eventDate,
         notes: notes || undefined,
       });
-      window.location.href = `/companies/${companyId}`;
+      router.push(`/companies/${companyId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to issue shares');
     } finally {
@@ -49,12 +59,14 @@ export default function IssueSharesPage() {
     }
   }
 
+  const selectedName = stakeholders.find(s => s.id === stakeholderId)?.name_en;
+
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
       <div>
-        <a href={`/companies/${companyId}`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s ease' }}>
+        <Link href={`/companies/${companyId}`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s ease' }}>
           ← Back to company
-        </a>
+        </Link>
       </div>
 
       <div>
@@ -65,6 +77,11 @@ export default function IssueSharesPage() {
           This creates an immutable share issuance event and updates the cap table.
           All events are drafted — review with legal counsel before treating as official.
         </p>
+        {preselectedStakeholder && selectedName && (
+          <p style={{ fontSize: '13px', color: 'var(--brand-purple)', marginTop: '8px', fontWeight: 500 }}>
+            Pre-selected: {selectedName}
+          </p>
+        )}
       </div>
 
       {loadingStakeholders ? (
@@ -72,9 +89,9 @@ export default function IssueSharesPage() {
       ) : stakeholders.length === 0 ? (
         <div className="glass-panel" style={{ padding: '48px 24px', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', textAlign: 'center' }}>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>No stakeholders yet. You must add a stakeholder before issuing shares.</p>
-          <a href={`/companies/${companyId}/stakeholders/new`} style={{ color: 'var(--brand-purple)', fontSize: '14px', textDecoration: 'none', fontWeight: 500 }}>
+          <Link href={`/companies/${companyId}/stakeholders/new`} className="link-accent" style={{ fontSize: '14px', textDecoration: 'none', fontWeight: 500 }}>
             Add a stakeholder first →
-          </a>
+          </Link>
         </div>
       ) : (
         <div className="glass-panel">
@@ -165,16 +182,17 @@ export default function IssueSharesPage() {
             )}
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center', marginTop: '16px', paddingTop: '20px', borderTop: '1px solid var(--glass-border)' }}>
-              <a href={`/companies/${companyId}`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s ease' }}>
+              <Link href={`/companies/${companyId}`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s ease' }}>
                 Cancel
-              </a>
-              <button 
-                type="submit" 
-                disabled={loading} 
+              </Link>
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary"
                 style={{
-                  background: 'var(--brand-purple)', color: '#fff', border: 'none', borderRadius: '8px',
+                  border: 'none', borderRadius: '8px',
                   padding: '10px 20px', fontSize: '14px', fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.7 : 1, transition: 'all 0.2s ease', boxShadow: '0 0 20px -5px rgba(139, 92, 246, 0.4)'
+                  opacity: loading ? 0.7 : 1,
                 }}
               >
                 {loading ? 'Issuing...' : 'Issue shares'}
@@ -186,4 +204,3 @@ export default function IssueSharesPage() {
     </div>
   );
 }
-

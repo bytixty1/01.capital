@@ -8,9 +8,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_company_member, get_current_user, require_admin
+from app.core.deps import get_company_member, require_admin
 from app.models.company_member import CompanyMember
-from app.models.esop_grant import EsopGrant, GrantStatus
+from app.models.esop_grant import EsopGrant
 from app.models.esop_plan import EsopPlan, EsopPlanStatus
 from app.models.stakeholder import Stakeholder
 from app.models.user import User
@@ -93,7 +93,9 @@ async def create_grant(
     db: AsyncSession = Depends(get_db),
 ) -> EsopGrant:
     plan_result = await db.execute(
-        select(EsopPlan).where(EsopPlan.id == plan_id, EsopPlan.company_id == member.company_id)
+        select(EsopPlan)
+        .where(EsopPlan.id == plan_id, EsopPlan.company_id == member.company_id)
+        .with_for_update()
     )
     plan = plan_result.scalar_one_or_none()
     if plan is None:

@@ -41,9 +41,10 @@ function VerifyContent() {
       window.location.href = '/dashboard';
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Verification failed';
-      // Provide helpful error messages
-      if (message.includes('Invalid OTP') || message.includes('invalid')) {
-        setError('Invalid verification code. For demo, use: 000000');
+      if (message.includes('Invalid OTP') || message.includes('invalid') || message.includes('Invalid verification')) {
+        setError('Invalid verification code. Please check the 6-digit code sent to your email.');
+      } else if (message.includes('expired')) {
+        setError('Verification code expired. Please register again to receive a new code.');
       } else if (message.includes('not found')) {
         setError('User not found. Please register first.');
       } else if (message.includes('already')) {
@@ -89,7 +90,7 @@ function VerifyContent() {
           </div>
         )}
 
-        <button type="submit" disabled={loading || otp.length !== 6} style={styles.button}>
+        <button type="submit" disabled={loading || otp.length !== 6} className="btn-primary" style={styles.button}>
           {loading ? (
             <span style={styles.loadingSpinner}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
@@ -104,7 +105,7 @@ function VerifyContent() {
 
       <p style={styles.footer}>
         Didn't receive the code?{' '}
-        <button type="button" onClick={() => alert('Demo: just use 000000')} style={styles.link}>Resend</button>
+        <button type="button" onClick={() => alert('Demo: just use 000000')} className="link-accent" style={styles.link}>Resend</button>
       </p>
     </div>
   );
@@ -201,7 +202,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   button: {
     marginTop: '4px',
-    background: 'var(--brand-purple)',
+    background: 'rgba(255,255,255,0.04)',
     color: '#fff',
     border: 'none',
     borderRadius: '8px',
@@ -227,7 +228,7 @@ const styles: Record<string, React.CSSProperties> = {
   link: {
     background: 'none',
     border: 'none',
-    color: 'var(--brand-purple)',
+    color: 'var(--text-secondary)',
     textDecoration: 'none',
     fontWeight: 500,
     cursor: 'pointer',

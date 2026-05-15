@@ -39,7 +39,7 @@ export default function EsopPlanPage() {
           <h1 style={s.heading}>{plan.name}</h1>
           <span style={{ ...s.badge, color: plan.status === 'active' ? 'var(--pos)' : 'var(--text-tertiary)' }}>{plan.status}</span>
         </div>
-        {plan.status === 'active' && <a href={`/companies/${companyId}/esop/${planId}/grant`} style={s.cta}>+ Issue grant</a>}
+        {plan.status === 'active' && <a href={`/companies/${companyId}/esop/${planId}/grant`} className="btn-primary" style={s.cta}>+ Issue grant</a>}
       </div>
 
       <div style={s.statsRow}>
@@ -95,7 +95,7 @@ const styles: Record<string, React.CSSProperties> = {
   header: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' },
   heading: { fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' },
   badge: { fontSize: '11px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' as const, letterSpacing: '0.06em' },
-  cta: { background: 'var(--brand-purple)', color: '#fff', textDecoration: 'none', padding: '9px 16px', borderRadius: 'var(--radius-md)', fontSize: '13px', fontWeight: 500 },
+  cta: { textDecoration: 'none', padding: '9px 16px', borderRadius: 'var(--radius-md)', fontSize: '13px', fontWeight: 500 },
   statsRow: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: 'var(--border-default)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginBottom: '28px' },
   stat: { background: 'var(--bg-surface)', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '6px' },
   statLabel: { fontSize: '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.06em' },

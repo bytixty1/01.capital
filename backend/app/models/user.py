@@ -10,6 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
 
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -24,7 +25,11 @@ class User(Base):
 
     # MFA (TOTP via authenticator app — Sprint 1 security baseline)
     mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    mfa_secret: Mapped[str | None] = mapped_column(String(64))  # encrypted base32 TOTP secret
+    mfa_secret: Mapped[str | None] = mapped_column(String(512))  # AES-GCM encrypted base32 TOTP secret
+
+    # Email verification — time-limited OTP (SHA-256 hash stored, never plaintext)
+    verification_otp_hash: Mapped[str | None] = mapped_column(String(64))
+    verification_otp_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

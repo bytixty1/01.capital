@@ -73,3 +73,6 @@ temp/
 .claude/skills/pdf/
 .claude/skills/xlsx/
 .tools/
+
+# Separate projects that live near this repo but are not part of it
+pixel-agents/
