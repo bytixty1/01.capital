@@ -19,6 +19,8 @@ from app.schemas.cap_table import (
     CapTableEventResponse,
     CapTableResponse,
     IssueSharesRequest,
+    RoundPreviewRequest,
+    RoundPreviewResponse,
     TransferSharesRequest,
 )
 from app.schemas.company import CompanyResponse, CreateCompanyRequest, UpdateCompanyRequest
@@ -29,6 +31,8 @@ from app.services.cap_table import (
     apply_share_issuance,
     apply_share_transfer,
     get_cap_table,
+    preview_round as preview_round_service,
+    validate_share_class_for_entity,
 )
 from app.core.security import encrypt_field
 from app.services.filing_detector import detect_and_create_filings
@@ -309,10 +313,27 @@ async def delete_stakeholder(
 
 @router.get("/{company_id}/cap-table", response_model=CapTableResponse)
 async def cap_table(
+    diluted: bool = False,
     member: CompanyMember = Depends(get_company_member),
     db: AsyncSession = Depends(get_db),
 ) -> CapTableResponse:
-    return await get_cap_table(db, member.company_id)
+    return await get_cap_table(db, member.company_id, diluted=diluted)
+
+
+@router.post(
+    "/{company_id}/cap-table/preview-round",
+    response_model=RoundPreviewResponse,
+)
+async def preview_round_endpoint(
+    body: RoundPreviewRequest,
+    member: CompanyMember = Depends(get_company_member),
+    db: AsyncSession = Depends(get_db),
+) -> RoundPreviewResponse:
+    """Pure projection of a hypothetical priced round.
+
+    No state mutations. No event log writes. Anyone with cap-table read access can model.
+    """
+    return await preview_round_service(db, member.company_id, body)
 
 
 @router.post(
@@ -326,6 +347,10 @@ async def issue_shares(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> CapTableEvent:
+    company_result = await db.execute(select(Company).where(Company.id == member.company_id))
+    company = company_result.scalar_one()
+    validate_share_class_for_entity(company.entity_type, body.share_class)
+
     result = await db.execute(
         select(Stakeholder).where(
             Stakeholder.id == body.stakeholder_id,
@@ -356,8 +381,6 @@ async def issue_shares(
         share_class=body.share_class, quantity=body.quantity,
     )
 
-    company_result = await db.execute(select(Company).where(Company.id == member.company_id))
-    company = company_result.scalar_one()
     await detect_and_create_filings(
         db, company_id=member.company_id, entity_type=company.entity_type,
         event_id=event.id, event_type=EventType.SHARE_ISSUANCE, event_date=body.event_date,
@@ -379,6 +402,10 @@ async def transfer_shares(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> CapTableEvent:
+    company_result = await db.execute(select(Company).where(Company.id == member.company_id))
+    company = company_result.scalar_one()
+    validate_share_class_for_entity(company.entity_type, body.share_class)
+
     # Verify both stakeholders belong to this company
     for sid in (body.from_stakeholder_id, body.to_stakeholder_id):
         r = await db.execute(
@@ -410,8 +437,6 @@ async def transfer_shares(
         share_class=body.share_class, quantity=body.quantity,
     )
 
-    company_result = await db.execute(select(Company).where(Company.id == member.company_id))
-    company = company_result.scalar_one()
     await detect_and_create_filings(
         db, company_id=member.company_id, entity_type=company.entity_type,
         event_id=event.id, event_type=EventType.SHARE_TRANSFER, event_date=body.event_date,
@@ -433,6 +458,12 @@ async def capital_increase(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> CapTableEvent:
+    company_result = await db.execute(select(Company).where(Company.id == member.company_id))
+    company = company_result.scalar_one()
+    # Only validate share class if shares are actually being issued in this event
+    if body.stakeholder_id is not None and body.shares_issued > 0:
+        validate_share_class_for_entity(company.entity_type, body.share_class)
+
     event = CapTableEvent(
         company_id=member.company_id,
         event_type=EventType.CAPITAL_INCREASE,
@@ -450,9 +481,7 @@ async def capital_increase(
     db.add(event)
     await db.flush()
 
-    # Update company capital figures
-    company_result = await db.execute(select(Company).where(Company.id == member.company_id))
-    company = company_result.scalar_one()
+    # Update company capital figures (company already fetched above for validation)
     if body.new_authorized_capital is not None:
         company.authorized_capital = body.new_authorized_capital
     if body.new_paid_up_capital is not None:
@@ -496,6 +525,10 @@ async def capital_decrease(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> CapTableEvent:
+    company_result = await db.execute(select(Company).where(Company.id == member.company_id))
+    company = company_result.scalar_one()
+    validate_share_class_for_entity(company.entity_type, body.share_class)
+
     r = await db.execute(
         select(Stakeholder).where(
             Stakeholder.id == body.stakeholder_id,
@@ -521,8 +554,6 @@ async def capital_decrease(
     db.add(event)
     await db.flush()
 
-    company_result = await db.execute(select(Company).where(Company.id == member.company_id))
-    company = company_result.scalar_one()
     if body.new_paid_up_capital is not None:
         company.paid_up_capital = body.new_paid_up_capital
 

@@ -3,7 +3,11 @@
 import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
+<<<<<<< HEAD
 const FluidBg = dynamic(() => import('@/components/MetaballCanvas'), { ssr: false });
+=======
+import { PageBackground } from '@/components/PageBackground';
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
 const WORDMARK = (
   <svg style={{ height: 22, width: 'auto', display: 'block' }} viewBox="600 340 820 360" preserveAspectRatio="xMinYMid meet" aria-label="ZeroOne Capital">
@@ -52,6 +56,10 @@ export default function LandingPage() {
     let lensOn = false;
     let lx = -1000, ly = -1000;
     const LENS_LERP = 0.10;
+<<<<<<< HEAD
+=======
+    const LENS_R = 130; // half of 260px lens
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
     const lensEl = document.getElementById('lp-lens');
     const lensBtnEl = document.getElementById('lp-lens-btn');
     function toggleLens() {
@@ -59,11 +67,29 @@ export default function LandingPage() {
       if (lensOn && hasMoved) { lx = mx; ly = my; }
       if (lensEl) lensEl.dataset.on = lensOn ? '1' : '0';
       if (lensBtnEl) lensBtnEl.dataset.on = lensOn ? '1' : '0';
+<<<<<<< HEAD
     }
     lensBtnEl?.addEventListener('click', toggleLens);
 
     // Track mouse for AR text reveal (no visible cursor element)
     const BUBBLE_R = 100;
+=======
+      if (!lensOn) {
+        // Clean up: hide all CA overlays, clear language masks, clear stale lens position
+        document.querySelectorAll<HTMLElement>('.lp-reveal, .lp-nav-link').forEach(el => {
+          el.style.setProperty('--ca-r', '0px');
+        });
+        document.querySelectorAll<HTMLElement>('.lp-reveal > .lp-en, .lp-reveal > .lp-ar').forEach(el => {
+          el.style.maskImage = '';
+          el.style.webkitMaskImage = '';
+        });
+        if (lensEl) { lensEl.style.left = ''; lensEl.style.top = ''; }
+      }
+    }
+    lensBtnEl?.addEventListener('click', toggleLens);
+
+    // Track mouse position (used to set lens position on toggle-on)
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
     let mx = -2000, my = -2000, hasMoved = false;
     let rafId = 0;
 
@@ -72,6 +98,53 @@ export default function LandingPage() {
       if (!hasMoved) hasMoved = true;
     };
     window.addEventListener('mousemove', onMove);
+<<<<<<< HEAD
+=======
+
+    // Build chromatic-aberration overlays. For .lp-reveal we make TWO overlays — one cloning the EN
+    // text and one with the AR translation (from data-ar). CSS picks which to show based on current
+    // language mode: in EN mode the AR overlay is the "reveal" (so hovering shows the translation),
+    // and vice versa. For .lp-nav-link we make one EN overlay (no translation).
+    function makeOverlay(extraClass: string, html: string) {
+      const overlay = document.createElement('span');
+      overlay.className = `lp-ca-overlay ${extraClass}`;
+      overlay.setAttribute('aria-hidden', 'true');
+      overlay.innerHTML = html;
+      return overlay;
+    }
+    document.querySelectorAll<HTMLElement>('.lp-reveal').forEach(host => {
+      const cs = getComputedStyle(host);
+      if (cs.position === 'static') host.style.position = 'relative';
+      const en = host.querySelector<HTMLElement>(':scope > .lp-en');
+      const arText = host.dataset.ar || '';
+      if (!host.querySelector(':scope > .lp-ca-en')) {
+        host.appendChild(makeOverlay('lp-ca-en', en ? en.innerHTML : (host.textContent || '')));
+      }
+      if (arText && !host.querySelector(':scope > .lp-ca-ar')) {
+        host.appendChild(makeOverlay('lp-ca-ar', arText));
+      }
+    });
+    document.querySelectorAll<HTMLElement>('.lp-nav-link').forEach(host => {
+      if (host.querySelector(':scope > .lp-ca-overlay')) return;
+      const cs = getComputedStyle(host);
+      if (cs.position === 'static') host.style.position = 'relative';
+      // Clone innerHTML without any prior overlay
+      const tmp = host.cloneNode(true) as HTMLElement;
+      tmp.querySelectorAll('.lp-ca-overlay').forEach(o => o.remove());
+      host.appendChild(makeOverlay('lp-ca-en', tmp.innerHTML));
+    });
+
+    // One-time cleanup of stale inline styles left by the old AR-reveal logic (HMR safety).
+    function clearStyle(s: CSSStyleDeclaration, props: string[]) {
+      props.forEach(p => s.removeProperty(p));
+    }
+    document.querySelectorAll<HTMLElement>('.lp-reveal').forEach(host => {
+      const ar = host.querySelector<HTMLElement>('.lp-ar');
+      const en = host.querySelector<HTMLElement>('.lp-en');
+      if (en) clearStyle(en.style, ['mask-image', '-webkit-mask-image', 'clip-path', '-webkit-clip-path', 'opacity']);
+      if (ar) clearStyle(ar.style, ['mask-image', '-webkit-mask-image', 'clip-path', '-webkit-clip-path', 'opacity']);
+    });
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
     function frame() {
       if (lensEl && lensOn) {
@@ -79,6 +152,7 @@ export default function LandingPage() {
         ly += (my - ly) * LENS_LERP;
         lensEl.style.left = lx + 'px';
         lensEl.style.top = ly + 'px';
+<<<<<<< HEAD
       }
       if (hasMoved) {
         document.querySelectorAll<HTMLElement>('.lp-reveal').forEach(host => {
@@ -92,10 +166,25 @@ export default function LandingPage() {
           const lx = mx - r.left, ly = my - r.top;
           const cp = `circle(${BUBBLE_R}px at ${lx}px ${ly}px)`;
           const mask = `radial-gradient(circle ${BUBBLE_R}px at ${lx}px ${ly}px, transparent 99%, #000 100%)`;
+=======
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const arS = ar.style as any, enS = en.style as any;
+        // .lp-reveal: update clip-path vars AND mask the currently-visible language inside
+        // the lens circle so the opposite-language CA overlay shows through (translation reveal).
+        document.querySelectorAll<HTMLElement>('.lp-reveal').forEach(el => {
+          const r = el.getBoundingClientRect();
+          const cx = lx - r.left;
+          const cy = ly - r.top;
+          const nx = Math.max(0, Math.min(cx, r.width));
+          const ny = Math.max(0, Math.min(cy, r.height));
+          const dist = Math.hypot(cx - nx, cy - ny);
+          const overlapping = dist < LENS_R;
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
+          el.style.setProperty('--ca-x', cx + 'px');
+          el.style.setProperty('--ca-y', cy + 'px');
+          el.style.setProperty('--ca-r', overlapping ? LENS_R + 'px' : '0px');
+
+<<<<<<< HEAD
           if (!isArMode) {
             if (dist > BUBBLE_R + 40) {
               ar.style.clipPath = 'circle(0px at 0 0)';
@@ -117,8 +206,38 @@ export default function LandingPage() {
               en.style.opacity = '1';
               arS.webkitMaskImage = mask; ar.style.maskImage = mask;
               ar.style.maskRepeat = 'no-repeat'; arS.webkitMaskRepeat = 'no-repeat';
+=======
+          // The currently-visible original gets a circular hole so the CA overlay (other language) shows through.
+          const en = el.querySelector<HTMLElement>(':scope > .lp-en');
+          const ar = el.querySelector<HTMLElement>(':scope > .lp-ar');
+          const visibleOriginal = isArMode ? ar : en;
+          const hiddenOriginal = isArMode ? en : ar;
+          if (hiddenOriginal) { hiddenOriginal.style.maskImage = ''; hiddenOriginal.style.webkitMaskImage = ''; }
+          if (visibleOriginal) {
+            if (overlapping) {
+              const mask = `radial-gradient(circle ${LENS_R}px at ${cx}px ${cy}px, transparent 96%, #000 100%)`;
+              visibleOriginal.style.maskImage = mask;
+              visibleOriginal.style.webkitMaskImage = mask;
+              visibleOriginal.style.maskRepeat = 'no-repeat';
+            } else {
+              visibleOriginal.style.maskImage = '';
+              visibleOriginal.style.webkitMaskImage = '';
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
             }
           }
+        });
+
+        // .lp-nav-link: simpler — no translation, just clip the CA overlay to the lens circle.
+        document.querySelectorAll<HTMLElement>('.lp-nav-link').forEach(el => {
+          const r = el.getBoundingClientRect();
+          const cx = lx - r.left;
+          const cy = ly - r.top;
+          const nx = Math.max(0, Math.min(cx, r.width));
+          const ny = Math.max(0, Math.min(cy, r.height));
+          const dist = Math.hypot(cx - nx, cy - ny);
+          el.style.setProperty('--ca-x', cx + 'px');
+          el.style.setProperty('--ca-y', cy + 'px');
+          el.style.setProperty('--ca-r', dist < LENS_R ? LENS_R + 'px' : '0px');
         });
       }
       rafId = requestAnimationFrame(frame);
@@ -192,6 +311,7 @@ export default function LandingPage() {
       <style dangerouslySetInnerHTML={{ __html: `
         .lp-wrap { --serif: var(--font-serif); --mono: var(--font-mono); --ar: var(--font-ar); }
         .lp-wrap * { box-sizing: border-box; margin: 0; padding: 0; }
+<<<<<<< HEAD
         /* BG — WebGL canvas is rendered by <FluidBg />, background colour is its base */
         .lp-wrap { background: #050507; }
         .lp-grain { position: fixed; inset: -50%; z-index: 1; pointer-events: none; opacity: .07; mix-blend-mode: overlay;
@@ -199,6 +319,8 @@ export default function LandingPage() {
           background-size: 240px 240px; animation: lp-grain 1.4s steps(6) infinite; }
         @keyframes lp-grain { 0%{transform:translate(0,0)} 20%{transform:translate(-4%,2%)} 40%{transform:translate(3%,-3%)} 60%{transform:translate(-2%,4%)} 80%{transform:translate(4%,-2%)} 100%{transform:translate(0,0)} }
         .lp-vignette { position: fixed; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,.65) 100%); }
+=======
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
         /* NAV */
         .lp-nav { position: fixed; top: 14px; left: 14px; right: 14px; z-index: 50; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 24px; padding: 12px 22px;
@@ -350,6 +472,7 @@ export default function LandingPage() {
         .lp-footer ul a { color: var(--text-primary); transition: color .2s; text-decoration: none; }
         .lp-footer ul a:hover { color: var(--brand-purple-hover); }
 
+<<<<<<< HEAD
         /* LENS */
         .lp-lens { position: fixed; z-index: 98; pointer-events: none; width: 220px; height: 220px; margin: -110px 0 0 -110px; will-change: left, top; opacity: 0; transition: opacity .4s ease; }
         .lp-lens[data-on="1"] { opacity: 1; }
@@ -366,6 +489,79 @@ export default function LandingPage() {
           border: 1px solid rgba(255,255,255,.06);
           mask-image: radial-gradient(circle at center, transparent 82%, rgba(0,0,0,.45) 92%, transparent 100%);
           -webkit-mask-image: radial-gradient(circle at center, transparent 82%, rgba(0,0,0,.45) 92%, transparent 100%); }
+=======
+        /* LENS — hidden when off, no exceptions */
+        .lp-lens {
+          display: none;
+          position: fixed; z-index: 98; pointer-events: none;
+          width: 260px; height: 260px; margin: -130px 0 0 -130px;
+          will-change: left, top;
+        }
+        .lp-lens[data-on="1"] { display: block; }
+
+        /* Glass body — slight blur reads as glass distortion of the WebGL background */
+        .lp-lens-glass { position: absolute; inset: 0; border-radius: 50%;
+          backdrop-filter: blur(1.2px) saturate(1.6) contrast(1.15) brightness(1.12);
+          -webkit-backdrop-filter: blur(1.2px) saturate(1.6) contrast(1.15) brightness(1.12);
+          mask-image: radial-gradient(circle at center, black 0%, black 58%, rgba(0,0,0,.80) 74%, rgba(0,0,0,.34) 88%, transparent 100%);
+          -webkit-mask-image: radial-gradient(circle at center, black 0%, black 58%, rgba(0,0,0,.80) 74%, rgba(0,0,0,.34) 88%, transparent 100%); }
+
+        /* Internal highlight — top-left glass reflection */
+        .lp-lens-hi { position: absolute; inset: 0; border-radius: 50%;
+          background:
+            radial-gradient(ellipse 56% 40% at 30% 22%, rgba(255,255,255,.11) 0%, transparent 60%),
+            radial-gradient(ellipse 38% 28% at 70% 78%, rgba(255,255,255,.04) 0%, transparent 70%);
+          mask-image: radial-gradient(circle at center, black 0%, black 50%, rgba(0,0,0,.7) 68%, transparent 100%);
+          -webkit-mask-image: radial-gradient(circle at center, black 0%, black 50%, rgba(0,0,0,.7) 68%, transparent 100%); }
+
+        /* Rim — defined glass edge with chromatic-tinted outer rings (this is the "lens" look) */
+        .lp-lens-rim { position: absolute; inset: 0; border-radius: 50%;
+          border: 1.5px solid rgba(255,255,255,.28);
+          box-shadow:
+            inset 0 0 0 1px rgba(255,255,255,.08),
+            inset 0 1px 3px rgba(255,255,255,.10),
+            0 0 0 1px rgba(255,64,108,.32),
+            0 0 0 2px rgba(64,140,255,.20),
+            0 0 36px rgba(139,92,246,.22),
+            0 8px 28px rgba(0,0,0,.5);
+          mask-image: radial-gradient(circle at center, transparent 74%, rgba(0,0,0,.85) 88%, transparent 100%);
+          -webkit-mask-image: radial-gradient(circle at center, transparent 74%, rgba(0,0,0,.85) 88%, transparent 100%); }
+
+        /* CHROMATIC ABERRATION overlay — a clone of the text rendered on top of the original,
+           with text-shadow RGB-split, clipped to the lens circle, and switched by language mode
+           so the lens shows the OPPOSITE language (translation reveal). */
+        .lp-ca-overlay {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          color: inherit;
+          font: inherit;
+          text-shadow:
+            -0.9px 0 0 rgba(255, 56, 96, .55),
+             0.9px 0 0 rgba(56, 132, 255, .55);
+          clip-path: circle(var(--ca-r, 0px) at var(--ca-x, 0) var(--ca-y, 0));
+          -webkit-clip-path: circle(var(--ca-r, 0px) at var(--ca-x, 0) var(--ca-y, 0));
+          z-index: 2;
+        }
+
+        /* EN mode (default body): lens reveals AR; hide EN overlay, show AR overlay. */
+        .lp-reveal > .lp-ca-en { display: none; }
+        .lp-reveal > .lp-ca-ar {
+          display: block;
+          font-family: var(--font-ar);
+          direction: rtl;
+          text-align: center;
+          line-height: 1;
+          white-space: nowrap;
+        }
+
+        /* AR mode: lens reveals EN; flip overlay visibility. */
+        .lp-ar-mode .lp-reveal > .lp-ca-en { display: block; }
+        .lp-ar-mode .lp-reveal > .lp-ca-ar { display: none; }
+
+        /* Nav links — no translation, only the EN overlay exists and always shows. */
+        .lp-nav-link > .lp-ca-en { display: block; }
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
         /* Lens toggle button */
         .lp-lens-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); cursor: pointer; transition: all .2s; color: var(--text-secondary); flex-shrink: 0; }
         .lp-lens-btn:hover { border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.08); color: var(--text-primary); }
@@ -402,12 +598,19 @@ export default function LandingPage() {
       `}} />
 
       <div className="lp-wrap">
+<<<<<<< HEAD
         {/* Background — WebGL domain-warped flow field */}
         <FluidBg />
         <div className="lp-grain" aria-hidden="true" />
         <div className="lp-vignette" aria-hidden="true" />
 
         {/* Glass lens — follows cursor, toggled via nav button */}
+=======
+        <PageBackground />
+
+        {/* Glass lens — follows cursor, toggled via nav button. */}
+        {/* Real RGB chromatic aberration is applied to text via .lp-ca-on (text-shadow) inside the rAF loop. */}
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
         <div id="lp-lens" className="lp-lens" data-on="0" aria-hidden="true">
           <div className="lp-lens-glass" />
           <div className="lp-lens-hi" />

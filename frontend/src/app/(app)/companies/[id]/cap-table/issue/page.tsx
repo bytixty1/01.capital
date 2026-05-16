@@ -3,7 +3,12 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+<<<<<<< HEAD
 import { api, StakeholderResponse } from '@/lib/api';
+=======
+import { api, StakeholderResponse, CompanyResponse } from '@/lib/api';
+import { SHARE_CLASS_SUGGESTIONS, defaultShareClass, isShareClassLocked, shareClassLabel } from '@/lib/share-class';
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
 export default function IssueSharesPage() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -14,6 +19,7 @@ export default function IssueSharesPage() {
   const [stakeholders, setStakeholders] = useState<StakeholderResponse[]>([]);
   const [stakeholderId, setStakeholderId] = useState('');
   const [shareClass, setShareClass] = useState('ordinary');
+  const [company, setCompany] = useState<CompanyResponse | null>(null);
   const [quantity, setQuantity] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [notes, setNotes] = useState('');
@@ -23,6 +29,12 @@ export default function IssueSharesPage() {
 
   useEffect(() => {
     setEventDate(new Date().toISOString().slice(0, 10));
+    api.companies.get(companyId)
+      .then(c => {
+        setCompany(c);
+        setShareClass(defaultShareClass(c.entity_type));
+      })
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load company'));
     api.stakeholders
       .list(companyId)
       .then(s => {
@@ -117,17 +129,24 @@ export default function IssueSharesPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                Share class *
+                {shareClassLabel(company?.entity_type)} *
               </label>
               <input
                 type="text"
                 value={shareClass}
                 onChange={e => setShareClass(e.target.value)}
                 required
+                disabled={isShareClassLocked(company?.entity_type)}
+                list="issue-share-classes"
                 className="glass-input"
                 placeholder="e.g. ordinary"
-                style={{ fontFamily: 'var(--font-mono)' }}
+                style={{ fontFamily: 'var(--font-mono)', opacity: isShareClassLocked(company?.entity_type) ? 0.6 : 1 }}
               />
+              {company && (
+                <datalist id="issue-share-classes">
+                  {SHARE_CLASS_SUGGESTIONS[company.entity_type].map(c => <option key={c} value={c} />)}
+                </datalist>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

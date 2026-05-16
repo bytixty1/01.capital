@@ -9,6 +9,11 @@ void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
 
 // Soft diagonal silk ribbons — no domain warping, no marbling.
 // Three gaussian bands flow top-left → bottom-right with gentle organic sway.
+<<<<<<< HEAD
+=======
+// Longitudinal flow: bright crests translate ~30 s to traverse visible diagonal.
+// Breathing pulse: ~18 s period. All periods incommensurate — no visible loop restart.
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 const FRAG = `
 precision highp float;
 uniform vec2  u_res;
@@ -41,6 +46,7 @@ void main() {
   float along   = dot(p, fwd);
   float lateral = dot(p - vec2(asp * 0.5, 0.5), side);
 
+<<<<<<< HEAD
   // ── Organic motion ────────────────────────────────────────────────────────────
   // 1. Slow large-scale shape drift (changes over ~30 s — gives the ribbons
   //    their split/rejoin look without chaotic turbulence)
@@ -76,6 +82,73 @@ void main() {
   float core = cA * 0.330 + cB * 0.270 + cC * 0.155;
   float I    = clamp(haze + core, 0.0, 1.0);
 
+=======
+  // ── Per-ribbon independent waves ──────────────────────────────────────────────
+  // Each ribbon has different freqs/speeds/phases — they never lockstep.
+  // ampX = slow noise value that evolves each ribbon's wave magnitude over time.
+
+  float shared = sN(vec2(along * 0.25, t * 0.035)) * 0.04 - 0.02;
+
+  float ampA = 0.80 + sN(vec2(t * 0.041,        1.1)) * 0.40;
+  float waveA = (  sin(along * 2.30 - t * 1.05       ) * 0.085
+                 + sin(along * 1.10 - t * 0.73 + 0.7 ) * 0.052
+                 + sin(along * 4.50 - t * 1.90 + 1.5 ) * 0.022) * ampA;
+
+  float ampB = 0.80 + sN(vec2(t * 0.037 + 5.1,  3.7)) * 0.40;
+  float waveB = (  sin(along * 1.90 - t * 0.88 + 2.3 ) * 0.090
+                 + sin(along * 3.10 - t * 1.35 + 1.1 ) * 0.040
+                 + sin(along * 0.70 - t * 0.55 + 3.7 ) * 0.060) * ampB;
+
+  float ampC = 0.80 + sN(vec2(t * 0.044 + 2.3,  6.2)) * 0.40;
+  float waveC = (  sin(along * 2.80 - t * 1.25 + 4.1 ) * 0.075
+                 + sin(along * 1.50 - t * 0.95 + 2.8 ) * 0.055
+                 + sin(along * 5.00 - t * 2.10 + 0.5 ) * 0.020) * ampC;
+
+  // Ephemeral ribbons D and E — noise-driven opacity makes stripe count vary ~2..5
+  float opD = clamp(sN(vec2(t * 0.058,        8.4)) * 1.4 - 0.25, 0.0, 1.0);
+  float opE = clamp(sN(vec2(t * 0.051 + 3.1, 11.7)) * 1.4 - 0.30, 0.0, 1.0);
+
+  float ampD = 0.80 + sN(vec2(t * 0.039 + 7.7,  2.2)) * 0.40;
+  float waveD = (  sin(along * 2.10 - t * 0.97 + 3.3 ) * 0.080
+                 + sin(along * 1.70 - t * 1.15 + 5.1 ) * 0.045) * ampD;
+
+  float ampE = 0.80 + sN(vec2(t * 0.046 + 1.3,  9.0)) * 0.40;
+  float waveE = (  sin(along * 3.30 - t * 1.40 + 1.8 ) * 0.070
+                 + sin(along * 0.90 - t * 0.68 + 4.6 ) * 0.055) * ampE;
+
+  // Independent lateral positions per ribbon
+  float lwA = lateral        + waveA + shared;
+  float lwB = lateral - 0.30 + waveB + shared;
+  float lwC = lateral + 0.24 + waveC + shared;
+  float lwD = lateral - 0.55 + waveD + shared;
+  float lwE = lateral + 0.48 + waveE + shared;
+
+  // ── Gaussian profiles ─────────────────────────────────────────────────────────
+  float hA = exp(-pow(lwA * 5.8,  2.0)), cA = exp(-pow(lwA * 21.0, 2.0));
+  float hB = exp(-pow(lwB * 6.5,  2.0)), cB = exp(-pow(lwB * 23.0, 2.0));
+  float hC = exp(-pow(lwC * 7.5,  2.0)), cC = exp(-pow(lwC * 26.0, 2.0));
+  float hD = exp(-pow(lwD * 8.0,  2.0)) * opD, cD = exp(-pow(lwD * 28.0, 2.0)) * opD;
+  float hE = exp(-pow(lwE * 9.0,  2.0)) * opE, cE = exp(-pow(lwE * 30.0, 2.0)) * opE;
+
+  // ── Longitudinal brightness per ribbon (different speeds) ─────────────────────
+  float flowA = 0.55 + 0.30 * sin(along * 0.80 - t * 0.44      ) + 0.15 * sin(along * 1.60 - t * 0.70 + 1.3);
+  float flowB = 0.55 + 0.30 * sin(along * 0.80 - t * 0.38 + 2.1) + 0.15 * sin(along * 1.60 - t * 0.60 + 0.7);
+  float flowC = 0.55 + 0.30 * sin(along * 0.90 - t * 0.52 + 4.2) + 0.15 * sin(along * 1.80 - t * 0.80 + 2.9);
+  float flowD = 0.55 + 0.35 * sin(along * 1.10 - t * 0.61 + 0.9);
+  float flowE = 0.55 + 0.35 * sin(along * 0.70 - t * 0.49 + 3.5);
+
+  float haze = hA*flowA*0.065 + hB*flowB*0.044 + hC*flowC*0.022 + hD*flowD*0.038 + hE*flowE*0.028;
+  float core = cA*flowA*0.330 + cB*flowB*0.270 + cC*flowC*0.155 + cD*flowD*0.200 + cE*flowE*0.150;
+  float I    = clamp(haze + core, 0.0, 1.0);
+
+  // ── Breathing pulse — global slow intensity oscillation ───────────────────────
+  // Primary period ~18 s (0.349 rad/s = 2π/18).
+  // Secondary period ~19 s (0.331 rad/s) — incommensurate with primary and flow.
+  float breath = 1.00 + 0.15 * sin(t * 0.349)
+                      + 0.05 * sin(t * 0.331 + 1.7);
+  I = clamp(I * breath, 0.0, 1.0);
+
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
   // ── Spatial envelope ──────────────────────────────────────────────────────────
   float topE  = smoothstep(0.10, 0.90, uv.y);
   float leftE = smoothstep(0.80, 0.10, uv.x);

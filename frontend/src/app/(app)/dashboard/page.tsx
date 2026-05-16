@@ -92,7 +92,7 @@ export default function DashboardPage() {
 
       {/* Stats strip */}
       {!loading && companies.length > 0 && (
-        <div style={styles.statsStrip}>
+        <div className="glass-panel" style={styles.statsStrip}>
           {/* Company count */}
           <div style={styles.statBlock}>
             <span style={styles.statLabel}>Companies</span>
@@ -154,7 +154,7 @@ export default function DashboardPage() {
 
       {/* Empty state */}
       {!loading && !error && companies.length === 0 && (
-        <div style={styles.empty}>
+        <div className="glass-panel" style={styles.empty}>
           <div style={styles.emptyIconWrap}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="var(--text-secondary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -175,7 +175,7 @@ export default function DashboardPage() {
           </div>
           <div style={styles.grid}>
             {companies.map(c => (
-              <Link key={c.id} href={`/companies/${c.id}`} style={styles.card}>
+              <Link key={c.id} href={`/companies/${c.id}`} className="glass-panel" style={styles.card}>
                 <div style={styles.cardTop}>
                   <span style={styles.entityBadge}>{c.entity_type}</span>
                   <div style={{ ...styles.statusDot, background: c.status === 'active' ? 'var(--pos)' : 'var(--text-tertiary)' }} />
@@ -212,7 +212,7 @@ export default function DashboardPage() {
             ))}
 
             {/* Add new card */}
-            <Link href="/companies/new" style={styles.addCard}>
+            <Link href="/companies/new" className="glass-panel" style={styles.addCard}>
               <div style={styles.addIcon}>
                 <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
                   <path d="M8 2v12M2 8h12" stroke="var(--text-tertiary)" strokeWidth="1.6" strokeLinecap="round" />
@@ -250,9 +250,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   statsStrip: {
-    background: 'var(--bg-surface)',
-    border: '1px solid var(--border-default)',
-    borderRadius: 'var(--radius-lg)',
     display: 'flex', alignItems: 'center',
     padding: '20px 28px',
     gap: '24px',
@@ -278,7 +275,6 @@ const styles: Record<string, React.CSSProperties> = {
   empty: {
     padding: '72px 0', display: 'flex', flexDirection: 'column' as const,
     alignItems: 'center', gap: '10px', textAlign: 'center' as const,
-    border: '1px dashed var(--border-default)', borderRadius: 'var(--radius-lg)',
   },
   emptyIconWrap: {
     width: '56px', height: '56px', borderRadius: '14px',
@@ -298,8 +294,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '14px',
   },
   card: {
-    background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
-    borderRadius: 'var(--radius-lg)', padding: '20px 22px', textDecoration: 'none',
+    padding: '20px 22px', textDecoration: 'none',
     display: 'flex', flexDirection: 'column' as const, gap: '0', position: 'relative' as const,
     transition: 'border-color 150ms ease, background 150ms ease',
   },

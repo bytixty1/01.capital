@@ -75,9 +75,15 @@ function DeleteCompanyModal({
     }} onClick={onCancel}>
       <div
         onClick={e => e.stopPropagation()}
+<<<<<<< HEAD
         style={{
           background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
           borderRadius: '16px', padding: '32px', maxWidth: '480px', width: '100%',
+=======
+        className="glass-panel"
+        style={{
+          padding: '32px', maxWidth: '480px', width: '100%',
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
           display: 'flex', flexDirection: 'column', gap: '20px',
         }}
       >
@@ -189,16 +195,32 @@ export default function CompanyPage() {
   const [showDelete, setShowDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [hoveredSlice, setHoveredSlice] = useState<number | null>(null);
+<<<<<<< HEAD
+=======
+  const [diluted, setDiluted] = useState(false);
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
   useEffect(() => {
-    Promise.all([api.companies.get(id), api.capTable.get(id)])
+    Promise.all([api.companies.get(id), api.capTable.get(id, { diluted })])
       .then(([c, ct]) => {
         setCompany(c);
         setCapTable(ct);
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load'))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, diluted]);
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      await api.companies.delete(id);
+      router.push('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed');
+      setDeleting(false);
+      setShowDelete(false);
+    }
+  }
 
   async function handleDelete() {
     setDeleting(true);
@@ -304,7 +326,11 @@ export default function CompanyPage() {
       </div>
 
       {/* Capital Summary Stats */}
-      <div className="glass-panel" style={{ padding: 0, overflow: 'hidden', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1px', background: 'rgba(255, 255, 255, 0.1)' }}>
+      <div className="glass-panel" style={{ 
+        padding: 0, overflow: 'hidden', display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+        gap: '1px', background: 'var(--glass-border)',
+      }}>
         <div style={{ background: 'var(--glass-bg)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Paid-up capital</span>
           <span style={{ fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
@@ -333,12 +359,57 @@ export default function CompanyPage() {
 
       {/* Ownership Chart + Cap Table */}
       <div id="cap-table" className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--glass-border)' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>Cap table</h2>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--glass-border)', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>Cap table</h2>
+            {/* Issued / Fully diluted toggle */}
+            <div style={{ display: 'inline-flex', padding: '3px', background: 'var(--bg-elevated)', border: '1px solid var(--border-default)', borderRadius: '8px' }}>
+              {([
+                { v: false, label: 'Issued' },
+                { v: true,  label: 'Fully diluted' },
+              ] as const).map(opt => (
+                <button
+                  key={String(opt.v)}
+                  type="button"
+                  onClick={() => setDiluted(opt.v)}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: diluted === opt.v ? 'var(--brand-purple-subtle)' : 'transparent',
+                    color: diluted === opt.v ? 'var(--brand-purple-hover)' : 'var(--text-secondary)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {diluted && capTable.total_shares_diluted && capTable.total_shares_issued && (
+              <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                Issued {Number(capTable.total_shares_issued).toLocaleString('en-SA')} · Diluted {Number(capTable.total_shares_diluted).toLocaleString('en-SA')}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
             <Link href={`/companies/${id}/cap-table/transfer`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
               Transfer
             </Link>
+<<<<<<< HEAD
+=======
+            <Link href={`/companies/${id}/cap-table/capital-increase`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
+              Capital increase
+            </Link>
+            <Link href={`/companies/${id}/cap-table/round-modeler`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
+              Round modeler
+            </Link>
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
             <Link href={`/companies/${id}/cap-table/issue`} className="link-accent" style={{ fontSize: '14px', textDecoration: 'none', fontWeight: 500 }}>
               Issue shares
             </Link>
@@ -396,6 +467,7 @@ export default function CompanyPage() {
                   </tr>
                 </thead>
                 <tbody>
+<<<<<<< HEAD
                   {capTable.holdings.map((h, index) => (
                     <tr 
                       key={`${h.stakeholder_id}-${h.share_class}`} 
@@ -403,17 +475,63 @@ export default function CompanyPage() {
                         borderBottom: '1px solid rgba(255,255,255,0.05)',
                         background: hoveredSlice === index ? 'rgba(255,255,255,0.02)' : 'transparent',
                         transition: 'background 0.2s ease'
+=======
+                  {capTable.holdings.map((h, index) => {
+                    const isSynthetic = !!h.synthetic;
+                    const badgeColor =
+                      h.synthetic === 'esop_pool' ? 'var(--info)' :
+                      h.synthetic === 'esop_grants' ? 'var(--warn)' :
+                      h.synthetic === 'convertible' ? 'var(--brand-purple)' :
+                      'var(--text-tertiary)';
+                    const badgeLabel =
+                      h.synthetic === 'esop_pool' ? 'ESOP POOL' :
+                      h.synthetic === 'esop_grants' ? 'ESOP GRANTS' :
+                      h.synthetic === 'convertible' ? 'CONVERTIBLE' : '';
+                    return (
+                    <tr
+                      key={`${h.stakeholder_id ?? `synth-${h.synthetic}-${index}`}-${h.share_class}`}
+                      style={{
+                        borderBottom: '1px solid rgba(255,255,255,0.05)',
+                        background: hoveredSlice === index ? 'rgba(255,255,255,0.02)' : 'transparent',
+                        transition: 'background 0.2s ease',
+                        borderLeft: isSynthetic ? `2px dashed ${badgeColor}` : 'none',
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
                       }}
                       onMouseEnter={() => setHoveredSlice(index)}
                       onMouseLeave={() => setHoveredSlice(null)}
                     >
                       <td style={tdStyle}>
+<<<<<<< HEAD
                         <Link
                           href={`/companies/${id}/stakeholders/${h.stakeholder_id}`}
                           style={{ fontWeight: 500, color: 'var(--text-primary)', textDecoration: 'none', transition: 'color 0.2s ease' }}
                         >
                           {h.stakeholder_name}
                         </Link>
+=======
+                        {isSynthetic ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              letterSpacing: '0.08em',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              background: 'rgba(255,255,255,0.04)',
+                              color: badgeColor,
+                              fontFamily: 'var(--font-mono)',
+                            }}>{badgeLabel}</span>
+                            <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>{h.stakeholder_name}</span>
+                          </span>
+                        ) : (
+                          <Link
+                            href={`/companies/${id}/stakeholders/${h.stakeholder_id}`}
+                            style={{ fontWeight: 500, color: 'var(--text-primary)', textDecoration: 'none', transition: 'color 0.2s ease' }}
+                          >
+                            {h.stakeholder_name}
+                          </Link>
+                        )}
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
                       </td>
                       <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
                         {h.share_class}
@@ -426,6 +544,7 @@ export default function CompanyPage() {
                       </td>
                       <td style={{ ...tdStyle, textAlign: 'right' }}>
                         <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', width: '100px', overflow: 'hidden', display: 'inline-block', verticalAlign: 'middle' }}>
+<<<<<<< HEAD
                           <div style={{ 
                             height: '100%', 
                             background: COLORS[index % COLORS.length], 
@@ -433,10 +552,21 @@ export default function CompanyPage() {
                             width: `${Math.min(Number(h.percentage), 100)}%`,
                             boxShadow: hoveredSlice === index ? `0 0 8px ${COLORS[index % COLORS.length]}` : 'none',
                             transition: 'all 0.3s ease'
+=======
+                          <div style={{
+                            height: '100%',
+                            background: isSynthetic ? badgeColor : COLORS[index % COLORS.length],
+                            borderRadius: '3px',
+                            width: `${Math.min(Number(h.percentage), 100)}%`,
+                            boxShadow: hoveredSlice === index ? `0 0 8px ${isSynthetic ? badgeColor : COLORS[index % COLORS.length]}` : 'none',
+                            transition: 'all 0.3s ease',
+                            opacity: isSynthetic ? 0.6 : 1,
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
                           }} />
                         </div>
                       </td>
                       <td style={{ ...tdStyle, textAlign: 'right' }}>
+<<<<<<< HEAD
                         <div style={{ display: 'flex', gap: '14px', justifyContent: 'flex-end' }}>
                           <Link
                             href={`/companies/${id}/cap-table/issue?stakeholder=${h.stakeholder_id}`}
@@ -463,6 +593,39 @@ export default function CompanyPage() {
                       </td>
                     </tr>
                   ))}
+=======
+                        {isSynthetic ? (
+                          <span style={{ fontSize: '11px', color: 'var(--text-disabled)', fontStyle: 'italic' }}>—</span>
+                        ) : (
+                          <div style={{ display: 'flex', gap: '14px', justifyContent: 'flex-end' }}>
+                            <Link
+                              href={`/companies/${id}/cap-table/issue?stakeholder=${h.stakeholder_id}`}
+                              style={{ fontSize: '12px', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}
+                              title="Issue more shares"
+                            >
+                              Issue
+                            </Link>
+                            <Link
+                              href={`/companies/${id}/cap-table/transfer?from=${h.stakeholder_id}`}
+                              style={{ fontSize: '12px', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}
+                              title="Transfer shares"
+                            >
+                              Transfer
+                            </Link>
+                            <Link
+                              href={`/companies/${id}/cap-table/reduce?stakeholder=${h.stakeholder_id}`}
+                              style={{ fontSize: '12px', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}
+                              title="Reduce / Buyback shares"
+                            >
+                              Reduce
+                            </Link>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                    );
+                  })}
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
                 </tbody>
               </table>
             </div>

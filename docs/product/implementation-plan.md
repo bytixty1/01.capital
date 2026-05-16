@@ -1,8 +1,8 @@
-# 01 Capital — Implementation Plan v0.2
+# 01 Capital — Implementation Plan v0.3
 
 > **Status:** Active. ADR-0004 accepted 2026-05-06. Sprint 1 underway.
 >
-> **This document supersedes v0.1.** Updated 2026-05-10 to reflect validated customer use cases, competitive research findings, and elevated scope for document generation, security, and Saudi-specific integrations.
+> **This document supersedes v0.2.** Updated 2026-05-16 with structured competitive benchmark against Carta, Pulley, and Ledgy: added waterfall + breakpoint analysis, pro forma round modeling, IFRS 2 expense engine, performance/milestone vesting, bulk grant issuance, integrated e-signing adapter, custom fields, and one-click audit pack. Saudi-wedge scope unchanged.
 
 ---
 
@@ -25,6 +25,13 @@
 
 **Competitive positioning:** No existing platform natively models SJSC share classes, enforces Saudi Companies Law compliance, generates Arabic-language corporate documents, or integrates with MoC digital filing. This gap is the moat. Every sprint should deepen it.
 
+**Benchmark posture vs. global players (Carta / Pulley / Ledgy):**
+- **vs. Carta** — we don't try to match the integration ecosystem (HRIS / payroll / banking / 409A bundle) or the SEC-registered transfer-agent service. We win on Saudi-legal correctness and Arabic-first documents, where Carta has zero presence. We adopt their waterfall + breakpoint analysis and one-click audit-ready report patterns.
+- **vs. Pulley** — we match the "founder-friendly" UX bar (simple forms, no legal expertise needed) but extend it to LLC / SJSC / JSC, not just Delaware C-corp. We adopt their pro-forma round modeling and IFRS-aligned reporting.
+- **vs. Ledgy** — multi-jurisdiction is their wedge (EU). Saudi-jurisdiction depth is ours. We adopt their bulk-ops, integrated e-signing, performance-based vesting, and custom-fields UX patterns without their cross-border complexity.
+
+**What we explicitly do NOT copy:** token cap tables (Pulley), AI scenario co-pilots (Carta — per CLAUDE.md Rule 7, AI stays optional/narrow), HRIS integrations across countries (Ledgy — V2 backlog if at all).
+
 ---
 
 ## 2. Product Scope
@@ -37,10 +44,17 @@
 - Capital change events: issuance, transfer, repurchase, splits, secondary transactions
 - Secondary transactions: shareholder-to-shareholder transfers (not just company-issued events)
 - Scenario and dilution modeling (round modeling, ESOP pool expansion, waterfall)
+- Waterfall + breakpoint analysis (sensitivity, payout, dilution modeling for exit scenarios)
+- Pro forma round modeling: model dilution from a next-round sukuk-convertible, SAFE-equivalent, or new share issuance before execution
+- IFRS 2 share-based payment expensing reports (auto-computed, auditor-ready) — Saudi GAAP follows IFRS
 - ESOP plan setup, grants, vesting tracking, exercise, termination handling
+- Performance / milestone-based vesting in addition to time-based cliff/graded (common in Saudi family-business CEO grants)
+- Bulk grant issuance flow (CSV import + preview + signed-batch generation) for onboarding multiple employees in one event
 - Sukuk-convertible instrument support
 - Phantom share support
 - PDF document generation (cap table, share certificates, vesting schedules, resolutions) — Arabic + English, watermarked
+- Integrated e-signing flow on every generated document (board consents, share certificates, grants, resolutions) — adapter-based, vendor-neutral
+- One-click "audit pack" generator: bundles current cap table + event log + grant register + generated documents into a single PDF/ZIP formatted for Saudi external auditors
 - MoC filing tracker (surfaces requirements, generates draft filings — does not auto-submit)
 - ZATCA-aligned data export (zakat-year structured)
 - CMA ESOP compliance workflow (guided plan design, Arabic disclosure documents)
@@ -60,8 +74,10 @@
 - Public-listed company workflows (when SJSCs convert to listed JSCs — V2)
 - Family charter authoring tools (V1 flags charter presence; V2 authors)
 - Secondary market / share-sale marketplace
+- Tender offers / company-run secondary liquidity events — V2 backlog. V1 records secondary transactions when they occur but does not orchestrate them.
 - AI-driven recommendations or valuations
 - HRIS integrations (V2, post-MVP)
+- Saudi payroll / HRIS integration adapters (Mudad, Qiwa) — V2 backlog. V1 supports manual stakeholder + grant entry only.
 
 ---
 
@@ -103,9 +119,9 @@ Monorepo. Modular boundaries inside monolith — no microservices until Sprint 8
 ### 3.3 Data Model (Key Entities)
 
 - **Company** — entity_type (LLC | SJSC | JSC), AoA flags, capital structure
-- **Stakeholder** — person or entity, nationality, role, national_id (encrypted)
-- **Holding** — security type (quota | ordinary_share | preferred_share | option | sukuk_convertible | phantom), quantity, vesting_id, restrictions
-- **VestingSchedule** — cliff, period, type, custom milestones
+- **Stakeholder** — person or entity, nationality, role, national_id (encrypted), custom_fields (JSONB) — for legal nuances not modeled in core schema (e.g., specific AoA-required attributes)
+- **Holding** — security type (quota | ordinary_share | preferred_share | option | sukuk_convertible | phantom), quantity, vesting_id, restrictions, custom_fields (JSONB)
+- **VestingSchedule** — cliff, period, type, time-based + performance/milestone-based, custom milestones
 - **CapitalEvent** — the immutable event log (issuance, transfer, secondary_transfer, repurchase, split, exercise, grant, revoke)
 - **ESOPPlan** — CMA-aligned plan parameters, pool size, AoA resolution reference
 - **Document** — generated PDFs with watermark status, language, signing state
@@ -182,8 +198,15 @@ Monorepo. Modular boundaries inside monolith — no microservices until Sprint 8
 - Round modeling: input a term sheet → see post-money cap table instantly
 - ESOP pool expansion modeling: show dilution before and after pool creation
 - Waterfall analysis: liquidation preference stacks, pro-rata distributions
+- **Breakpoint analysis**: per-class sensitivity — at what exit value does each share class start receiving proceeds? (Carta-equivalent)
+- **Pro forma round modeler**: input new round terms (size, instrument type, share class, conversion price for converts) → projected post-round cap table with per-shareholder dilution deltas
 - Fully diluted cap table vs. issued-and-outstanding toggle (always visible)
 - Save and name scenarios (draft; not committed to the event log)
+
+**IFRS 2 expense engine (foundational service, report surfaced in Sprint 5):**
+- Auto-compute share-based payment expense per grant per period using Black-Scholes or binomial models
+- Saudi GAAP follows IFRS, so this is auditor-table-stakes — every external auditor will request it
+- Exposed as a service in Sprint 2; consumed by the audit-pack generator in Sprint 5
 
 **Deliverable:** founders can simulate a Series A and understand exactly what every scenario does to their stake and their co-founders' stakes.
 
@@ -197,6 +220,8 @@ Monorepo. Modular boundaries inside monolith — no microservices until Sprint 8
 - ESOP plan creation wizard: AoA check, pool size, CMA-required plan parameters
 - Grant management: issue, modify, revoke
 - Vesting engine: cliff + monthly graded (default four-year / one-year cliff per CMA common practice); custom schedule support
+- **Performance / milestone-based vesting** alongside time-based (common in Saudi family-business founder-CEO grants; Ledgy-equivalent)
+- **Bulk grant issuance**: CSV upload, preview screen, atomic batch creation — onboarding 30 employees should be one operation, not 30 forms (Ledgy-equivalent)
 - Exercise tracking: cash exercise, net exercise
 - Termination handling: good leaver / bad leaver rules
 - CMA quarterly disclosure pack export (structured data, Arabic-language)
@@ -209,6 +234,8 @@ Monorepo. Modular boundaries inside monolith — no microservices until Sprint 8
 - All generated documents carry: "مسودة — يُرجى المراجعة مع مستشار قانوني / DRAFT — REVIEW WITH LEGAL COUNSEL" watermark until a lawyer clears it
 - PDF engine: WeasyPrint (Python-native, supports Arabic RTL rendering)
 - Field-level PII encryption live before any ESOP grant data is entered
+- **E-signing adapter interface** (vendor-neutral; first integration is a stub — pluggable for DocuSign or a Saudi-local provider in V1.5). Every generated document supports a "Send for signature" action that produces an audit-traceable signing record (Ledgy/Carta-equivalent UX).
+- **"Audit pack" generator** (one-click): bundles current cap table + event log + grant register + IFRS 2 expense calc + generated documents into a single PDF/ZIP formatted for Saudi external auditors. Endpoint + UI action.
 
 **Deliverable:** 01 Capital can issue ESOP grants and export a bilingual PDF cap table that a Saudi lawyer would recognize as correctly formatted.
 
@@ -473,6 +500,7 @@ All tiers include: MFA, RBAC, audit log, PDF export, Arabic documents, MoC filin
 | **Founder bandwidth: engineering is thin** | Realistic sprint sizing. No parallel feature work. Hire engineer #2 by end of Sprint 5 if customer pull justifies. |
 | **AoA reading errors in customer onboarding** | Manual lawyer review of first 10 customers' AoA. Build automation only after the manual process is reliable. |
 | **Mission creep from "we should also do X"** | This document is the spec. Anything not in it requires an ADR. |
+| **Feature-parity perception with global incumbents (Carta / Pulley / Ledgy)** | Customers who used Carta in past startups may assume we're "less powerful." Counter via: (a) explicit feature-parity table on marketing site, (b) prove the Arabic + Saudi-legal wedge in the demo, (c) bundle the IFRS 2 + audit-pack features that even Carta's local presence couldn't provide without Saudi templates. |
 
 ---
 
@@ -493,3 +521,4 @@ Updates require:
 |---|---|---|
 | v0.1 | 2026-05-05 | Initial plan post-pivot to cap table direction |
 | v0.2 | 2026-05-10 | Elevated document generation to Sprint 3; added security baseline to Sprint 1; added secondary transactions to Sprint 2; added employee and investor portals (Sprint 6); added data room; added Arabic UI sprint; added CMA ESOP workflow; updated pricing model to SAR-denominated published tiers; added competitive feature comparison; added Qapita and Carta as named risks |
+| v0.3 | 2026-05-16 | Structured benchmark against Carta / Pulley / Ledgy. Added: waterfall + breakpoint analysis, pro forma round modeling, IFRS 2 expense engine (Sprint 2); performance/milestone vesting, bulk grant issuance, integrated e-signing adapter, one-click audit pack (Sprint 3); custom_fields on Stakeholder + Holding; explicit V2 markers for tender offers and Saudi-payroll/HRIS integrations; benchmark posture subsection in §1; feature-parity-perception risk row |

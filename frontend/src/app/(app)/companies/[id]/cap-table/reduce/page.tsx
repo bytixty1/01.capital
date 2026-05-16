@@ -3,7 +3,12 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+<<<<<<< HEAD
 import { api, StakeholderResponse } from '@/lib/api';
+=======
+import { api, StakeholderResponse, CompanyResponse } from '@/lib/api';
+import { SHARE_CLASS_SUGGESTIONS, defaultShareClass, isShareClassLocked, shareClassLabel } from '@/lib/share-class';
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
 export default function ReduceSharesPage() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -12,6 +17,10 @@ export default function ReduceSharesPage() {
   const preselectedStakeholder = searchParams.get('stakeholder');
 
   const [stakeholders, setStakeholders] = useState<StakeholderResponse[]>([]);
+<<<<<<< HEAD
+=======
+  const [company, setCompany] = useState<CompanyResponse | null>(null);
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
   const [stakeholderId, setStakeholderId] = useState('');
   const [shareClass, setShareClass] = useState('ordinary');
   const [quantity, setQuantity] = useState('');
@@ -24,6 +33,12 @@ export default function ReduceSharesPage() {
 
   useEffect(() => {
     setEventDate(new Date().toISOString().slice(0, 10));
+<<<<<<< HEAD
+=======
+    api.companies.get(companyId)
+      .then(c => { setCompany(c); setShareClass(defaultShareClass(c.entity_type)); })
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load company'));
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
     api.stakeholders.list(companyId)
       .then(s => {
         setStakeholders(s);
@@ -102,9 +117,29 @@ export default function ReduceSharesPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+<<<<<<< HEAD
                 Share class *
               </label>
               <input type="text" value={shareClass} onChange={e => setShareClass(e.target.value)} required className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} />
+=======
+                {shareClassLabel(company?.entity_type)} *
+              </label>
+              <input
+                type="text"
+                value={shareClass}
+                onChange={e => setShareClass(e.target.value)}
+                required
+                disabled={isShareClassLocked(company?.entity_type)}
+                list="reduce-share-classes"
+                className="glass-input"
+                style={{ fontFamily: 'var(--font-mono)', opacity: isShareClassLocked(company?.entity_type) ? 0.6 : 1 }}
+              />
+              {company && (
+                <datalist id="reduce-share-classes">
+                  {SHARE_CLASS_SUGGESTIONS[company.entity_type].map(c => <option key={c} value={c} />)}
+                </datalist>
+              )}
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

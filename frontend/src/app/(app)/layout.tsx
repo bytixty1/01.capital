@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
+import { PageBackground } from '@/components/PageBackground';
 
 const WORDMARK = (
   <svg style={{ height: 20, width: 'auto', display: 'block' }} viewBox="600 340 820 360" preserveAspectRatio="xMinYMid meet" aria-label="01 Capital">
@@ -66,27 +67,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     : gap + navH + gap;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
-      {/* Blob bg — near-invisible, pure depth only */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '-10%', right: '10%', width: 500, height: 500, background: 'rgba(255,255,255,0.012)', borderRadius: '50%', filter: 'blur(120px)' }} />
-        <div style={{ position: 'absolute', bottom: '-5%', left: '20%', width: 400, height: 400, background: 'rgba(255,255,255,0.008)', borderRadius: '50%', filter: 'blur(100px)' }} />
-      </div>
+    <div className="app-shell" style={{ position: 'relative' }}>
+      <PageBackground />
 
       {/* Primary navbar */}
-      <nav style={{
+      <nav className="glass-panel" style={{
         position: 'fixed', top: gap, left: gap, right: gap, height: navH, zIndex: 100,
-        background: 'rgba(10,10,15,0.55)',
-        backdropFilter: 'blur(24px) saturate(1.4)',
-        WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: '18px',
-        boxShadow: '0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
         display: 'grid',
         gridTemplateColumns: 'auto 1fr auto',
         alignItems: 'center',
         padding: '0 22px',
         gap: '24px',
+        borderRadius: '18px',
       }}>
         {/* Left: wordmark */}
         <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
@@ -157,17 +149,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Company sub-nav */}
       {inCompany && (
-        <nav style={{
+        <nav className="glass-panel" style={{
           position: 'fixed',
           top: gap + navH + subGap,
           left: gap, right: gap, height: subH, zIndex: 99,
-          background: 'rgba(10,10,15,0.4)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255,255,255,0.06)',
-          borderRadius: '12px',
           display: 'flex', alignItems: 'center',
           padding: '0 22px', gap: '24px',
+          borderRadius: '12px',
         }}>
           {[
             { label: 'Overview', href: `/companies/${activeCompanyId}`, exact: true },

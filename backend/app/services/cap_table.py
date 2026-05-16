@@ -22,11 +22,36 @@ from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.esop_grant import EsopGrant, GrantStatus
+from app.models.esop_plan import EsopPlan, EsopPlanStatus
 from app.models.holding import Holding
+from app.models.instrument import Instrument, InstrumentStatus, InstrumentType
 from app.models.stakeholder import Stakeholder
-from app.schemas.cap_table import CapTableResponse, HoldingResponse
+from app.schemas.cap_table import (
+    CapTableResponse,
+    HoldingResponse,
+    ProjectedHolding,
+    RoundPreviewRequest,
+    RoundPreviewResponse,
+)
 
 
+def validate_share_class_for_entity(entity_type: str, share_class: str) -> None:
+    """Reject share classes that are illegal for the company's entity type.
+
+    Per the 2023 Saudi Companies Law: LLC ownership is distributed as partner
+    quotas, not shares, so preferred/common classes are not permitted. SJSC
+    and JSC entities support flexible share-class taxonomies.
+    """
+    if entity_type == "LLC" and share_class != "quota":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "LLC entities use the 'quota' share class only — preferred/common "
+                "classes are not permitted under the 2023 Saudi Companies Law "
+                "(LLC ownership is via partner quotas, not shares)."
+            ),
+        )
 async def _get_holding_for_update(
     db: AsyncSession,
     company_id: uuid.UUID,
@@ -130,7 +155,70 @@ async def apply_capital_decrease(
     holding.quantity = holding.quantity - quantity
 
 
-async def get_cap_table(db: AsyncSession, company_id: uuid.UUID) -> CapTableResponse:
+async def _compute_diluted_additions(
+    db: AsyncSession, company_id: uuid.UUID
+) -> list[tuple[str, str, Decimal, str]]:
+    """Return synthetic rows contributing to fully-diluted total.
+
+    Each tuple is (synthetic_kind, label, quantity, share_class).
+    """
+    additions: list[tuple[str, str, Decimal, str]] = []
+
+    # ESOP pool — unallocated reserves (one row per active plan)
+    plans = (await db.execute(
+        select(EsopPlan).where(
+            EsopPlan.company_id == company_id,
+            EsopPlan.status == EsopPlanStatus.ACTIVE,
+        )
+    )).scalars().all()
+    for p in plans:
+        unallocated = p.total_pool - p.allocated
+        if unallocated > 0:
+            additions.append(("esop_pool", f"ESOP pool — {p.name} (unallocated)", unallocated, p.share_class))
+
+    # ESOP grants — unexercised options (one synthetic row aggregating all active grants per share class)
+    grants = (await db.execute(
+        select(EsopGrant, EsopPlan)
+        .join(EsopPlan, EsopGrant.plan_id == EsopPlan.id)
+        .where(
+            EsopGrant.company_id == company_id,
+            EsopGrant.status.in_([GrantStatus.ACTIVE, GrantStatus.PARTIALLY_EXERCISED]),
+        )
+    )).all()
+    grant_by_class: dict[str, Decimal] = {}
+    for row in grants:
+        remaining = row.EsopGrant.quantity - row.EsopGrant.exercised_quantity
+        if remaining > 0:
+            grant_by_class[row.EsopPlan.share_class] = grant_by_class.get(row.EsopPlan.share_class, Decimal("0")) + remaining
+    for share_class, qty in grant_by_class.items():
+        additions.append(("esop_grants", "ESOP grants — unexercised", qty, share_class))
+
+    # Convertibles — sukuk-convertibles and warrants, one row per instrument
+    instruments = (await db.execute(
+        select(Instrument).where(
+            Instrument.company_id == company_id,
+            Instrument.status == InstrumentStatus.ACTIVE,
+            Instrument.instrument_type.in_([InstrumentType.SUKUK_CONVERTIBLE, InstrumentType.WARRANT]),
+        )
+    )).scalars().all()
+    for inst in instruments:
+        # Parse conversion_shares from terms JSONB; skip if missing/invalid.
+        raw = (inst.terms or {}).get("conversion_shares")
+        if raw is None:
+            continue
+        try:
+            conv_qty = Decimal(str(raw))
+        except Exception:
+            continue
+        if conv_qty > 0:
+            additions.append(("convertible", inst.name, conv_qty, "as-converted"))
+
+    return additions
+
+
+async def get_cap_table(
+    db: AsyncSession, company_id: uuid.UUID, diluted: bool = False
+) -> CapTableResponse:
     result = await db.execute(
         select(Holding, Stakeholder)
         .join(Stakeholder, Holding.stakeholder_id == Stakeholder.id)
@@ -139,13 +227,22 @@ async def get_cap_table(db: AsyncSession, company_id: uuid.UUID) -> CapTableResp
     )
     rows = result.all()
 
-    total = sum((r.Holding.quantity for r in rows), Decimal("0"))
+    issued_total = sum((r.Holding.quantity for r in rows), Decimal("0"))
+
+    additions: list[tuple[str, str, Decimal, str]] = []
+    diluted_total = issued_total
+    if diluted:
+        additions = await _compute_diluted_additions(db, company_id)
+        diluted_total = issued_total + sum((a[2] for a in additions), Decimal("0"))
+
+    # Denominator for percentages: diluted total if diluted else issued total
+    denom = diluted_total if diluted else issued_total
 
     holdings: list[HoldingResponse] = []
     for row in rows:
         pct = (
-            (row.Holding.quantity / total * 100).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
-            if total > 0
+            (row.Holding.quantity / denom * 100).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+            if denom > 0
             else Decimal("0")
         )
         holdings.append(
@@ -158,8 +255,141 @@ async def get_cap_table(db: AsyncSession, company_id: uuid.UUID) -> CapTableResp
             )
         )
 
+    # Append synthetic rows in diluted mode
+    if diluted:
+        for kind, label, qty, share_class in additions:
+            pct = (
+                (qty / denom * 100).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+                if denom > 0
+                else Decimal("0")
+            )
+            holdings.append(
+                HoldingResponse(
+                    stakeholder_id=None,
+                    stakeholder_name=label,
+                    share_class=share_class,
+                    quantity=qty,
+                    percentage=pct,
+                    synthetic=kind,  # type: ignore[arg-type]
+                )
+            )
+
     return CapTableResponse(
         company_id=company_id,
-        total_shares=total,
+        total_shares=denom,
         holdings=holdings,
+        total_shares_issued=issued_total,
+        total_shares_diluted=diluted_total if diluted else None,
+    )
+
+
+async def _esop_pool_unallocated(db: AsyncSession, company_id: uuid.UUID) -> Decimal:
+    """Sum of (total_pool − allocated) across all active ESOP plans for the company."""
+    plans = (await db.execute(
+        select(EsopPlan).where(
+            EsopPlan.company_id == company_id,
+            EsopPlan.status == EsopPlanStatus.ACTIVE,
+        )
+    )).scalars().all()
+    return sum((p.total_pool - p.allocated for p in plans), Decimal("0"))
+
+
+async def preview_round(
+    db: AsyncSession,
+    company_id: uuid.UUID,
+    req: RoundPreviewRequest,
+) -> RoundPreviewResponse:
+    """Pure projection — model a new priced round against the current cap table.
+
+    NO state mutations. NO event log writes. Caller renders the result for UI display.
+    Math convention: ESOP top-up dilutes pre-money holders (added to pre_total before
+    new investor shares are issued).
+    """
+    # 1. Current fully-diluted cap table snapshot.
+    diluted_pre = await get_cap_table(db, company_id, diluted=True)
+    pre_total = diluted_pre.total_shares_diluted or Decimal("0")
+
+    # 2. Valuations.
+    pre_money = pre_total * req.price_per_share
+
+    # 3. New investor shares.
+    new_inv_shares = (req.round_size_sar / req.price_per_share).quantize(
+        Decimal("1"), rounding=ROUND_HALF_UP
+    )
+
+    # 4. ESOP top-up (optional).
+    topup = Decimal("0")
+    if req.target_esop_post_money_pct is not None and req.target_esop_post_money_pct > 0:
+        existing_pool = await _esop_pool_unallocated(db, company_id)
+        tgt = req.target_esop_post_money_pct / Decimal("100")
+        # Solve: tgt = (existing_pool + topup) / (pre_total + topup + new_inv_shares)
+        # => topup = (tgt * (pre_total + new_inv_shares) − existing_pool) / (1 − tgt)
+        if tgt < Decimal("1"):
+            topup_raw = (tgt * (pre_total + new_inv_shares) - existing_pool) / (Decimal("1") - tgt)
+            topup = max(Decimal("0"), topup_raw.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+    # 5. Post-round totals.
+    post_total = pre_total + topup + new_inv_shares
+    post_money = post_total * req.price_per_share
+
+    # 6. Build projected holdings.
+    projected: list[ProjectedHolding] = []
+    for h in diluted_pre.holdings:
+        pre_pct = Decimal(str(h.percentage))
+        post_pct = (
+            (h.quantity / post_total * 100).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+            if post_total > 0
+            else Decimal("0")
+        )
+        projected.append(ProjectedHolding(
+            stakeholder_name=h.stakeholder_name,
+            share_class=h.share_class,
+            pre_round_quantity=h.quantity,
+            pre_round_percentage=pre_pct,
+            post_round_quantity=h.quantity,
+            post_round_percentage=post_pct,
+            dilution_delta_pp=post_pct - pre_pct,
+            is_new=False,
+            synthetic=h.synthetic,  # type: ignore[arg-type]
+        ))
+
+    if topup > 0:
+        topup_pct = (topup / post_total * 100).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+        projected.append(ProjectedHolding(
+            stakeholder_name="ESOP pool — top-up",
+            share_class="esop",
+            pre_round_quantity=Decimal("0"),
+            pre_round_percentage=Decimal("0"),
+            post_round_quantity=topup,
+            post_round_percentage=topup_pct,
+            dilution_delta_pp=topup_pct,
+            is_new=True,
+            synthetic="esop_topup",
+        ))
+
+    new_inv_pct = (
+        (new_inv_shares / post_total * 100).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+        if post_total > 0
+        else Decimal("0")
+    )
+    projected.append(ProjectedHolding(
+        stakeholder_name=req.new_investor_name,
+        share_class=req.new_share_class,
+        pre_round_quantity=Decimal("0"),
+        pre_round_percentage=Decimal("0"),
+        post_round_quantity=new_inv_shares,
+        post_round_percentage=new_inv_pct,
+        dilution_delta_pp=new_inv_pct,
+        is_new=True,
+        synthetic="new_investor",
+    ))
+
+    return RoundPreviewResponse(
+        pre_money_valuation_sar=pre_money,
+        post_money_valuation_sar=post_money,
+        pre_round_total_shares=pre_total,
+        post_round_total_shares=post_total,
+        new_investor_shares=new_inv_shares,
+        esop_topup_shares=topup,
+        holdings=projected,
     )

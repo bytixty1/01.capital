@@ -81,18 +81,50 @@ export type StakeholderDetailResponse = StakeholderResponse & {
   holdings: { share_class: string; quantity: string }[];
 };
 
+<<<<<<< HEAD
+=======
+export type SyntheticKind = 'esop_pool' | 'esop_grants' | 'convertible';
+
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 export type HoldingResponse = {
-  stakeholder_id: string;
+  stakeholder_id: string | null;  // null for synthetic (diluted) rows
   stakeholder_name: string;
   share_class: string;
   quantity: string;
   percentage: string;
+  synthetic?: SyntheticKind | null;
 };
 
 export type CapTableResponse = {
   company_id: string;
   total_shares: string;
   holdings: HoldingResponse[];
+  total_shares_issued?: string | null;
+  total_shares_diluted?: string | null;
+};
+
+export type ProjectedSyntheticKind = SyntheticKind | 'esop_topup' | 'new_investor';
+
+export type ProjectedHolding = {
+  stakeholder_name: string;
+  share_class: string;
+  pre_round_quantity: string;
+  pre_round_percentage: string;
+  post_round_quantity: string;
+  post_round_percentage: string;
+  dilution_delta_pp: string;
+  is_new: boolean;
+  synthetic?: ProjectedSyntheticKind | null;
+};
+
+export type RoundPreviewResponse = {
+  pre_money_valuation_sar: string;
+  post_money_valuation_sar: string;
+  pre_round_total_shares: string;
+  post_round_total_shares: string;
+  new_investor_shares: string;
+  esop_topup_shares: string;
+  holdings: ProjectedHolding[];
 };
 
 export type CapTableEventResponse = {
@@ -254,8 +286,16 @@ export const api = {
   },
 
   capTable: {
-    get: (companyId: string) =>
-      request<CapTableResponse>(`/api/companies/${companyId}/cap-table`, { headers: authHeaders() }),
+    get: (companyId: string, opts?: { diluted?: boolean }) =>
+      request<CapTableResponse>(`/api/companies/${companyId}/cap-table${opts?.diluted ? '?diluted=true' : ''}`, { headers: authHeaders() }),
+    previewRound: (companyId: string, body: {
+      round_size_sar: number; price_per_share: number;
+      new_share_class?: string; new_investor_name?: string;
+      target_esop_post_money_pct?: number;
+    }) =>
+      request<RoundPreviewResponse>(`/api/companies/${companyId}/cap-table/preview-round`, {
+        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+      }),
     issue: (companyId: string, body: {
       stakeholder_id: string; share_class?: string; quantity: number;
       event_date: string; notes?: string;

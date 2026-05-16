@@ -3,7 +3,12 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+<<<<<<< HEAD
 import { api, StakeholderResponse } from '@/lib/api';
+=======
+import { api, StakeholderResponse, CompanyResponse } from '@/lib/api';
+import { SHARE_CLASS_SUGGESTIONS, defaultShareClass, isShareClassLocked, shareClassLabel } from '@/lib/share-class';
+>>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
 export default function TransferSharesPage() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -12,6 +17,7 @@ export default function TransferSharesPage() {
   const preselectedFrom = searchParams.get('from');
 
   const [stakeholders, setStakeholders] = useState<StakeholderResponse[]>([]);
+  const [company, setCompany] = useState<CompanyResponse | null>(null);
   const [fromId, setFromId] = useState('');
   const [toId, setToId] = useState('');
   const [shareClass, setShareClass] = useState('ordinary');
@@ -24,6 +30,9 @@ export default function TransferSharesPage() {
 
   useEffect(() => {
     setEventDate(new Date().toISOString().slice(0, 10));
+    api.companies.get(companyId)
+      .then(c => { setCompany(c); setShareClass(defaultShareClass(c.entity_type)); })
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load company'));
     api.stakeholders.list(companyId)
       .then(s => { 
         setStakeholders(s); 
@@ -124,9 +133,23 @@ export default function TransferSharesPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                Share class *
+                {shareClassLabel(company?.entity_type)} *
               </label>
-              <input type="text" value={shareClass} onChange={e => setShareClass(e.target.value)} required className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} />
+              <input
+                type="text"
+                value={shareClass}
+                onChange={e => setShareClass(e.target.value)}
+                required
+                disabled={isShareClassLocked(company?.entity_type)}
+                list="transfer-share-classes"
+                className="glass-input"
+                style={{ fontFamily: 'var(--font-mono)', opacity: isShareClassLocked(company?.entity_type) ? 0.6 : 1 }}
+              />
+              {company && (
+                <datalist id="transfer-share-classes">
+                  {SHARE_CLASS_SUGGESTIONS[company.entity_type].map(c => <option key={c} value={c} />)}
+                </datalist>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
