@@ -47,6 +47,13 @@ class Settings(BaseSettings):
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
     @model_validator(mode="after")
+    def _fix_database_url(self) -> "Settings":
+        """Transform postgres:// to postgresql+asyncpg:// for SQLAlchemy compat."""
+        if self.database_url.startswith("postgres://"):
+            self.database_url = self.database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+        return self
+
+    @model_validator(mode="after")
     def _validate_production(self) -> "Settings":
         if self.environment != "production":
             return self
