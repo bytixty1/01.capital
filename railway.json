@@ -1,9 +1,9 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
+  "root": "/backend",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "backend/Dockerfile",
-    "context": "backend"
+    "dockerfilePath": "Dockerfile"
   },
   "deploy": {
     "numReplicas": 1,
