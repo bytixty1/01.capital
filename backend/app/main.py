@@ -92,6 +92,12 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 # ── Health ─────────────────────────────────────────────────────────────────────
 
+@app.get("/ping", tags=["system"])
+async def ping() -> JSONResponse:
+    """Shallow liveness probe — always 200 once the process is up."""
+    return JSONResponse(content={"status": "ok"})
+
+
 @app.get("/health", tags=["system"])
 async def health_check() -> JSONResponse:
     db_ok = True
