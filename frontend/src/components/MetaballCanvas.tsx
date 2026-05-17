@@ -9,11 +9,8 @@ void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
 
 // Soft diagonal silk ribbons — no domain warping, no marbling.
 // Three gaussian bands flow top-left → bottom-right with gentle organic sway.
-<<<<<<< HEAD
-=======
 // Longitudinal flow: bright crests translate ~30 s to traverse visible diagonal.
 // Breathing pulse: ~18 s period. All periods incommensurate — no visible loop restart.
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 const FRAG = `
 precision highp float;
 uniform vec2  u_res;
@@ -46,43 +43,6 @@ void main() {
   float along   = dot(p, fwd);
   float lateral = dot(p - vec2(asp * 0.5, 0.5), side);
 
-<<<<<<< HEAD
-  // ── Organic motion ────────────────────────────────────────────────────────────
-  // 1. Slow large-scale shape drift (changes over ~30 s — gives the ribbons
-  //    their split/rejoin look without chaotic turbulence)
-  float drift = sN(vec2(along * 0.30, t * 0.040)) * 0.12 - 0.06;
-
-  // 2. Faster traveling sine waves along the ribbon length — this is the
-  //    visible "water current under glass" motion.
-  float wave =  sin(along * 1.40 - t * 0.22) * 0.013
-              + sin(along * 0.60 - t * 0.15 + 0.8) * 0.008;
-
-  float lw = lateral + drift + wave;  // final swayed lateral position
-
-  // ── Ribbon bands ──────────────────────────────────────────────────────────────
-  // Each ribbon = wide dim haze   (indigo glow)
-  //             + narrow bright core (milky silk spine)
-  // The separation along 'side' keeps them as distinct parallel diagonals.
-
-  // Ribbon A — main diagonal corridor
-  float hA = exp(-pow(lw        * 5.8,  2.0));   // haze  σ≈0.17
-  float cA = exp(-pow(lw        * 21.0, 2.0));   // core  σ≈0.048
-
-  // Ribbon B — upper-left band (offset +0.30 in side direction)
-  float lB = lw - 0.30;
-  float hB = exp(-pow(lB * 6.5,  2.0));
-  float cB = exp(-pow(lB * 23.0, 2.0));
-
-  // Ribbon C — secondary lower band (faint)
-  float lC = lw + 0.24;
-  float hC = exp(-pow(lC * 7.5,  2.0));
-  float cC = exp(-pow(lC * 26.0, 2.0));
-
-  float haze = hA * 0.065 + hB * 0.044 + hC * 0.022;
-  float core = cA * 0.330 + cB * 0.270 + cC * 0.155;
-  float I    = clamp(haze + core, 0.0, 1.0);
-
-=======
   // ── Per-ribbon independent waves ──────────────────────────────────────────────
   // Each ribbon has different freqs/speeds/phases — they never lockstep.
   // ampX = slow noise value that evolves each ribbon's wave magnitude over time.
@@ -148,7 +108,6 @@ void main() {
                       + 0.05 * sin(t * 0.331 + 1.7);
   I = clamp(I * breath, 0.0, 1.0);
 
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
   // ── Spatial envelope ──────────────────────────────────────────────────────────
   float topE  = smoothstep(0.10, 0.90, uv.y);
   float leftE = smoothstep(0.80, 0.10, uv.x);

@@ -75,15 +75,9 @@ function DeleteCompanyModal({
     }} onClick={onCancel}>
       <div
         onClick={e => e.stopPropagation()}
-<<<<<<< HEAD
-        style={{
-          background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
-          borderRadius: '16px', padding: '32px', maxWidth: '480px', width: '100%',
-=======
         className="glass-panel"
         style={{
           padding: '32px', maxWidth: '480px', width: '100%',
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
           display: 'flex', flexDirection: 'column', gap: '20px',
         }}
       >
@@ -195,10 +189,7 @@ export default function CompanyPage() {
   const [showDelete, setShowDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [hoveredSlice, setHoveredSlice] = useState<number | null>(null);
-<<<<<<< HEAD
-=======
   const [diluted, setDiluted] = useState(false);
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
   useEffect(() => {
     Promise.all([api.companies.get(id), api.capTable.get(id, { diluted })])
@@ -209,18 +200,6 @@ export default function CompanyPage() {
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load'))
       .finally(() => setLoading(false));
   }, [id, diluted]);
-
-  async function handleDelete() {
-    setDeleting(true);
-    try {
-      await api.companies.delete(id);
-      router.push('/dashboard');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Delete failed');
-      setDeleting(false);
-      setShowDelete(false);
-    }
-  }
 
   async function handleDelete() {
     setDeleting(true);
@@ -401,15 +380,12 @@ export default function CompanyPage() {
             <Link href={`/companies/${id}/cap-table/transfer`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
               Transfer
             </Link>
-<<<<<<< HEAD
-=======
             <Link href={`/companies/${id}/cap-table/capital-increase`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
               Capital increase
             </Link>
             <Link href={`/companies/${id}/cap-table/round-modeler`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
               Round modeler
             </Link>
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
             <Link href={`/companies/${id}/cap-table/issue`} className="link-accent" style={{ fontSize: '14px', textDecoration: 'none', fontWeight: 500 }}>
               Issue shares
             </Link>
@@ -467,15 +443,6 @@ export default function CompanyPage() {
                   </tr>
                 </thead>
                 <tbody>
-<<<<<<< HEAD
-                  {capTable.holdings.map((h, index) => (
-                    <tr 
-                      key={`${h.stakeholder_id}-${h.share_class}`} 
-                      style={{ 
-                        borderBottom: '1px solid rgba(255,255,255,0.05)',
-                        background: hoveredSlice === index ? 'rgba(255,255,255,0.02)' : 'transparent',
-                        transition: 'background 0.2s ease'
-=======
                   {capTable.holdings.map((h, index) => {
                     const isSynthetic = !!h.synthetic;
                     const badgeColor =
@@ -495,20 +462,11 @@ export default function CompanyPage() {
                         background: hoveredSlice === index ? 'rgba(255,255,255,0.02)' : 'transparent',
                         transition: 'background 0.2s ease',
                         borderLeft: isSynthetic ? `2px dashed ${badgeColor}` : 'none',
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
                       }}
                       onMouseEnter={() => setHoveredSlice(index)}
                       onMouseLeave={() => setHoveredSlice(null)}
                     >
                       <td style={tdStyle}>
-<<<<<<< HEAD
-                        <Link
-                          href={`/companies/${id}/stakeholders/${h.stakeholder_id}`}
-                          style={{ fontWeight: 500, color: 'var(--text-primary)', textDecoration: 'none', transition: 'color 0.2s ease' }}
-                        >
-                          {h.stakeholder_name}
-                        </Link>
-=======
                         {isSynthetic ? (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
                             <span style={{
@@ -531,7 +489,6 @@ export default function CompanyPage() {
                             {h.stakeholder_name}
                           </Link>
                         )}
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
                       </td>
                       <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
                         {h.share_class}
@@ -544,15 +501,6 @@ export default function CompanyPage() {
                       </td>
                       <td style={{ ...tdStyle, textAlign: 'right' }}>
                         <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', width: '100px', overflow: 'hidden', display: 'inline-block', verticalAlign: 'middle' }}>
-<<<<<<< HEAD
-                          <div style={{ 
-                            height: '100%', 
-                            background: COLORS[index % COLORS.length], 
-                            borderRadius: '3px', 
-                            width: `${Math.min(Number(h.percentage), 100)}%`,
-                            boxShadow: hoveredSlice === index ? `0 0 8px ${COLORS[index % COLORS.length]}` : 'none',
-                            transition: 'all 0.3s ease'
-=======
                           <div style={{
                             height: '100%',
                             background: isSynthetic ? badgeColor : COLORS[index % COLORS.length],
@@ -561,39 +509,10 @@ export default function CompanyPage() {
                             boxShadow: hoveredSlice === index ? `0 0 8px ${isSynthetic ? badgeColor : COLORS[index % COLORS.length]}` : 'none',
                             transition: 'all 0.3s ease',
                             opacity: isSynthetic ? 0.6 : 1,
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
                           }} />
                         </div>
                       </td>
                       <td style={{ ...tdStyle, textAlign: 'right' }}>
-<<<<<<< HEAD
-                        <div style={{ display: 'flex', gap: '14px', justifyContent: 'flex-end' }}>
-                          <Link
-                            href={`/companies/${id}/cap-table/issue?stakeholder=${h.stakeholder_id}`}
-                            style={{ fontSize: '12px', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}
-                            title="Issue more shares"
-                          >
-                            Issue
-                          </Link>
-                          <Link
-                            href={`/companies/${id}/cap-table/transfer?from=${h.stakeholder_id}`}
-                            style={{ fontSize: '12px', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}
-                            title="Transfer shares"
-                          >
-                            Transfer
-                          </Link>
-                          <Link
-                            href={`/companies/${id}/cap-table/reduce?stakeholder=${h.stakeholder_id}`}
-                            style={{ fontSize: '12px', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}
-                            title="Reduce / Buyback shares"
-                          >
-                            Reduce
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-=======
                         {isSynthetic ? (
                           <span style={{ fontSize: '11px', color: 'var(--text-disabled)', fontStyle: 'italic' }}>—</span>
                         ) : (
@@ -625,7 +544,6 @@ export default function CompanyPage() {
                     </tr>
                     );
                   })}
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
                 </tbody>
               </table>
             </div>

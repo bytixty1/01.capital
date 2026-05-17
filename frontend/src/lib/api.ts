@@ -81,11 +81,8 @@ export type StakeholderDetailResponse = StakeholderResponse & {
   holdings: { share_class: string; quantity: string }[];
 };
 
-<<<<<<< HEAD
-=======
 export type SyntheticKind = 'esop_pool' | 'esop_grants' | 'convertible';
 
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 export type HoldingResponse = {
   stakeholder_id: string | null;  // null for synthetic (diluted) rows
   stakeholder_name: string;

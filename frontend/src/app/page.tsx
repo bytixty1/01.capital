@@ -3,11 +3,7 @@
 import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
-<<<<<<< HEAD
-const FluidBg = dynamic(() => import('@/components/MetaballCanvas'), { ssr: false });
-=======
 import { PageBackground } from '@/components/PageBackground';
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
 const WORDMARK = (
   <svg style={{ height: 22, width: 'auto', display: 'block' }} viewBox="600 340 820 360" preserveAspectRatio="xMinYMid meet" aria-label="ZeroOne Capital">
@@ -56,10 +52,7 @@ export default function LandingPage() {
     let lensOn = false;
     let lx = -1000, ly = -1000;
     const LENS_LERP = 0.10;
-<<<<<<< HEAD
-=======
     const LENS_R = 130; // half of 260px lens
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
     const lensEl = document.getElementById('lp-lens');
     const lensBtnEl = document.getElementById('lp-lens-btn');
     function toggleLens() {
@@ -67,13 +60,6 @@ export default function LandingPage() {
       if (lensOn && hasMoved) { lx = mx; ly = my; }
       if (lensEl) lensEl.dataset.on = lensOn ? '1' : '0';
       if (lensBtnEl) lensBtnEl.dataset.on = lensOn ? '1' : '0';
-<<<<<<< HEAD
-    }
-    lensBtnEl?.addEventListener('click', toggleLens);
-
-    // Track mouse for AR text reveal (no visible cursor element)
-    const BUBBLE_R = 100;
-=======
       if (!lensOn) {
         // Clean up: hide all CA overlays, clear language masks, clear stale lens position
         document.querySelectorAll<HTMLElement>('.lp-reveal, .lp-nav-link').forEach(el => {
@@ -89,7 +75,6 @@ export default function LandingPage() {
     lensBtnEl?.addEventListener('click', toggleLens);
 
     // Track mouse position (used to set lens position on toggle-on)
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
     let mx = -2000, my = -2000, hasMoved = false;
     let rafId = 0;
 
@@ -98,8 +83,6 @@ export default function LandingPage() {
       if (!hasMoved) hasMoved = true;
     };
     window.addEventListener('mousemove', onMove);
-<<<<<<< HEAD
-=======
 
     // Build chromatic-aberration overlays. For .lp-reveal we make TWO overlays — one cloning the EN
     // text and one with the AR translation (from data-ar). CSS picks which to show based on current
@@ -144,7 +127,6 @@ export default function LandingPage() {
       if (en) clearStyle(en.style, ['mask-image', '-webkit-mask-image', 'clip-path', '-webkit-clip-path', 'opacity']);
       if (ar) clearStyle(ar.style, ['mask-image', '-webkit-mask-image', 'clip-path', '-webkit-clip-path', 'opacity']);
     });
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
     function frame() {
       if (lensEl && lensOn) {
@@ -152,21 +134,6 @@ export default function LandingPage() {
         ly += (my - ly) * LENS_LERP;
         lensEl.style.left = lx + 'px';
         lensEl.style.top = ly + 'px';
-<<<<<<< HEAD
-      }
-      if (hasMoved) {
-        document.querySelectorAll<HTMLElement>('.lp-reveal').forEach(host => {
-          const ar = host.querySelector<HTMLElement>('.lp-ar');
-          const en = host.querySelector<HTMLElement>('.lp-en');
-          if (!ar || !en) return;
-          const r = host.getBoundingClientRect();
-          const nx = Math.max(r.left, Math.min(mx, r.right));
-          const ny = Math.max(r.top, Math.min(my, r.bottom));
-          const dist = Math.hypot(mx - nx, my - ny);
-          const lx = mx - r.left, ly = my - r.top;
-          const cp = `circle(${BUBBLE_R}px at ${lx}px ${ly}px)`;
-          const mask = `radial-gradient(circle ${BUBBLE_R}px at ${lx}px ${ly}px, transparent 99%, #000 100%)`;
-=======
 
         // .lp-reveal: update clip-path vars AND mask the currently-visible language inside
         // the lens circle so the opposite-language CA overlay shows through (translation reveal).
@@ -178,35 +145,11 @@ export default function LandingPage() {
           const ny = Math.max(0, Math.min(cy, r.height));
           const dist = Math.hypot(cx - nx, cy - ny);
           const overlapping = dist < LENS_R;
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
           el.style.setProperty('--ca-x', cx + 'px');
           el.style.setProperty('--ca-y', cy + 'px');
           el.style.setProperty('--ca-r', overlapping ? LENS_R + 'px' : '0px');
 
-<<<<<<< HEAD
-          if (!isArMode) {
-            if (dist > BUBBLE_R + 40) {
-              ar.style.clipPath = 'circle(0px at 0 0)';
-              arS.webkitClipPath = 'circle(0px at 0 0)';
-              enS.webkitMaskImage = ''; en.style.maskImage = '';
-            } else {
-              ar.style.clipPath = cp; arS.webkitClipPath = cp;
-              enS.webkitMaskImage = mask; en.style.maskImage = mask;
-              en.style.maskRepeat = 'no-repeat'; enS.webkitMaskRepeat = 'no-repeat';
-            }
-          } else {
-            if (dist > BUBBLE_R + 40) {
-              en.style.clipPath = 'circle(0px at 0 0)';
-              enS.webkitClipPath = 'circle(0px at 0 0)';
-              en.style.opacity = '0';
-              arS.webkitMaskImage = ''; ar.style.maskImage = '';
-            } else {
-              en.style.clipPath = cp; enS.webkitClipPath = cp;
-              en.style.opacity = '1';
-              arS.webkitMaskImage = mask; ar.style.maskImage = mask;
-              ar.style.maskRepeat = 'no-repeat'; arS.webkitMaskRepeat = 'no-repeat';
-=======
           // The currently-visible original gets a circular hole so the CA overlay (other language) shows through.
           const en = el.querySelector<HTMLElement>(':scope > .lp-en');
           const ar = el.querySelector<HTMLElement>(':scope > .lp-ar');
@@ -222,7 +165,6 @@ export default function LandingPage() {
             } else {
               visibleOriginal.style.maskImage = '';
               visibleOriginal.style.webkitMaskImage = '';
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
             }
           }
         });
@@ -311,16 +253,6 @@ export default function LandingPage() {
       <style dangerouslySetInnerHTML={{ __html: `
         .lp-wrap { --serif: var(--font-serif); --mono: var(--font-mono); --ar: var(--font-ar); }
         .lp-wrap * { box-sizing: border-box; margin: 0; padding: 0; }
-<<<<<<< HEAD
-        /* BG — WebGL canvas is rendered by <FluidBg />, background colour is its base */
-        .lp-wrap { background: #050507; }
-        .lp-grain { position: fixed; inset: -50%; z-index: 1; pointer-events: none; opacity: .07; mix-blend-mode: overlay;
-          background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.7 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-          background-size: 240px 240px; animation: lp-grain 1.4s steps(6) infinite; }
-        @keyframes lp-grain { 0%{transform:translate(0,0)} 20%{transform:translate(-4%,2%)} 40%{transform:translate(3%,-3%)} 60%{transform:translate(-2%,4%)} 80%{transform:translate(4%,-2%)} 100%{transform:translate(0,0)} }
-        .lp-vignette { position: fixed; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,.65) 100%); }
-=======
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
         /* NAV */
         .lp-nav { position: fixed; top: 14px; left: 14px; right: 14px; z-index: 50; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 24px; padding: 12px 22px;
@@ -472,24 +404,6 @@ export default function LandingPage() {
         .lp-footer ul a { color: var(--text-primary); transition: color .2s; text-decoration: none; }
         .lp-footer ul a:hover { color: var(--brand-purple-hover); }
 
-<<<<<<< HEAD
-        /* LENS */
-        .lp-lens { position: fixed; z-index: 98; pointer-events: none; width: 220px; height: 220px; margin: -110px 0 0 -110px; will-change: left, top; opacity: 0; transition: opacity .4s ease; }
-        .lp-lens[data-on="1"] { opacity: 1; }
-        .lp-lens-glass { position: absolute; inset: 0; border-radius: 50%;
-          backdrop-filter: brightness(1.11) contrast(1.05) saturate(1.22) hue-rotate(-6deg);
-          -webkit-backdrop-filter: brightness(1.11) contrast(1.05) saturate(1.22) hue-rotate(-6deg);
-          mask-image: radial-gradient(circle at center, black 0%, black 42%, rgba(0,0,0,.72) 60%, rgba(0,0,0,.28) 76%, transparent 100%);
-          -webkit-mask-image: radial-gradient(circle at center, black 0%, black 42%, rgba(0,0,0,.72) 60%, rgba(0,0,0,.28) 76%, transparent 100%); }
-        .lp-lens-hi { position: absolute; inset: 0; border-radius: 50%;
-          background: radial-gradient(ellipse 58% 44% at 28% 24%, rgba(255,255,255,.065) 0%, transparent 100%);
-          mask-image: radial-gradient(circle at center, black 0%, black 42%, rgba(0,0,0,.6) 62%, transparent 100%);
-          -webkit-mask-image: radial-gradient(circle at center, black 0%, black 42%, rgba(0,0,0,.6) 62%, transparent 100%); }
-        .lp-lens-rim { position: absolute; inset: 0; border-radius: 50%;
-          border: 1px solid rgba(255,255,255,.06);
-          mask-image: radial-gradient(circle at center, transparent 82%, rgba(0,0,0,.45) 92%, transparent 100%);
-          -webkit-mask-image: radial-gradient(circle at center, transparent 82%, rgba(0,0,0,.45) 92%, transparent 100%); }
-=======
         /* LENS — hidden when off, no exceptions */
         .lp-lens {
           display: none;
@@ -561,7 +475,6 @@ export default function LandingPage() {
 
         /* Nav links — no translation, only the EN overlay exists and always shows. */
         .lp-nav-link > .lp-ca-en { display: block; }
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
         /* Lens toggle button */
         .lp-lens-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); cursor: pointer; transition: all .2s; color: var(--text-secondary); flex-shrink: 0; }
         .lp-lens-btn:hover { border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.08); color: var(--text-primary); }
@@ -598,19 +511,10 @@ export default function LandingPage() {
       `}} />
 
       <div className="lp-wrap">
-<<<<<<< HEAD
-        {/* Background — WebGL domain-warped flow field */}
-        <FluidBg />
-        <div className="lp-grain" aria-hidden="true" />
-        <div className="lp-vignette" aria-hidden="true" />
-
-        {/* Glass lens — follows cursor, toggled via nav button */}
-=======
         <PageBackground />
 
         {/* Glass lens — follows cursor, toggled via nav button. */}
         {/* Real RGB chromatic aberration is applied to text via .lp-ca-on (text-shadow) inside the rAF loop. */}
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
         <div id="lp-lens" className="lp-lens" data-on="0" aria-hidden="true">
           <div className="lp-lens-glass" />
           <div className="lp-lens-hi" />

@@ -3,12 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-<<<<<<< HEAD
-import { api, StakeholderResponse } from '@/lib/api';
-=======
 import { api, StakeholderResponse, CompanyResponse } from '@/lib/api';
 import { SHARE_CLASS_SUGGESTIONS, defaultShareClass, isShareClassLocked, shareClassLabel } from '@/lib/share-class';
->>>>>>> f361866 (feat: implement premium glassmorphism UI, shared WebGL background, and security hardening)
 
 export default function IssueSharesPage() {
   const { id: companyId } = useParams<{ id: string }>();
