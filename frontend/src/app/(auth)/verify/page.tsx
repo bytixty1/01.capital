@@ -13,6 +13,27 @@ function VerifyContent() {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendMsg, setResendMsg] = useState<string | null>(null);
+
+  async function handleResend() {
+    if (!email || resendCooldown > 0) return;
+    setResendMsg(null);
+    setError(null);
+    try {
+      await api.auth.resendVerification(email);
+      setResendMsg('A new code has been sent. Check your inbox.');
+      setResendCooldown(60);
+      const tick = setInterval(() => {
+        setResendCooldown(s => {
+          if (s <= 1) { clearInterval(tick); return 0; }
+          return s - 1;
+        });
+      }, 1000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not resend code');
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,8 +82,7 @@ function VerifyContent() {
     <div className="glass-panel" style={styles.card}>
       <h1 style={styles.heading}>Verify your email</h1>
       <p style={styles.sub}>
-        We sent a verification code to <strong>{email || 'your email'}</strong>. <br />
-        (For demo purposes, use OTP: 000000)
+        We sent a verification code to <strong>{email || 'your email'}</strong>.
       </p>
 
       <form onSubmit={handleSubmit} style={styles.form}>
@@ -90,6 +110,16 @@ function VerifyContent() {
           </div>
         )}
 
+        {resendMsg && (
+          <div style={styles.successBox}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+              <circle cx="7" cy="7" r="6" stroke="#22c55e" strokeWidth="1.5" />
+              <path d="M4.5 7.2l1.7 1.6L9.5 5.3" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {resendMsg}
+          </div>
+        )}
+
         <button type="submit" disabled={loading || otp.length !== 6} className="btn-primary" style={styles.button}>
           {loading ? (
             <span style={styles.loadingSpinner}>
@@ -105,7 +135,15 @@ function VerifyContent() {
 
       <p style={styles.footer}>
         Didn't receive the code?{' '}
-        <button type="button" onClick={() => alert('Demo: just use 000000')} className="link-accent" style={styles.link}>Resend</button>
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={resendCooldown > 0 || !email}
+          className="link-accent"
+          style={{ ...styles.link, opacity: resendCooldown > 0 ? 0.5 : 1, cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer' }}
+        >
+          {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend'}
+        </button>
       </p>
     </div>
   );
@@ -199,6 +237,17 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '10px 12px',
     fontSize: '13px',
     color: 'var(--neg)',
+  },
+  successBox: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    background: 'rgba(34, 197, 94, 0.08)',
+    border: '1px solid rgba(34, 197, 94, 0.2)',
+    borderRadius: '8px',
+    padding: '10px 12px',
+    fontSize: '13px',
+    color: '#22c55e',
   },
   button: {
     marginTop: '4px',

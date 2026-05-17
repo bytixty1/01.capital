@@ -215,6 +215,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ email, otp }),
       }),
+    resendVerification: (email: string) =>
+      request<RegisterResponse>('/api/auth/resend-verification', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      }),
     login: (email: string, password: string) =>
       request<TokenResponse>('/api/auth/login', {
         method: 'POST',

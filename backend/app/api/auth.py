@@ -36,6 +36,7 @@ from app.schemas.auth import (
     MFAVerifyRequest,
     RegisterRequest,
     RegisterResponse,
+    ResendVerificationRequest,
     TokenResponse,
     UserResponse,
     VerifyEmailRequest,
@@ -94,25 +95,47 @@ async def register(
     db: AsyncSession = Depends(get_db),
 ) -> RegisterResponse:
     result = await db.execute(select(User).where(User.email == body.email))
-    if result.scalar_one_or_none():
+    existing = result.scalar_one_or_none()
+
+    if existing and existing.is_verified:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
     otp, otp_hash = _generate_otp()
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=_OTP_TTL_MINUTES)
 
-    user = User(
-        email=body.email,
-        hashed_password=hash_password(body.password),
-        full_name=body.full_name,
-        verification_otp_hash=otp_hash,
-        verification_otp_expires_at=datetime.now(timezone.utc) + timedelta(minutes=_OTP_TTL_MINUTES),
-    )
-    db.add(user)
+    if existing:
+        # Re-register over unverified — refresh password + OTP, keep created_at.
+        existing.hashed_password = hash_password(body.password)
+        existing.full_name = body.full_name
+        existing.verification_otp_hash = otp_hash
+        existing.verification_otp_expires_at = expires_at
+        user = existing
+        audit_detail = "re-registered (unverified)"
+    else:
+        user = User(
+            email=body.email,
+            hashed_password=hash_password(body.password),
+            full_name=body.full_name,
+            verification_otp_hash=otp_hash,
+            verification_otp_expires_at=expires_at,
+        )
+        db.add(user)
+        audit_detail = "registered"
+
     await db.flush()
-    await _audit(db, AuditAction.LOGIN_SUCCESS, request, user_id=user.id, detail="registered")
+    await _audit(db, AuditAction.LOGIN_SUCCESS, request, user_id=user.id, detail=audit_detail)
+
+    try:
+        await send_verification_email(user.email, otp)
+    except Exception as e:
+        await db.rollback()
+        logger.exception("Verification email send failed for %s", body.email)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Could not send verification email. Please try again.",
+        ) from e
+
     await db.commit()
-
-    await send_verification_email(user.email, otp)
-
     return RegisterResponse(message="Please verify your email", email=user.email)
 
 
@@ -174,6 +197,41 @@ async def dev_verify_email(
     user.verification_otp_expires_at = None
     await db.commit()
     return TokenResponse(access_token=create_access_token(str(user.id)))
+
+
+# ── Resend verification ───────────────────────────────────────────────────────
+
+@router.post("/resend-verification", response_model=RegisterResponse)
+@_limiter.limit("1/minute;5/hour")
+async def resend_verification(
+    request: Request,
+    body: ResendVerificationRequest,
+    db: AsyncSession = Depends(get_db),
+) -> RegisterResponse:
+    result = await db.execute(select(User).where(User.email == body.email))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No pending verification for this email")
+    if user.is_verified:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already verified")
+
+    otp, otp_hash = _generate_otp()
+    user.verification_otp_hash = otp_hash
+    user.verification_otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=_OTP_TTL_MINUTES)
+    await db.flush()
+
+    try:
+        await send_verification_email(user.email, otp)
+    except Exception as e:
+        await db.rollback()
+        logger.exception("Verification email send failed for %s", body.email)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Could not send verification email. Please try again.",
+        ) from e
+
+    await db.commit()
+    return RegisterResponse(message="Verification code sent", email=user.email)
 
 
 # ── Login ─────────────────────────────────────────────────────────────────────
