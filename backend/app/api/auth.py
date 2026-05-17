@@ -29,6 +29,7 @@ from app.core.security import (
 )
 from app.models.audit_log import AuditAction, AuditLog
 from app.models.user import User
+from app.services.email import send_verification_email
 from app.schemas.auth import (
     LoginRequest,
     MFASetupResponse,
@@ -110,10 +111,7 @@ async def register(
     await _audit(db, AuditAction.LOGIN_SUCCESS, request, user_id=user.id, detail="registered")
     await db.commit()
 
-    if settings.environment != "production":
-        # In dev/staging, log OTP to console since no email service is wired yet.
-        # Never log OTPs in production — email delivery required.
-        logger.info("DEV — email verification OTP for %s: %s", body.email, otp)
+    await send_verification_email(user.email, otp)
 
     return RegisterResponse(message="Please verify your email", email=user.email)
 

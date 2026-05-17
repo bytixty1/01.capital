@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+asyncpg://01capital:01capital@localhost:5432/01capital"
 
+    # Email (Resend)
+    resend_api_key: str = ""
+    email_from: str = "01 Capital <noreply@01capital.app>"
+
     # Auth
     jwt_secret_key: str = _INSECURE_JWT
     jwt_algorithm: str = "HS256"
