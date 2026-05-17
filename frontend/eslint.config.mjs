@@ -12,6 +12,12 @@ const config = [
   {
     ignores: ["e2e/**", ".next/**", "node_modules/**"],
   },
+  {
+    rules: {
+      "react/no-unescaped-entities": "off",
+      "@next/next/no-img-element": "warn",
+    },
+  },
 ];
 
 export default config;
