@@ -11,7 +11,7 @@ The audit record is preserved; created_by becomes NULL.
 from alembic import op
 
 revision = "0008"
-down_revision = "634ce2c948ef"
+down_revision = ("0007", "634ce2c948ef")
 branch_labels = None
 depends_on = None
 
