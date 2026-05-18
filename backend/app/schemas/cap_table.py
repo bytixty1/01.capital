@@ -114,3 +114,56 @@ class RoundPreviewResponse(BaseModel):
     new_investor_shares: Decimal
     esop_topup_shares: Decimal           # 0 if not requested
     holdings: list[ProjectedHolding]
+
+
+# ── Waterfall + breakpoint analysis ───────────────────────────────────────────
+
+ParticipationType = Literal["non_participating", "participating", "capped"]
+
+
+class WaterfallPreference(BaseModel):
+    share_class: str = Field(..., min_length=1, max_length=50)
+    seniority: int = Field(default=1, ge=1, le=100, description="Lower = paid first")
+    multiplier: Decimal = Field(
+        default=Decimal("1"), ge=0, le=10,
+        description="Liquidation preference multiplier. 0 for common/quota/synthetic.",
+    )
+    participation: ParticipationType = "non_participating"
+    cap_multiplier: Decimal | None = Field(default=None, ge=0, le=10)
+    original_investment_sar: Decimal = Field(default=Decimal("0"), ge=0)
+
+
+class WaterfallRequest(BaseModel):
+    exit_value_sar: Decimal = Field(..., gt=0)
+    preferences: list[WaterfallPreference] = Field(default_factory=list)
+
+
+class StakeholderDistribution(BaseModel):
+    stakeholder_name: str
+    share_class: str
+    quantity: Decimal
+    distribution_sar: Decimal
+    pct_of_exit: Decimal  # 0–100
+    synthetic: Literal["esop_pool", "esop_grants", "convertible"] | None = None
+
+
+class ClassDistribution(BaseModel):
+    share_class: str
+    total_distribution_sar: Decimal
+    pct_of_exit: Decimal
+    converted: bool  # true if class declined pref and went pro-rata
+
+
+class Breakpoint(BaseModel):
+    exit_value_sar: Decimal
+    description: str
+    breakpoint_type: Literal["common_starts", "conversion", "cap_hit"]
+    share_class: str | None = None
+
+
+class WaterfallResponse(BaseModel):
+    exit_value_sar: Decimal
+    total_distributed_sar: Decimal
+    stakeholder_distributions: list[StakeholderDistribution]
+    class_distributions: list[ClassDistribution]
+    breakpoints: list[Breakpoint]

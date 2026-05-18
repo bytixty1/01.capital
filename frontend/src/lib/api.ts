@@ -124,6 +124,48 @@ export type RoundPreviewResponse = {
   holdings: ProjectedHolding[];
 };
 
+export type ParticipationType = 'non_participating' | 'participating' | 'capped';
+
+export type WaterfallPreference = {
+  share_class: string;
+  seniority: number;
+  multiplier: number;
+  participation: ParticipationType;
+  cap_multiplier?: number;
+  original_investment_sar: number;
+};
+
+export type StakeholderDistribution = {
+  stakeholder_name: string;
+  share_class: string;
+  quantity: string;
+  distribution_sar: string;
+  pct_of_exit: string;
+  synthetic?: SyntheticKind | null;
+};
+
+export type ClassDistribution = {
+  share_class: string;
+  total_distribution_sar: string;
+  pct_of_exit: string;
+  converted: boolean;
+};
+
+export type Breakpoint = {
+  exit_value_sar: string;
+  description: string;
+  breakpoint_type: 'common_starts' | 'conversion' | 'cap_hit';
+  share_class: string | null;
+};
+
+export type WaterfallResponse = {
+  exit_value_sar: string;
+  total_distributed_sar: string;
+  stakeholder_distributions: StakeholderDistribution[];
+  class_distributions: ClassDistribution[];
+  breakpoints: Breakpoint[];
+};
+
 export type CapTableEventResponse = {
   id: string;
   company_id: string;
@@ -296,6 +338,13 @@ export const api = {
       target_esop_post_money_pct?: number;
     }) =>
       request<RoundPreviewResponse>(`/api/companies/${companyId}/cap-table/preview-round`, {
+        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+      }),
+    waterfall: (companyId: string, body: {
+      exit_value_sar: number;
+      preferences: WaterfallPreference[];
+    }) =>
+      request<WaterfallResponse>(`/api/companies/${companyId}/cap-table/waterfall`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
       }),
     issue: (companyId: string, body: {

@@ -22,6 +22,8 @@ from app.schemas.cap_table import (
     RoundPreviewRequest,
     RoundPreviewResponse,
     TransferSharesRequest,
+    WaterfallRequest,
+    WaterfallResponse,
 )
 from app.schemas.company import CompanyResponse, CreateCompanyRequest, UpdateCompanyRequest
 from app.schemas.stakeholder import CreateStakeholderRequest, StakeholderResponse
@@ -36,6 +38,7 @@ from app.services.cap_table import (
 )
 from app.core.security import encrypt_field
 from app.services.filing_detector import detect_and_create_filings
+from app.services.waterfall import compute_waterfall
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
@@ -334,6 +337,24 @@ async def preview_round_endpoint(
     No state mutations. No event log writes. Anyone with cap-table read access can model.
     """
     return await preview_round_service(db, member.company_id, body)
+
+
+@router.post(
+    "/{company_id}/cap-table/waterfall",
+    response_model=WaterfallResponse,
+)
+async def waterfall_endpoint(
+    body: WaterfallRequest,
+    member: CompanyMember = Depends(get_company_member),
+    db: AsyncSession = Depends(get_db),
+) -> WaterfallResponse:
+    """Distribute a hypothetical exit value across share classes per liquidation prefs.
+
+    Pure projection — reads the fully-diluted cap table, applies user-supplied
+    preferences, and returns per-stakeholder + per-class distributions plus
+    breakpoints (common-starts, conversion indifference, cap-hit). No persistence.
+    """
+    return await compute_waterfall(db, member.company_id, body)
 
 
 @router.post(
