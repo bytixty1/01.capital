@@ -83,6 +83,43 @@
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-default: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Design-system aliases ────────────────────────────────────────────────
+   * Names matching the Figma Visual Design System / shadcn convention.
+   * These point at the existing brand tokens above so consumers can use
+   * either name interchangeably.
+   */
+
+  /* Semantic colour aliases (Figma uses success/destructive/warning) */
+  --success: var(--pos);
+  --destructive: var(--neg);
+  --warning: var(--warn);
+  --accent: var(--brand-purple-hover);
+
+  /* shadcn-style surfaces — mapped to existing glass + elevated tokens */
+  --card: var(--glass-bg);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-elevated);
+  --popover-foreground: var(--text-primary);
+  --muted: var(--bg-elevated);
+  --muted-foreground: var(--text-tertiary);
+
+  /* Focus ring (shadcn convention) */
+  --ring: var(--brand-purple);
+
+  /* Chart palette — purple / blue / green / amber / red */
+  --chart-1: var(--brand-purple);
+  --chart-2: var(--info);
+  --chart-3: var(--pos);
+  --chart-4: var(--warn);
+  --chart-5: var(--neg);
+
+  /* Font-weight semantic tokens */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
 }
 
 * {
