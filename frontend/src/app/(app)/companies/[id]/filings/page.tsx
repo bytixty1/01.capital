@@ -30,10 +30,13 @@ export default function FilingsPage() {
   }, [companyId]);
 
   async function markStatus(id: string, newStatus: string) {
+    setError(null);
     try {
       const updated = await api.filings.update(companyId, id, { status: newStatus, submitted_date: newStatus === 'submitted' ? new Date().toISOString().slice(0, 10) : undefined });
       setFilings(prev => prev.map(f => f.id === id ? updated : f));
-    } catch (e) { alert(e instanceof Error ? e.message : 'Update failed'); }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update filing status');
+    }
   }
 
   const s = styles;

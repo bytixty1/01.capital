@@ -15,7 +15,7 @@ test.describe('Company Members', () => {
 
     await page.waitForTimeout(1000);
     const pageContent = await page.content();
-    expect(pageContent).toContain('members') || expect(pageContent).toContain('Member');
+    expect(pageContent).toMatch(/[Mm]embers?/);
   });
 
   test('change member role via select', async ({ page }) => {

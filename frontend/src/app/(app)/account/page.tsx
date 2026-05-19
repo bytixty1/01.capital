@@ -17,7 +17,9 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    api.auth.me().then(setUser).catch(() => {});
+    api.auth.me()
+      .then(setUser)
+      .catch(e => setMsg({ type: 'err', text: e instanceof Error ? e.message : 'Failed to load account' }));
   }, []);
 
   async function startSetup() {

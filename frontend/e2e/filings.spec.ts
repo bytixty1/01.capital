@@ -59,6 +59,6 @@ test.describe('Filings', () => {
 
     await page.waitForTimeout(1000);
     const pageContent = await page.content();
-    expect(pageContent).toContain('filings') || expect(pageContent).toContain('Filing');
+    expect(pageContent).toMatch(/[Ff]ilings?/);
   });
 });
