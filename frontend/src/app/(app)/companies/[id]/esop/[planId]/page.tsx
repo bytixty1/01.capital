@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { api, EsopPlanResponse, GrantResponse, StakeholderResponse } from '@/lib/api';
+import {
+  api,
+  EsopPlanResponse,
+  GrantResponse,
+  IFRS2ExpenseResponse,
+  StakeholderResponse,
+} from '@/lib/api';
 
 export default function EsopPlanPage() {
   const { id: companyId, planId } = useParams<{ id: string; planId: string }>();
@@ -12,16 +18,61 @@ export default function EsopPlanPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ── IFRS 2 calculator state ─────────────────────────────────────────────────
+  const [selectedGrantId, setSelectedGrantId] = useState('');
+  const [spotPrice, setSpotPrice] = useState('');
+  const [volatility, setVolatility] = useState('0.40');
+  const [riskFreeRate, setRiskFreeRate] = useState('0.045');
+  const [dividendYield, setDividendYield] = useState('0');
+  const [expectedLifeYears, setExpectedLifeYears] = useState('');
+  const [ifrs2Result, setIfrs2Result] = useState<IFRS2ExpenseResponse | null>(null);
+  const [ifrs2Loading, setIfrs2Loading] = useState(false);
+  const [ifrs2Error, setIfrs2Error] = useState<string | null>(null);
+
   useEffect(() => {
     Promise.all([
       api.esop.getPlan(companyId, planId),
       api.esop.listGrants(companyId, planId),
       api.stakeholders.list(companyId),
     ])
-      .then(([p, g, s]) => { setPlan(p); setGrants(g); setStakeholders(s); })
+      .then(([p, g, s]) => {
+        setPlan(p);
+        setGrants(g);
+        setStakeholders(s);
+        if (g.length > 0) setSelectedGrantId(g[0].id);
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [companyId, planId]);
+
+  async function computeIfrs2(e: React.FormEvent) {
+    e.preventDefault();
+    setIfrs2Error(null);
+    setIfrs2Result(null);
+    if (!selectedGrantId) {
+      setIfrs2Error('Pick a grant to value.');
+      return;
+    }
+    if (!spotPrice || Number(spotPrice) <= 0) {
+      setIfrs2Error('Spot price must be greater than zero.');
+      return;
+    }
+    setIfrs2Loading(true);
+    try {
+      const r = await api.esop.ifrs2Expense(companyId, planId, selectedGrantId, {
+        spot_price_sar: Number(spotPrice),
+        volatility: Number(volatility),
+        risk_free_rate: Number(riskFreeRate),
+        dividend_yield: dividendYield ? Number(dividendYield) : 0,
+        expected_life_years: expectedLifeYears ? Number(expectedLifeYears) : undefined,
+      });
+      setIfrs2Result(r);
+    } catch (err) {
+      setIfrs2Error(err instanceof Error ? err.message : 'Failed to compute IFRS 2 expense');
+    } finally {
+      setIfrs2Loading(false);
+    }
+  }
 
   if (loading) return <p style={{ color: 'var(--text-tertiary)', fontSize: '13px' }}>Loading…</p>;
   if (error) return <p style={{ color: 'var(--neg)', fontSize: '13px' }}>{error}</p>;
@@ -85,6 +136,112 @@ export default function EsopPlanPage() {
           </table>
         )}
       </div>
+
+      {/* ── IFRS 2 expense calculator ─────────────────────────────────────── */}
+      {grants.length > 0 && (
+        <div style={{ ...s.section, marginTop: '28px' }}>
+          <div style={s.sectionHeader}>
+            <h2 style={s.sectionTitle}>IFRS 2 share-based payment expense</h2>
+            <p style={{ ...s.muted, fontSize: '12px', marginTop: '6px' }}>
+              Auditor-required calculation. Black-Scholes fair value × quantity, amortised straight-line over the vesting period (yearly).
+              Inputs are not persisted — re-enter for each scenario.
+            </p>
+          </div>
+
+          <form onSubmit={computeIfrs2} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <span style={s.fieldLabel}>Grant</span>
+                <select value={selectedGrantId} onChange={e => setSelectedGrantId(e.target.value)} className="glass-input" style={{ fontFamily: 'var(--font-mono)' }}>
+                  {grants.map(g => (
+                    <option key={g.id} value={g.id}>
+                      {stakeMap[g.stakeholder_id] ?? g.stakeholder_id} — {Number(g.quantity).toLocaleString()} ({g.grant_date})
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <span style={s.fieldLabel}>Spot price (SAR/share) *</span>
+                <input type="number" min="0" step="0.01" required value={spotPrice} onChange={e => setSpotPrice(e.target.value)} placeholder="10.00" className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} />
+              </label>
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <span style={s.fieldLabel}>Volatility (annualised)</span>
+                <input type="number" min="0.01" max="2" step="0.01" value={volatility} onChange={e => setVolatility(e.target.value)} placeholder="0.40" className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} />
+              </label>
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <span style={s.fieldLabel}>Risk-free rate (annual)</span>
+                <input type="number" min="0" max="0.30" step="0.001" value={riskFreeRate} onChange={e => setRiskFreeRate(e.target.value)} placeholder="0.045" className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} />
+              </label>
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <span style={s.fieldLabel}>Dividend yield</span>
+                <input type="number" min="0" max="0.30" step="0.001" value={dividendYield} onChange={e => setDividendYield(e.target.value)} placeholder="0" className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} />
+              </label>
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <span style={s.fieldLabel}>Expected life (years, optional)</span>
+                <input type="number" min="0.5" max="20" step="0.5" value={expectedLifeYears} onChange={e => setExpectedLifeYears(e.target.value)} placeholder="auto" className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} />
+              </label>
+            </div>
+
+            {ifrs2Error && (
+              <div style={{ padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', color: 'var(--neg)', fontSize: '13px' }}>
+                {ifrs2Error}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="submit" disabled={ifrs2Loading} className="btn-primary" style={{ borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 600, cursor: ifrs2Loading ? 'not-allowed' : 'pointer', opacity: ifrs2Loading ? 0.6 : 1 }}>
+                {ifrs2Loading ? 'Computing…' : 'Compute expense'}
+              </button>
+            </div>
+          </form>
+
+          {ifrs2Result && (
+            <div style={{ borderTop: '1px solid var(--border-default)' }}>
+              <div style={{ padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1px', background: 'var(--border-default)' }}>
+                {[
+                  { label: 'Fair value / option', value: `SAR ${Number(ifrs2Result.fair_value_per_option_sar).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                  { label: 'Total grant expense', value: `SAR ${Number(ifrs2Result.total_grant_expense_sar).toLocaleString(undefined, { maximumFractionDigits: 0 })}` },
+                  { label: 'Vesting period', value: `${ifrs2Result.total_vesting_months} months` },
+                  { label: 'Method', value: ifrs2Result.method.replace(/_/g, ' ') },
+                ].map(tile => (
+                  <div key={tile.label} style={{ background: 'var(--bg-surface)', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    <span style={s.statLabel}>{tile.label}</span>
+                    <span style={{ ...s.statValue, fontSize: '15px' }}>{tile.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <table style={s.table}>
+                <thead><tr>
+                  <th style={s.th}>Period start</th>
+                  <th style={s.th}>Period end</th>
+                  <th style={{ ...s.th, textAlign: 'right' as const }}>Period expense (SAR)</th>
+                  <th style={{ ...s.th, textAlign: 'right' as const }}>Cumulative (SAR)</th>
+                </tr></thead>
+                <tbody>
+                  {ifrs2Result.schedule.map((row, i) => (
+                    <tr key={i} style={s.row}>
+                      <td style={{ ...s.td, fontFamily: 'var(--font-mono)' }}>{row.period_start}</td>
+                      <td style={{ ...s.td, fontFamily: 'var(--font-mono)' }}>{row.period_end}</td>
+                      <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>
+                        {Number(row.period_expense_sar).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </td>
+                      <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                        {Number(row.cumulative_expense_sar).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -108,4 +265,5 @@ const styles: Record<string, React.CSSProperties> = {
   th: { padding: '10px 20px', textAlign: 'left' as const, fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' as const, letterSpacing: '0.06em', borderBottom: '1px solid var(--border-default)' },
   row: { borderBottom: '1px solid var(--border-subtle)' },
   td: { padding: '12px 20px', fontSize: '13px', color: 'var(--text-primary)' },
+  fieldLabel: { fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase' as const },
 };

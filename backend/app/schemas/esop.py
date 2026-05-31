@@ -71,3 +71,37 @@ class VestingStatusResponse(BaseModel):
     exercisable: Decimal
     unvested: Decimal
     vesting_pct: Decimal
+
+
+# ── IFRS 2 share-based payment expense ────────────────────────────────────────
+
+class IFRS2ValuationInputs(BaseModel):
+    """Inputs to the Black-Scholes model and the period schedule.
+
+    All rates are decimals (0.05 = 5%), not percentages.
+    """
+    spot_price_sar: Decimal = Field(..., gt=0, description="Fair value per underlying share at grant date, in SAR")
+    volatility: Decimal = Field(..., gt=0, le=2, description="Annualised volatility, e.g. 0.40 for 40%")
+    risk_free_rate: Decimal = Field(..., ge=0, le=0.30, description="Annual risk-free rate, e.g. 0.045 for 4.5%")
+    dividend_yield: Decimal = Field(default=Decimal("0"), ge=0, le=0.30, description="Annual dividend yield; usually 0 for startups")
+    # Expected option life override (years). If null, derived from vesting period.
+    expected_life_years: Decimal | None = Field(default=None, gt=0, le=20)
+
+
+class IFRS2PeriodExpense(BaseModel):
+    period_start: date
+    period_end: date
+    period_expense_sar: Decimal
+    cumulative_expense_sar: Decimal
+
+
+class IFRS2ExpenseResponse(BaseModel):
+    grant_id: uuid.UUID
+    fair_value_per_option_sar: Decimal   # Black-Scholes price
+    total_grant_expense_sar: Decimal     # fair_value × quantity (assumes 0 forfeiture)
+    vesting_start: date
+    vesting_end: date
+    total_vesting_months: int
+    method: str = "black_scholes_straight_line"
+    inputs: IFRS2ValuationInputs
+    schedule: list[IFRS2PeriodExpense]

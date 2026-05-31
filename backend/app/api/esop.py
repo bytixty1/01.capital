@@ -19,8 +19,11 @@ from app.schemas.esop import (
     CreateGrantRequest,
     EsopPlanResponse,
     GrantResponse,
+    IFRS2ExpenseResponse,
+    IFRS2ValuationInputs,
     VestingStatusResponse,
 )
+from app.services.ifrs2 import compute_grant_ifrs2_expense
 from app.services.vesting import compute_vested
 
 router = APIRouter(prefix="/companies", tags=["esop"])
@@ -184,3 +187,40 @@ async def grant_vesting_status(
         unvested=unvested,
         vesting_pct=vesting_pct,
     )
+
+
+@router.post(
+    "/{company_id}/esop/{plan_id}/grants/{grant_id}/ifrs2-expense",
+    response_model=IFRS2ExpenseResponse,
+)
+async def grant_ifrs2_expense(
+    plan_id: uuid.UUID,
+    grant_id: uuid.UUID,
+    body: IFRS2ValuationInputs,
+    member: CompanyMember = Depends(get_company_member),
+    db: AsyncSession = Depends(get_db),
+) -> IFRS2ExpenseResponse:
+    """Compute IFRS 2 share-based payment expense schedule for a grant.
+
+    Uses Black-Scholes to price the option at grant date, then amortises
+    straight-line over the vesting period (yearly buckets).
+
+    Inputs are caller-supplied — fair value of shares, volatility, risk-free
+    rate. Sprint 5 will persist these on the company so they don't have to
+    be re-entered each time.
+    """
+    # Defensive check: the grant must belong to this plan + this company.
+    result = await db.execute(
+        select(EsopGrant).where(
+            EsopGrant.id == grant_id,
+            EsopGrant.plan_id == plan_id,
+            EsopGrant.company_id == member.company_id,
+        )
+    )
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Grant not found")
+
+    try:
+        return await compute_grant_ifrs2_expense(db, member.company_id, grant_id, body)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e

@@ -166,6 +166,39 @@ export type WaterfallResponse = {
   breakpoints: Breakpoint[];
 };
 
+export type IFRS2ValuationInputs = {
+  spot_price_sar: number;
+  volatility: number;       // 0.40 = 40%
+  risk_free_rate: number;   // 0.045 = 4.5%
+  dividend_yield?: number;  // default 0
+  expected_life_years?: number;
+};
+
+export type IFRS2PeriodExpense = {
+  period_start: string;
+  period_end: string;
+  period_expense_sar: string;
+  cumulative_expense_sar: string;
+};
+
+export type IFRS2ExpenseResponse = {
+  grant_id: string;
+  fair_value_per_option_sar: string;
+  total_grant_expense_sar: string;
+  vesting_start: string;
+  vesting_end: string;
+  total_vesting_months: number;
+  method: string;
+  inputs: {
+    spot_price_sar: string;
+    volatility: string;
+    risk_free_rate: string;
+    dividend_yield: string;
+    expected_life_years: string | null;
+  };
+  schedule: IFRS2PeriodExpense[];
+};
+
 export type CapTableEventResponse = {
   id: string;
   company_id: string;
@@ -404,6 +437,16 @@ export const api = {
       request<GrantResponse>(`/api/companies/${companyId}/esop/${planId}/grants`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
       }),
+    ifrs2Expense: (
+      companyId: string,
+      planId: string,
+      grantId: string,
+      body: IFRS2ValuationInputs,
+    ) =>
+      request<IFRS2ExpenseResponse>(
+        `/api/companies/${companyId}/esop/${planId}/grants/${grantId}/ifrs2-expense`,
+        { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) },
+      ),
   },
 
   filings: {
