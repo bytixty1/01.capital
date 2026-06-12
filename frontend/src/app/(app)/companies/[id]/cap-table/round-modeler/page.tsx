@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api, CompanyResponse, RoundPreviewResponse } from '@/lib/api';
-import { SHARE_CLASS_SUGGESTIONS, defaultShareClass, isShareClassLocked, shareClassLabel } from '@/lib/share-class';
+import { SHARE_CLASS_SUGGESTIONS, isShareClassLocked, shareClassLabel } from '@/lib/share-class';
 import { formatNumberWhole, formatSARWhole } from '@/lib/format';
 import { thCompact, tdCompact } from '@/lib/table-styles';
 import { syntheticMeta } from '@/lib/synthetic-meta';
@@ -39,18 +39,13 @@ export default function RoundModelerPage() {
     api.companies.get(companyId)
       .then(c => {
         setCompany(c);
-        setShareClass(c.entity_type === 'LLC' ? 'quota' : defaultShareClass(c.entity_type));
+        // Investor share class defaults: LLC is quota-only; SJSC/JSC rounds
+        // are conventionally priced in a new preferred class.
+        setShareClass(c.entity_type === 'LLC' ? 'quota' : 'preferred-a');
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load company'))
       .finally(() => setLoadingCompany(false));
   }, [companyId]);
-
-  // Default investor share-class label for SJSC/JSC is "preferred-a"; LLC is quota-only.
-  useEffect(() => {
-    if (company && company.entity_type !== 'LLC') {
-      setShareClass('preferred-a');
-    }
-  }, [company]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

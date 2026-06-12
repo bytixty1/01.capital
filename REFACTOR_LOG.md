@@ -12,11 +12,19 @@ Step 9≡Phase 10. This log uses the Phase numbering.
 ## CURRENT POSITION
 
 - **Phases 1-6: COMPLETE and verified** (tsc 0 errors, production build passing).
-- **Next: Phase 7 — state architecture.** Inputs: the 8 remaining lint errors
-  (all `react-hooks/set-state-in-effect`): 7 form pages initializing date state
-  in an effect (fix: useState initializer), plus `app/(app)/layout.tsx`
-  company-name fetch-in-effect (fix: proper server/state pattern).
-- Commits: c4786ab (phases 2-5), 741cb7a (universe tool), phase 6 commit follows.
+- **Phase 7 part 1 COMPLETE: `npx eslint src` is fully clean — zero problems —
+  for the first time in the project's history.** All 8 `set-state-in-effect`
+  errors fixed:
+  - 6 form pages: date state moved to lazy `useState(todayISO)` initializer.
+  - round-modeler: redundant share-class sync effect deleted; default folded
+    into the load handler (`LLC → quota`, else `preferred-a` — observable
+    behavior identical).
+  - app layout: synchronous `setCompanyName(null)` replaced with derived
+    `shownCompanyName`; fetch got a cancellation guard.
+- **Next: Phase 7 part 2 — middleware.ts route guards + httpOnly cookie
+  session + RSC reads** (the approved Phase 2 architecture). High-risk auth
+  surface: useAuth hook, login/register/verify pages, api client, logout.
+- Commits: c4786ab (phases 2-5), 741cb7a (universe), 1034455 (phase 6).
 
 ---
 

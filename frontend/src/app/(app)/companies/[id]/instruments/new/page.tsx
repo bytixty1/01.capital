@@ -13,7 +13,7 @@ export default function NewInstrumentPage() {
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
   const [faceValue, setFaceValue] = useState('');
-  const [issueDate, setIssueDate] = useState('');
+  const [issueDate, setIssueDate] = useState(todayISO);
   const [maturityDate, setMaturityDate] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,6 @@ export default function NewInstrumentPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setIssueDate(todayISO());
     api.stakeholders.list(companyId).then(s => { setStakeholders(s); if (s[0]) setStakeholderId(s[0].id); }).catch(e => setError(e.message)).finally(() => setLoadingSH(false));
   }, [companyId]);
 

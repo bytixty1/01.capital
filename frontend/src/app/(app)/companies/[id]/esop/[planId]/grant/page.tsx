@@ -10,7 +10,7 @@ export default function IssueGrantPage() {
   const [stakeholders, setStakeholders] = useState<StakeholderResponse[]>([]);
   const [stakeholderId, setStakeholderId] = useState('');
   const [quantity, setQuantity] = useState('');
-  const [grantDate, setGrantDate] = useState('');
+  const [grantDate, setGrantDate] = useState(todayISO);
   const [cliffMonths, setCliffMonths] = useState('12');
   const [totalMonths, setTotalMonths] = useState('48');
   const [exercisePrice, setExercisePrice] = useState('');
@@ -20,7 +20,6 @@ export default function IssueGrantPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setGrantDate(todayISO());
     api.stakeholders.list(companyId).then(s => { setStakeholders(s); if (s[0]) setStakeholderId(s[0].id); }).catch(e => setError(e.message)).finally(() => setLoadingSH(false));
   }, [companyId]);
 

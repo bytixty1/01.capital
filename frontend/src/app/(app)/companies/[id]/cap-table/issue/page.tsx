@@ -18,14 +18,13 @@ export default function IssueSharesPage() {
   const [shareClass, setShareClass] = useState('ordinary');
   const [company, setCompany] = useState<CompanyResponse | null>(null);
   const [quantity, setQuantity] = useState('');
-  const [eventDate, setEventDate] = useState('');
+  const [eventDate, setEventDate] = useState(todayISO);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingStakeholders, setLoadingStakeholders] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setEventDate(todayISO());
     api.companies.get(companyId)
       .then(c => {
         setCompany(c);

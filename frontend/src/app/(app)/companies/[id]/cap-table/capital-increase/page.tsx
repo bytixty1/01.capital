@@ -38,14 +38,13 @@ export default function CapitalIncreasePage() {
   const [shareClass, setShareClass] = useState('ordinary');
   const [sharesIssued, setSharesIssued] = useState('');
 
-  const [eventDate, setEventDate] = useState('');
+  const [eventDate, setEventDate] = useState(todayISO);
   const [notes, setNotes] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setEventDate(todayISO());
     api.companies.get(companyId)
       .then(c => {
         setCompany(c);

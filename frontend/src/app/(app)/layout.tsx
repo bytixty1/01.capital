@@ -24,12 +24,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const activeCompanyId = companyMatch?.[1];
   const inCompany = !!activeCompanyId && activeCompanyId !== 'new';
 
+  // Server state fetched per company route; the rendered value is derived so
+  // leaving a company route needs no synchronous setState (Phase 7 will move
+  // this read to an RSC layout entirely).
   useEffect(() => {
-    if (!inCompany || !activeCompanyId) { setCompanyName(null); return; }
+    if (!inCompany || !activeCompanyId) return;
+    let cancelled = false;
     api.companies.get(activeCompanyId)
-      .then(c => setCompanyName(c.name_en))
-      .catch(() => setCompanyName(null));
+      .then(c => {
+        if (!cancelled) setCompanyName(c.name_en);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
   }, [activeCompanyId, inCompany]);
+
+  const shownCompanyName = inCompany ? companyName : null;
 
   if (loading) {
     return (
@@ -85,11 +96,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           >
             Dashboard
           </Link>
-          {inCompany && companyName && (
+          {shownCompanyName && (
             <>
               <span style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>·</span>
               <span style={{ ...monoSm, fontSize: '10px', letterSpacing: '.14em', color: 'var(--text-secondary)', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {companyName}
+                {shownCompanyName}
               </span>
             </>
           )}

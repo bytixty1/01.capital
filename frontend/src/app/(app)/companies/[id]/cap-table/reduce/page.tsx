@@ -19,14 +19,13 @@ export default function ReduceSharesPage() {
   const [shareClass, setShareClass] = useState('ordinary');
   const [quantity, setQuantity] = useState('');
   const [newPaidUpCapital, setNewPaidUpCapital] = useState('');
-  const [eventDate, setEventDate] = useState('');
+  const [eventDate, setEventDate] = useState(todayISO);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingStakeholders, setLoadingStakeholders] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setEventDate(todayISO());
     api.companies.get(companyId)
       .then(c => { setCompany(c); setShareClass(defaultShareClass(c.entity_type)); })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load company'));
