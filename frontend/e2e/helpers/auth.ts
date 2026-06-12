@@ -13,7 +13,8 @@ export async function registerUser(page: Page, email: string, password: string, 
 
 /**
  * Bypasses email OTP verification by calling the dev-only backend endpoint.
- * Injects the returned token into localStorage and navigates to /dashboard.
+ * Exchanges the returned token for the httpOnly session cookie via
+ * /api/session and navigates to /dashboard.
  *
  * Only works when ENVIRONMENT != production. Never use in tests against live data.
  */
@@ -26,7 +27,7 @@ export async function verifyEmailViaDevAPI(page: Page, email: string) {
     throw new Error(`dev/verify-email failed: ${response.status()} ${await response.text()}`);
   }
   const { access_token } = await response.json() as { access_token: string };
-  await injectToken(page, access_token);
+  await setSessionCookie(page, access_token);
   await page.goto('/dashboard');
   await page.waitForURL('/dashboard');
 }
@@ -46,10 +47,19 @@ export async function loginViaUI(page: Page, email: string, password: string) {
   await page.waitForURL('/dashboard');
 }
 
-export async function injectToken(page: Page, token: string) {
-  await page.evaluate((t) => {
-    localStorage.setItem('01capital_token', t);
-  }, token);
+/**
+ * Sets the httpOnly session cookie the way the app does: POST the backend
+ * token to the Next.js /api/session route. page.request shares the browser
+ * context's cookie jar, so the Set-Cookie applies to subsequent page loads.
+ */
+export async function setSessionCookie(page: Page, token: string) {
+  const response = await page.request.post('/api/session', {
+    data: { access_token: token },
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok()) {
+    throw new Error(`/api/session failed: ${response.status()} ${await response.text()}`);
+  }
 }
 
 export async function signOut(page: Page) {

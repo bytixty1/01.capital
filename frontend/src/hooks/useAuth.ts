@@ -2,29 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import { api, UserResponse } from '@/lib/api';
-import { clearToken, isAuthenticated } from '@/lib/auth';
+import { clearSession } from '@/lib/auth';
 
+/**
+ * Current-user state for app pages. Route access is already gated by
+ * middleware.ts (cookie presence); this hook resolves the actual user and
+ * bounces to /login if the session token is stale or revoked.
+ */
 export function useAuth() {
   const [user, setUser] = useState<UserResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      window.location.href = '/login';
-      return;
-    }
     api.auth
       .me()
       .then(setUser)
       .catch(() => {
-        clearToken();
         window.location.href = '/login';
       })
       .finally(() => setLoading(false));
   }, []);
 
-  function logout() {
-    clearToken();
+  async function logout() {
+    await clearSession();
     window.location.href = '/login';
   }
 

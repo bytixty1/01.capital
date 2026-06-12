@@ -21,10 +21,34 @@ Step 9≡Phase 10. This log uses the Phase numbering.
     behavior identical).
   - app layout: synchronous `setCompanyName(null)` replaced with derived
     `shownCompanyName`; fetch got a cancellation guard.
-- **Next: Phase 7 part 2 — middleware.ts route guards + httpOnly cookie
-  session + RSC reads** (the approved Phase 2 architecture). High-risk auth
-  surface: useAuth hook, login/register/verify pages, api client, logout.
-- Commits: c4786ab (phases 2-5), 741cb7a (universe), 1034455 (phase 6).
+- **Phase 7 part 2 COMPLETE — httpOnly cookie session + route guards live:**
+  - `lib/session-cookie.ts`: single source for the cookie name (`zc_session`).
+  - `app/api/session/route.ts`: POST exchanges a backend JWT for an httpOnly
+    SameSite=lax cookie (Secure in prod); DELETE clears it. JS never holds
+    the token after login.
+  - `app/api/backend/[...path]/route.ts`: catch-all proxy to FastAPI; attaches
+    Bearer from the cookie server-side; streams responses (JSON + the MFA QR
+    PNG). `BACKEND_URL` env (falls back to `NEXT_PUBLIC_API_URL`).
+  - `src/proxy.ts` (Next 16 convention; `middleware.ts` is deprecated):
+    redirects cookie-less requests on /dashboard|/companies|/account to
+    /login?next=… — route-level guards per CLAUDE.md rule 9.
+  - `lib/auth.ts` rewritten: `setSession`/`clearSession`; localStorage token
+    code deleted. `useAuth` simplified (middleware owns the gate).
+  - `lib/api.ts`: API_BASE → `/api/backend`; `authHeaders()` deleted from all
+    ~40 call sites. account page QR fetch is a plain same-origin fetch now.
+  - e2e `helpers/auth.ts`: `injectToken` (localStorage) → `setSessionCookie`
+    (POST /api/session via the shared cookie jar).
+  - **Runtime smoke-tested** against `next start`: no-cookie → 307
+    /login?next=…; POST /api/session → Set-Cookie HttpOnly SameSite=lax;
+    with-cookie → 200; DELETE expires; bad body → 400.
+- **DEPLOYMENT NOTE (action needed):** production env must set `BACKEND_URL`
+  for the Next server. Existing logged-in users are signed out once (their
+  localStorage token is no longer read). Backend CORS can now be tightened to
+  server-to-server. Full login E2E against the real backend still needs the
+  dev stack up — run the Playwright suite before deploying.
+- **Next: Phase 8 — API layer hardening** (zod per ADR-0008, typed errors,
+  retry on network failures, 401 → login redirect in `request()`).
+- Commits: c4786ab (ph 2-5), 741cb7a (universe), 1034455 (ph 6), 60c0973 (ph 7a).
 
 ---
 

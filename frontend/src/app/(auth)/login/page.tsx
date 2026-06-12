@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { api } from '@/lib/api';
-import { setToken } from '@/lib/auth';
+import { setSession } from '@/lib/auth';
 import { AuthBrandPanel } from '@/components/AuthBrandPanel';
 
 type Step = 'credentials' | 'mfa';
@@ -26,11 +26,11 @@ export default function LoginPage() {
     try {
       const res = await api.auth.login(email, password);
       if (res.mfa_required) {
-        setToken(res.access_token);
+        await setSession(res.access_token);
         setStep('mfa');
         setTimeout(() => mfaRef.current?.focus(), 50);
       } else {
-        setToken(res.access_token);
+        await setSession(res.access_token);
         window.location.href = '/dashboard';
       }
     } catch (err) {
@@ -52,7 +52,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await api.auth.mfaVerify(code);
-      setToken(res.access_token);
+      await setSession(res.access_token);
       window.location.href = '/dashboard';
     } catch {
       setError('Invalid code. Try again.');

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { setToken, getToken } from '@/lib/auth';
 import type { UserResponse } from '@/lib/api';
 
 type MFAStep = 'idle' | 'setup' | 'confirm' | 'disable';
@@ -28,11 +27,8 @@ export default function AccountPage() {
     try {
       const res = await api.auth.mfaSetup();
       setSecret(res.secret);
-      // QR code image requires auth header — fetch as blob
-      const token = getToken();
-      const blob = await fetch(api.auth.mfaQrUrl(), {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      }).then(r => r.blob());
+      // Same-origin proxy fetch — the session cookie authenticates it.
+      const blob = await fetch(api.auth.mfaQrUrl()).then(r => r.blob());
       setQrSrc(URL.createObjectURL(blob));
       setMfaStep('setup');
     } catch (e) {

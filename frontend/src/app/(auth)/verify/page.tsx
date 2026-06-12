@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
-import { setToken } from '@/lib/auth';
+import { setSession } from '@/lib/auth';
 import { AuthBrandPanel } from '@/components/AuthBrandPanel';
 
 function VerifyContent() {
@@ -58,7 +58,7 @@ function VerifyContent() {
         setError('Invalid response from server');
         return;
       }
-      setToken(access_token);
+      await setSession(access_token);
       window.location.href = '/dashboard';
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Verification failed';

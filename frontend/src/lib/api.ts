@@ -1,6 +1,8 @@
-import { getToken } from './auth';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+// All requests go through the Next.js proxy route (/api/backend/*), which
+// attaches the Bearer token from the httpOnly session cookie server-side.
+// Client code never handles the JWT. (When RSC reads land, a server-side
+// variant of this client will call the backend directly with cookies().)
+const API_BASE = '/api/backend';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const { headers, ...restInit } = init || {};
@@ -22,11 +24,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   // Trusted cast: responses are not runtime-validated yet. Zod validation at this
   // boundary is scheduled for the API-hardening step (ADR-0008).
   return res.json() as Promise<T>;
-}
-
-function authHeaders(): Record<string, string> {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -338,29 +335,29 @@ export const api = {
         body: JSON.stringify({ email, password }),
       }),
     me: () =>
-      request<UserResponse>('/api/auth/me', { headers: authHeaders() }),
+      request<UserResponse>('/api/auth/me'),
     mfaSetup: () =>
-      request<MFASetupResponse>('/api/auth/mfa/setup', { method: 'POST', headers: authHeaders() }),
+      request<MFASetupResponse>('/api/auth/mfa/setup', { method: 'POST' }),
     mfaQrUrl: () => `${API_BASE}/api/auth/mfa/qr`,
     mfaEnable: (code: string) =>
       request<{ mfa_enabled: boolean }>('/api/auth/mfa/enable', {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify({ code }),
+        method: 'POST', body: JSON.stringify({ code }),
       }),
     mfaVerify: (code: string) =>
       request<TokenResponse>('/api/auth/mfa/verify', {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify({ code }),
+        method: 'POST', body: JSON.stringify({ code }),
       }),
     mfaDisable: (code: string) =>
       request<{ mfa_enabled: boolean }>('/api/auth/mfa/disable', {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify({ code }),
+        method: 'POST', body: JSON.stringify({ code }),
       }),
   },
 
   companies: {
     list: () =>
-      request<CompanyResponse[]>('/api/companies', { headers: authHeaders() }),
+      request<CompanyResponse[]>('/api/companies'),
     get: (id: string) =>
-      request<CompanyResponse>(`/api/companies/${id}`, { headers: authHeaders() }),
+      request<CompanyResponse>(`/api/companies/${id}`),
     create: (body: {
       name_en: string; name_ar?: string | undefined; entity_type: EntityType;
       cr_number?: string | undefined; authorized_capital?: number | undefined;
@@ -371,7 +368,7 @@ export const api = {
       profit_allocation_notes?: string | undefined;
     }) =>
       request<CompanyResponse>('/api/companies', {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+        method: 'POST', body: JSON.stringify(body),
       }),
     // companies.update removed 2026-06: no UI called it, and its
     // Partial<CompanyResponse> body didn't match the backend's
@@ -379,60 +376,60 @@ export const api = {
     // when company editing ships.
     delete: (id: string) =>
       request<void>(`/api/companies/${id}`, {
-        method: 'DELETE', headers: authHeaders(),
+        method: 'DELETE',
       }),
   },
 
   stakeholders: {
     list: (companyId: string) =>
-      request<StakeholderResponse[]>(`/api/companies/${companyId}/stakeholders`, { headers: authHeaders() }),
+      request<StakeholderResponse[]>(`/api/companies/${companyId}/stakeholders`),
     get: (companyId: string, stakeholderId: string) =>
-      request<StakeholderDetailResponse>(`/api/companies/${companyId}/stakeholders/${stakeholderId}`, { headers: authHeaders() }),
+      request<StakeholderDetailResponse>(`/api/companies/${companyId}/stakeholders/${stakeholderId}`),
     create: (companyId: string, body: {
       stakeholder_type: StakeholderType; name_en: string; name_ar?: string | undefined;
       national_id?: string | undefined; nationality?: string | undefined;
       cr_number?: string | undefined; email?: string | undefined;
     }) =>
       request<StakeholderResponse>(`/api/companies/${companyId}/stakeholders`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+        method: 'POST', body: JSON.stringify(body),
       }),
     delete: (companyId: string, stakeholderId: string) =>
       request<void>(`/api/companies/${companyId}/stakeholders/${stakeholderId}`, {
-        method: 'DELETE', headers: authHeaders(),
+        method: 'DELETE',
       }),
   },
 
   capTable: {
     get: (companyId: string, opts?: { diluted?: boolean }) =>
-      request<CapTableResponse>(`/api/companies/${companyId}/cap-table${opts?.diluted ? '?diluted=true' : ''}`, { headers: authHeaders() }),
+      request<CapTableResponse>(`/api/companies/${companyId}/cap-table${opts?.diluted ? '?diluted=true' : ''}`),
     previewRound: (companyId: string, body: {
       round_size_sar: number; price_per_share: number;
       new_share_class?: string | undefined; new_investor_name?: string | undefined;
       target_esop_post_money_pct?: number | undefined;
     }) =>
       request<RoundPreviewResponse>(`/api/companies/${companyId}/cap-table/preview-round`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+        method: 'POST', body: JSON.stringify(body),
       }),
     waterfall: (companyId: string, body: {
       exit_value_sar: number;
       preferences: WaterfallPreference[];
     }) =>
       request<WaterfallResponse>(`/api/companies/${companyId}/cap-table/waterfall`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+        method: 'POST', body: JSON.stringify(body),
       }),
     issue: (companyId: string, body: {
       stakeholder_id: string; share_class?: string | undefined; quantity: number;
       event_date: string; notes?: string | undefined;
     }) =>
       request<CapTableEventResponse>(`/api/companies/${companyId}/cap-table/issue`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+        method: 'POST', body: JSON.stringify(body),
       }),
     transfer: (companyId: string, body: {
       from_stakeholder_id: string; to_stakeholder_id: string; share_class?: string | undefined;
       quantity: number; event_date: string; notes?: string | undefined;
     }) =>
       request<CapTableEventResponse>(`/api/companies/${companyId}/cap-table/transfer`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+        method: 'POST', body: JSON.stringify(body),
       }),
     capitalIncrease: (companyId: string, body: {
       new_authorized_capital?: number | undefined; new_paid_up_capital?: number | undefined;
@@ -441,35 +438,35 @@ export const api = {
       event_date: string; notes?: string | undefined;
     }) =>
       request<CapTableEventResponse>(`/api/companies/${companyId}/cap-table/capital-increase`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+        method: 'POST', body: JSON.stringify(body),
       }),
     capitalDecrease: (companyId: string, body: {
       stakeholder_id: string; share_class?: string | undefined; quantity: number;
       event_date: string; notes?: string | undefined;
     }) =>
       request<CapTableEventResponse>(`/api/companies/${companyId}/cap-table/capital-decrease`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+        method: 'POST', body: JSON.stringify(body),
       }),
     events: (companyId: string) =>
-      request<CapTableEventResponse[]>(`/api/companies/${companyId}/cap-table/events`, { headers: authHeaders() }),
+      request<CapTableEventResponse[]>(`/api/companies/${companyId}/cap-table/events`),
     zatcaExport: (companyId: string) =>
-      request<Record<string, unknown>>(`/api/companies/${companyId}/exports/zatca`, { headers: authHeaders() }),
+      request<Record<string, unknown>>(`/api/companies/${companyId}/exports/zatca`),
   },
 
   esop: {
     listPlans: (companyId: string) =>
-      request<EsopPlanResponse[]>(`/api/companies/${companyId}/esop`, { headers: authHeaders() }),
+      request<EsopPlanResponse[]>(`/api/companies/${companyId}/esop`),
     createPlan: (companyId: string, body: {
       name: string; total_pool: number; share_class?: string | undefined;
       authorized_date?: string | undefined; plan_rules?: string | undefined;
     }) =>
       request<EsopPlanResponse>(`/api/companies/${companyId}/esop`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+        method: 'POST', body: JSON.stringify(body),
       }),
     getPlan: (companyId: string, planId: string) =>
-      request<EsopPlanResponse>(`/api/companies/${companyId}/esop/${planId}`, { headers: authHeaders() }),
+      request<EsopPlanResponse>(`/api/companies/${companyId}/esop/${planId}`),
     listGrants: (companyId: string, planId: string) =>
-      request<GrantResponse[]>(`/api/companies/${companyId}/esop/${planId}/grants`, { headers: authHeaders() }),
+      request<GrantResponse[]>(`/api/companies/${companyId}/esop/${planId}/grants`),
     createGrant: (companyId: string, planId: string, body: {
       stakeholder_id: string; quantity: number; grant_date: string;
       expiry_date?: string | undefined; exercise_price?: number | undefined;
@@ -477,7 +474,7 @@ export const api = {
       notes?: string | undefined;
     }) =>
       request<GrantResponse>(`/api/companies/${companyId}/esop/${planId}/grants`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+        method: 'POST', body: JSON.stringify(body),
       }),
     ifrs2Expense: (
       companyId: string,
@@ -487,25 +484,25 @@ export const api = {
     ) =>
       request<IFRS2ExpenseResponse>(
         `/api/companies/${companyId}/esop/${planId}/grants/${grantId}/ifrs2-expense`,
-        { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) },
+        { method: 'POST', body: JSON.stringify(body) },
       ),
   },
 
   filings: {
     list: (companyId: string) =>
-      request<FilingResponse[]>(`/api/companies/${companyId}/filings`, { headers: authHeaders() }),
+      request<FilingResponse[]>(`/api/companies/${companyId}/filings`),
     update: (companyId: string, filingId: string, body: {
       status?: FilingStatus | undefined; submitted_date?: string | undefined;
       notes?: string | undefined;
     }) =>
       request<FilingResponse>(`/api/companies/${companyId}/filings/${filingId}`, {
-        method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body),
+        method: 'PATCH', body: JSON.stringify(body),
       }),
   },
 
   instruments: {
     list: (companyId: string) =>
-      request<InstrumentResponse[]>(`/api/companies/${companyId}/instruments`, { headers: authHeaders() }),
+      request<InstrumentResponse[]>(`/api/companies/${companyId}/instruments`),
     create: (companyId: string, body: {
       stakeholder_id: string; instrument_type: InstrumentType;
       name: string; quantity: number; face_value?: number | undefined; issue_date: string;
@@ -513,27 +510,27 @@ export const api = {
       notes?: string | undefined;
     }) =>
       request<InstrumentResponse>(`/api/companies/${companyId}/instruments`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+        method: 'POST', body: JSON.stringify(body),
       }),
   },
 
   members: {
     list: (companyId: string) =>
-      request<MemberResponse[]>(`/api/companies/${companyId}/members`, { headers: authHeaders() }),
+      request<MemberResponse[]>(`/api/companies/${companyId}/members`),
     updateRole: (companyId: string, memberId: string, role: MemberRole) =>
       request<{ id: string; role: string }>(`/api/companies/${companyId}/members/${memberId}`, {
-        method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ role }),
+        method: 'PATCH', body: JSON.stringify({ role }),
       }),
     remove: (companyId: string, memberId: string) =>
       request<void>(`/api/companies/${companyId}/members/${memberId}`, {
-        method: 'DELETE', headers: authHeaders(),
+        method: 'DELETE',
       }),
   },
 
   integrations: {
     moc: {
       fetchCompany: (crNumber: string) =>
-        request<MoCCompanyLookupResponse>(`/api/integrations/moc/cr/${crNumber}`, { headers: authHeaders() }),
+        request<MoCCompanyLookupResponse>(`/api/integrations/moc/cr/${crNumber}`),
     },
   },
 };
