@@ -1,0 +1,4 @@
+
+# local env files (NEXT_PUBLIC_* may leak into bundles, secrets must stay local)
+.env*.local
+.env.local

@@ -65,11 +65,41 @@ Step 9≡Phase 10. This log uses the Phase numbering.
     legal-correctness surface first.
   - Optional response fields widened to `| undefined` per
     exactOptionalPropertyTypes (no consumer-visible change).
-- **Next: Phase 9 (naming pass — light; most names already comply) and
-  Phase 10 (security headers/CSP in next.config; RLS migration is backend
-  scope and stays flagged).**
-- Commits: c4786ab (ph 2-5), 741cb7a (universe), 1034455 (ph 6),
-  60c0973 (ph 7a), 7fa2e80 (ph 7b).
+- **Phase 9 COMPLETE (light by design):** audit found naming already
+  compliant — handlers use `handle*`, actions are verb-named (`markStatus`,
+  `changeRole`, `computeIfrs2`), files follow PascalCase/useCamelCase/kebab
+  conventions, new exports carry JSDoc. One fix: generic `data` →
+  `mocCompany` in the company wizard's MoC lookup.
+  **Decision:** the `loading`/`error` → `isLoading`/`hasError` mass-rename was
+  evaluated and skipped — ~20 files of churn for idiomatic React names that
+  carry no ambiguity; KISS outweighs the prefix rule here.
+- **Phase 10 COMPLETE — security headers live (verified via curl against
+  `next start`):** CSP (default-src 'self'; connect-src 'self' — possible
+  because all API traffic now rides the same-origin proxy; img blob:/data:
+  for the MFA QR; style/script 'unsafe-inline' documented, nonce-based CSP is
+  the logged follow-up), X-Frame-Options DENY + frame-ancestors 'none',
+  nosniff, Referrer-Policy, Permissions-Policy, HSTS (prod only).
+  `.env*.local` added to frontend/.gitignore. Out of frontend scope, still
+  open: Postgres RLS migration (backend), pen test before first customer.
+
+## FINAL SUMMARY (phases 1-10 complete)
+
+- **Commits:** c4786ab (ph 2-5) · 741cb7a (universe) · 1034455 (ph 6) ·
+  60c0973 (ph 7a) · 7fa2e80 (ph 7b) · 35c619f (ph 8) · + ph 9, ph 10.
+- **Verification state:** `tsc --noEmit` 0 errors · `eslint src` 0 problems ·
+  `next build` passing · session/guard/header behavior smoke-tested over HTTP.
+- **Headline changes:** plaintext credential file deleted (rotate + history
+  purge still on the user) · eslint revived after being broken since day one ·
+  9 wire enums typed · 28 formatting call sites unified · 6 duplicate
+  patterns consolidated · landing god-file split 755→272 · JWT moved from
+  localStorage to httpOnly cookie with server-side Bearer proxy ·
+  route-level auth guards · zod boundary on the legal-correctness endpoints ·
+  CSP + full security header set.
+- **Not fixed (tracked above):** backend `created_by` nullability bug ·
+  mislabeled discovery screenshots · RSC migration of reads (architecture
+  ready: server client variant + cookies()) · nonce-based CSP · zod coverage
+  for waterfall/ESOP/filings/instruments/members endpoints ·
+  `useLandingEffects` internal decomposition.
 
 ---
 
