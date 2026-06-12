@@ -2,16 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { api, FilingResponse } from '@/lib/api';
+import { api, FilingResponse, FilingStatus, FilingType } from '@/lib/api';
+import { todayISO } from '@/lib/format';
 
-const STATUS_COLORS: Record<string, string> = {
+const STATUS_COLORS: Record<FilingStatus, string> = {
   pending: 'var(--warn)',
   in_progress: 'var(--info)',
   submitted: 'var(--pos)',
   not_required: 'var(--text-tertiary)',
 };
 
-const FILING_LABELS: Record<string, string> = {
+const FILING_LABELS: Record<FilingType, string> = {
   moc_partner_register: 'MoC — Partner register update',
   moc_aoa_amendment: 'MoC — AoA amendment',
   moc_capital_change: 'MoC — Capital change',
@@ -29,10 +30,10 @@ export default function FilingsPage() {
     api.filings.list(companyId).then(setFilings).catch(e => setError(e.message)).finally(() => setLoading(false));
   }, [companyId]);
 
-  async function markStatus(id: string, newStatus: string) {
+  async function markStatus(id: string, newStatus: FilingStatus) {
     setError(null);
     try {
-      const updated = await api.filings.update(companyId, id, { status: newStatus, submitted_date: newStatus === 'submitted' ? new Date().toISOString().slice(0, 10) : undefined });
+      const updated = await api.filings.update(companyId, id, { status: newStatus, submitted_date: newStatus === 'submitted' ? todayISO() : undefined });
       setFilings(prev => prev.map(f => f.id === id ? updated : f));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to update filing status');

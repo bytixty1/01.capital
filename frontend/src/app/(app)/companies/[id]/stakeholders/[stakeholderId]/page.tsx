@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api, StakeholderDetailResponse } from '@/lib/api';
+import { formatNumber } from '@/lib/format';
+import { thData, tdData } from '@/lib/table-styles';
 
 export default function StakeholderDetailPage() {
   const { id: companyId, stakeholderId } = useParams<{ id: string; stakeholderId: string }>();
@@ -119,7 +121,7 @@ export default function StakeholderDetailPage() {
         <div style={{ background: 'var(--glass-bg)', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>Total shares</span>
           <span style={{ fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-            {totalShares > 0 ? totalShares.toLocaleString('en-SA') : '—'}
+            {totalShares > 0 ? formatNumber(totalShares) : '—'}
           </span>
         </div>
         <div style={{ background: 'var(--glass-bg)', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -176,18 +178,18 @@ export default function StakeholderDetailPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={thStyle}>Share class</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>Shares held</th>
+                <th style={thData}>Share class</th>
+                <th style={{ ...thData, textAlign: 'right' }}>Shares held</th>
               </tr>
             </thead>
             <tbody>
               {stakeholder.holdings.map(h => (
                 <tr key={h.share_class} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={tdStyle}>
+                  <td style={tdData}>
                     <span style={{ fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{h.share_class}</span>
                   </td>
-                  <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '16px', fontWeight: 600 }}>
-                    {Number(h.quantity).toLocaleString('en-SA')}
+                  <td style={{ ...tdData, textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '16px', fontWeight: 600 }}>
+                    {formatNumber(h.quantity)}
                   </td>
                 </tr>
               ))}
@@ -199,21 +201,3 @@ export default function StakeholderDetailPage() {
   );
 }
 
-const thStyle: React.CSSProperties = {
-  padding: '14px 24px',
-  textAlign: 'left',
-  fontSize: '12px',
-  color: 'var(--text-tertiary)',
-  fontFamily: 'var(--font-mono)',
-  textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-  borderBottom: '1px solid var(--glass-border)',
-  background: 'rgba(255,255,255,0.02)',
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: '16px 24px',
-  fontSize: '14px',
-  color: 'var(--text-primary)',
-  verticalAlign: 'middle',
-};

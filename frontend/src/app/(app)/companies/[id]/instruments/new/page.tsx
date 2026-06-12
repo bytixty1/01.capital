@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api, StakeholderResponse } from '@/lib/api';
+import { todayISO } from '@/lib/format';
 
 export default function NewInstrumentPage() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -20,8 +21,8 @@ export default function NewInstrumentPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setIssueDate(new Date().toISOString().slice(0, 10));
-    api.stakeholders.list(companyId).then(s => { setStakeholders(s); if (s.length > 0) setStakeholderId(s[0].id); }).catch(e => setError(e.message)).finally(() => setLoadingSH(false));
+    setIssueDate(todayISO());
+    api.stakeholders.list(companyId).then(s => { setStakeholders(s); if (s[0]) setStakeholderId(s[0].id); }).catch(e => setError(e.message)).finally(() => setLoadingSH(false));
   }, [companyId]);
 
   async function handleSubmit(e: React.FormEvent) {

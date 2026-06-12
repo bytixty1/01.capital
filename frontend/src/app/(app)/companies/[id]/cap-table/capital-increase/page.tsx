@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api, StakeholderResponse, CompanyResponse } from '@/lib/api';
 import { SHARE_CLASS_SUGGESTIONS, defaultShareClass, isShareClassLocked, shareClassLabel } from '@/lib/share-class';
+import { todayISO } from '@/lib/format';
 
 const MODE_OPTIONS = [
   { value: 'capital' as const, label: 'Capital only', sub: 'Update legal capital figures' },
@@ -44,7 +45,7 @@ export default function CapitalIncreasePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setEventDate(new Date().toISOString().slice(0, 10));
+    setEventDate(todayISO());
     api.companies.get(companyId)
       .then(c => {
         setCompany(c);
@@ -54,7 +55,7 @@ export default function CapitalIncreasePage() {
     api.stakeholders.list(companyId)
       .then(s => {
         setStakeholders(s);
-        if (s.length > 0) setStakeholderId(s[0].id);
+        if (s[0]) setStakeholderId(s[0].id);
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load stakeholders'))
       .finally(() => setLoadingStakeholders(false));

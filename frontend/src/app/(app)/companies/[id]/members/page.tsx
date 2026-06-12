@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { api, MemberResponse } from '@/lib/api';
+import { api, MemberResponse, MemberRole } from '@/lib/api';
 
 export default function MembersPage() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -14,7 +14,7 @@ export default function MembersPage() {
     api.members.list(companyId).then(setMembers).catch(e => setError(e.message)).finally(() => setLoading(false));
   }, [companyId]);
 
-  async function changeRole(memberId: string, newRole: string) {
+  async function changeRole(memberId: string, newRole: MemberRole) {
     setError(null);
     try {
       await api.members.updateRole(companyId, memberId, newRole);
@@ -59,7 +59,8 @@ export default function MembersPage() {
                   {m.full_name && <p style={s.email}>{m.email}</p>}
                 </td>
                 <td style={{ ...s.td, textAlign: 'right' as const }}>
-                  <select value={m.role} onChange={e => changeRole(m.id, e.target.value)} style={s.roleSelect}>
+                  {/* Cast is sound: the options below are exactly the MemberRole union values. */}
+                  <select value={m.role} onChange={e => changeRole(m.id, e.target.value as MemberRole)} style={s.roleSelect}>
                     <option value="admin">Admin</option>
                     <option value="editor">Editor</option>
                     <option value="viewer">Viewer</option>

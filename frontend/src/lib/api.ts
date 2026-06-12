@@ -17,7 +17,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       message = detail.map(d => d.msg).join(', ');
     throw new Error(message);
   }
+  // 204 carries no body; the affected endpoints are typed Promise<void> by their callers.
   if (res.status === 204) return undefined as T;
+  // Trusted cast: responses are not runtime-validated yet. Zod validation at this
+  // boundary is scheduled for the API-hardening step (ADR-0008).
   return res.json() as Promise<T>;
 }
 
@@ -43,13 +46,35 @@ export type MFASetupResponse = { secret: string; otpauth_uri: string };
 
 export type EntityType = 'LLC' | 'SJSC' | 'JSC';
 
+// Wire enums — mirrored from backend/app/models/*.py, which is the source of truth.
+// If the backend enum changes, these unions must change with it.
+export type CompanyStatus = 'active' | 'suspended' | 'dissolved';
+export type MemberRole = 'admin' | 'editor' | 'viewer';
+export type CapTableEventType =
+  | 'share_issuance'
+  | 'share_transfer'
+  | 'share_cancellation'
+  | 'capital_increase'
+  | 'capital_decrease';
+export type EsopPlanStatus = 'active' | 'exhausted' | 'closed';
+export type GrantStatus = 'active' | 'exercised' | 'partially_exercised' | 'forfeited' | 'expired';
+export type FilingType =
+  | 'moc_partner_register'
+  | 'moc_aoa_amendment'
+  | 'moc_capital_change'
+  | 'zatca_zakat_year'
+  | 'cma_esop_disclosure';
+export type FilingStatus = 'pending' | 'in_progress' | 'submitted' | 'not_required';
+export type InstrumentType = 'sukuk_convertible' | 'phantom' | 'warrant';
+export type InstrumentStatus = 'active' | 'converted' | 'redeemed' | 'expired';
+
 export type CompanyResponse = {
   id: string;
   name_en: string;
   name_ar: string | null;
   entity_type: EntityType;
   cr_number: string | null;
-  status: string;
+  status: CompanyStatus;
   authorized_capital: string | null;
   paid_up_capital: string | null;
   par_value_per_share: string | null;
@@ -131,7 +156,7 @@ export type WaterfallPreference = {
   seniority: number;
   multiplier: number;
   participation: ParticipationType;
-  cap_multiplier?: number;
+  cap_multiplier?: number | undefined;
   original_investment_sar: number;
 };
 
@@ -170,8 +195,8 @@ export type IFRS2ValuationInputs = {
   spot_price_sar: number;
   volatility: number;       // 0.40 = 40%
   risk_free_rate: number;   // 0.045 = 4.5%
-  dividend_yield?: number;  // default 0
-  expected_life_years?: number;
+  dividend_yield?: number | undefined;  // default 0
+  expected_life_years?: number | undefined;
 };
 
 export type IFRS2PeriodExpense = {
@@ -202,7 +227,7 @@ export type IFRS2ExpenseResponse = {
 export type CapTableEventResponse = {
   id: string;
   company_id: string;
-  event_type: string;
+  event_type: CapTableEventType;
   event_date: string;
   payload: Record<string, unknown>;
   notes: string | null;
@@ -219,7 +244,7 @@ export type EsopPlanResponse = {
   share_class: string;
   authorized_date: string | null;
   plan_rules: string | null;
-  status: string;
+  status: EsopPlanStatus;
   created_at: string;
 };
 
@@ -234,7 +259,7 @@ export type GrantResponse = {
   expiry_date: string | null;
   exercise_price: string | null;
   vesting_schedule: { type: string; cliff_months: number; total_months: number };
-  status: string;
+  status: GrantStatus;
   notes: string | null;
   created_at: string;
 };
@@ -242,9 +267,9 @@ export type GrantResponse = {
 export type FilingResponse = {
   id: string;
   company_id: string;
-  filing_type: string;
+  filing_type: FilingType;
   trigger_event_id: string | null;
-  status: string;
+  status: FilingStatus;
   due_date: string | null;
   submitted_date: string | null;
   notes: string | null;
@@ -255,14 +280,14 @@ export type InstrumentResponse = {
   id: string;
   company_id: string;
   stakeholder_id: string;
-  instrument_type: string;
+  instrument_type: InstrumentType;
   name: string;
   face_value: string | null;
   quantity: string;
   issue_date: string;
   maturity_date: string | null;
   terms: Record<string, unknown>;
-  status: string;
+  status: InstrumentStatus;
   notes: string | null;
   created_at: string;
 };
@@ -272,8 +297,20 @@ export type MemberResponse = {
   user_id: string;
   email: string;
   full_name: string | null;
-  role: string;
+  role: MemberRole;
   created_at: string;
+};
+
+// Mock MoC lookup — mirrors backend/app/api/integrations.py response shape.
+export type MoCCompanyLookupResponse = {
+  cr_number: string;
+  status: string;
+  name_en: string;
+  name_ar: string;
+  entity_type: EntityType;
+  capital: number;
+  incorporation_date: string;
+  mock: boolean;
 };
 
 // ── API ───────────────────────────────────────────────────────────────────────
@@ -325,19 +362,21 @@ export const api = {
     get: (id: string) =>
       request<CompanyResponse>(`/api/companies/${id}`, { headers: authHeaders() }),
     create: (body: {
-      name_en: string; name_ar?: string; entity_type: EntityType;
-      cr_number?: string; authorized_capital?: number; paid_up_capital?: number;
-      par_value_per_share?: number; incorporation_date?: string; fiscal_year_start?: number;
-      has_rofr?: boolean; rofr_days?: number; has_drag_tag?: boolean;
-      has_tag_along?: boolean; profit_allocation_notes?: string;
+      name_en: string; name_ar?: string | undefined; entity_type: EntityType;
+      cr_number?: string | undefined; authorized_capital?: number | undefined;
+      paid_up_capital?: number | undefined; par_value_per_share?: number | undefined;
+      incorporation_date?: string | undefined; fiscal_year_start?: number | undefined;
+      has_rofr?: boolean | undefined; rofr_days?: number | undefined;
+      has_drag_tag?: boolean | undefined; has_tag_along?: boolean | undefined;
+      profit_allocation_notes?: string | undefined;
     }) =>
       request<CompanyResponse>('/api/companies', {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
       }),
-    update: (id: string, body: Partial<CompanyResponse>) =>
-      request<CompanyResponse>(`/api/companies/${id}`, {
-        method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body),
-      }),
+    // companies.update removed 2026-06: no UI called it, and its
+    // Partial<CompanyResponse> body didn't match the backend's
+    // UpdateCompanyRequest. Reintroduce typed against that schema
+    // when company editing ships.
     delete: (id: string) =>
       request<void>(`/api/companies/${id}`, {
         method: 'DELETE', headers: authHeaders(),
@@ -350,8 +389,9 @@ export const api = {
     get: (companyId: string, stakeholderId: string) =>
       request<StakeholderDetailResponse>(`/api/companies/${companyId}/stakeholders/${stakeholderId}`, { headers: authHeaders() }),
     create: (companyId: string, body: {
-      stakeholder_type: StakeholderType; name_en: string; name_ar?: string;
-      national_id?: string; nationality?: string; cr_number?: string; email?: string;
+      stakeholder_type: StakeholderType; name_en: string; name_ar?: string | undefined;
+      national_id?: string | undefined; nationality?: string | undefined;
+      cr_number?: string | undefined; email?: string | undefined;
     }) =>
       request<StakeholderResponse>(`/api/companies/${companyId}/stakeholders`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
@@ -367,8 +407,8 @@ export const api = {
       request<CapTableResponse>(`/api/companies/${companyId}/cap-table${opts?.diluted ? '?diluted=true' : ''}`, { headers: authHeaders() }),
     previewRound: (companyId: string, body: {
       round_size_sar: number; price_per_share: number;
-      new_share_class?: string; new_investor_name?: string;
-      target_esop_post_money_pct?: number;
+      new_share_class?: string | undefined; new_investor_name?: string | undefined;
+      target_esop_post_money_pct?: number | undefined;
     }) =>
       request<RoundPreviewResponse>(`/api/companies/${companyId}/cap-table/preview-round`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
@@ -381,30 +421,31 @@ export const api = {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
       }),
     issue: (companyId: string, body: {
-      stakeholder_id: string; share_class?: string; quantity: number;
-      event_date: string; notes?: string;
+      stakeholder_id: string; share_class?: string | undefined; quantity: number;
+      event_date: string; notes?: string | undefined;
     }) =>
       request<CapTableEventResponse>(`/api/companies/${companyId}/cap-table/issue`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
       }),
     transfer: (companyId: string, body: {
-      from_stakeholder_id: string; to_stakeholder_id: string; share_class?: string;
-      quantity: number; event_date: string; notes?: string;
+      from_stakeholder_id: string; to_stakeholder_id: string; share_class?: string | undefined;
+      quantity: number; event_date: string; notes?: string | undefined;
     }) =>
       request<CapTableEventResponse>(`/api/companies/${companyId}/cap-table/transfer`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
       }),
     capitalIncrease: (companyId: string, body: {
-      new_authorized_capital?: number; new_paid_up_capital?: number;
-      share_class?: string; shares_issued?: number; stakeholder_id?: string;
-      event_date: string; notes?: string;
+      new_authorized_capital?: number | undefined; new_paid_up_capital?: number | undefined;
+      share_class?: string | undefined; shares_issued?: number | undefined;
+      stakeholder_id?: string | undefined;
+      event_date: string; notes?: string | undefined;
     }) =>
       request<CapTableEventResponse>(`/api/companies/${companyId}/cap-table/capital-increase`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
       }),
     capitalDecrease: (companyId: string, body: {
-      stakeholder_id: string; share_class?: string; quantity: number;
-      event_date: string; notes?: string;
+      stakeholder_id: string; share_class?: string | undefined; quantity: number;
+      event_date: string; notes?: string | undefined;
     }) =>
       request<CapTableEventResponse>(`/api/companies/${companyId}/cap-table/capital-decrease`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
@@ -419,8 +460,8 @@ export const api = {
     listPlans: (companyId: string) =>
       request<EsopPlanResponse[]>(`/api/companies/${companyId}/esop`, { headers: authHeaders() }),
     createPlan: (companyId: string, body: {
-      name: string; total_pool: number; share_class?: string;
-      authorized_date?: string; plan_rules?: string;
+      name: string; total_pool: number; share_class?: string | undefined;
+      authorized_date?: string | undefined; plan_rules?: string | undefined;
     }) =>
       request<EsopPlanResponse>(`/api/companies/${companyId}/esop`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
@@ -431,8 +472,9 @@ export const api = {
       request<GrantResponse[]>(`/api/companies/${companyId}/esop/${planId}/grants`, { headers: authHeaders() }),
     createGrant: (companyId: string, planId: string, body: {
       stakeholder_id: string; quantity: number; grant_date: string;
-      expiry_date?: string; exercise_price?: number; cliff_months?: number;
-      total_months?: number; notes?: string;
+      expiry_date?: string | undefined; exercise_price?: number | undefined;
+      cliff_months?: number | undefined; total_months?: number | undefined;
+      notes?: string | undefined;
     }) =>
       request<GrantResponse>(`/api/companies/${companyId}/esop/${planId}/grants`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
@@ -453,7 +495,8 @@ export const api = {
     list: (companyId: string) =>
       request<FilingResponse[]>(`/api/companies/${companyId}/filings`, { headers: authHeaders() }),
     update: (companyId: string, filingId: string, body: {
-      status?: string; submitted_date?: string; notes?: string;
+      status?: FilingStatus | undefined; submitted_date?: string | undefined;
+      notes?: string | undefined;
     }) =>
       request<FilingResponse>(`/api/companies/${companyId}/filings/${filingId}`, {
         method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body),
@@ -464,9 +507,10 @@ export const api = {
     list: (companyId: string) =>
       request<InstrumentResponse[]>(`/api/companies/${companyId}/instruments`, { headers: authHeaders() }),
     create: (companyId: string, body: {
-      stakeholder_id: string; instrument_type: 'sukuk_convertible' | 'phantom' | 'warrant';
-      name: string; quantity: number; face_value?: number; issue_date: string;
-      maturity_date?: string; terms?: Record<string, unknown>; notes?: string;
+      stakeholder_id: string; instrument_type: InstrumentType;
+      name: string; quantity: number; face_value?: number | undefined; issue_date: string;
+      maturity_date?: string | undefined; terms?: Record<string, unknown> | undefined;
+      notes?: string | undefined;
     }) =>
       request<InstrumentResponse>(`/api/companies/${companyId}/instruments`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
@@ -476,7 +520,7 @@ export const api = {
   members: {
     list: (companyId: string) =>
       request<MemberResponse[]>(`/api/companies/${companyId}/members`, { headers: authHeaders() }),
-    updateRole: (companyId: string, memberId: string, role: string) =>
+    updateRole: (companyId: string, memberId: string, role: MemberRole) =>
       request<{ id: string; role: string }>(`/api/companies/${companyId}/members/${memberId}`, {
         method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ role }),
       }),
@@ -489,7 +533,7 @@ export const api = {
   integrations: {
     moc: {
       fetchCompany: (crNumber: string) =>
-        request<any>(`/api/integrations/moc/cr/${crNumber}`, { headers: authHeaders() }),
+        request<MoCCompanyLookupResponse>(`/api/integrations/moc/cr/${crNumber}`, { headers: authHeaders() }),
     },
   },
 };

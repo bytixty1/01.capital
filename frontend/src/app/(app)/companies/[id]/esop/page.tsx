@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api, EsopPlanResponse } from '@/lib/api';
+import { formatNumber } from '@/lib/format';
 
 export default function EsopPage() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -33,9 +34,9 @@ export default function EsopPage() {
               <span style={{ ...s.badge, color: p.status === 'active' ? 'var(--pos)' : 'var(--text-tertiary)' }}>{p.status}</span>
             </div>
             <div style={s.stats}>
-              <span style={s.stat}><span style={s.statLabel}>Pool</span><span style={s.mono}>{Number(p.total_pool).toLocaleString()}</span></span>
-              <span style={s.stat}><span style={s.statLabel}>Allocated</span><span style={s.mono}>{Number(p.allocated).toLocaleString()}</span></span>
-              <span style={s.stat}><span style={s.statLabel}>Available</span><span style={s.mono}>{(Number(p.total_pool) - Number(p.allocated)).toLocaleString()}</span></span>
+              <span style={s.stat}><span style={s.statLabel}>Pool</span><span style={s.mono}>{formatNumber(p.total_pool)}</span></span>
+              <span style={s.stat}><span style={s.statLabel}>Allocated</span><span style={s.mono}>{formatNumber(p.allocated)}</span></span>
+              <span style={s.stat}><span style={s.statLabel}>Available</span><span style={s.mono}>{formatNumber(Number(p.total_pool) - Number(p.allocated))}</span></span>
               <span style={s.stat}><span style={s.statLabel}>Share class</span><span style={s.mono}>{p.share_class}</span></span>
             </div>
           </a>

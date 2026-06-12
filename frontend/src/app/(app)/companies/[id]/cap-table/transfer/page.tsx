@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { api, StakeholderResponse, CompanyResponse } from '@/lib/api';
 import { SHARE_CLASS_SUGGESTIONS, defaultShareClass, isShareClassLocked, shareClassLabel } from '@/lib/share-class';
+import { todayISO } from '@/lib/format';
 
 export default function TransferSharesPage() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -25,25 +26,27 @@ export default function TransferSharesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setEventDate(new Date().toISOString().slice(0, 10));
+    setEventDate(todayISO());
     api.companies.get(companyId)
       .then(c => { setCompany(c); setShareClass(defaultShareClass(c.entity_type)); })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load company'));
     api.stakeholders.list(companyId)
       .then(s => { 
-        setStakeholders(s); 
-        if (s.length > 0) {
+        setStakeholders(s);
+        const first = s[0];
+        if (first) {
           // Pre-select from query param or default to first
           if (preselectedFrom && s.find(st => st.id === preselectedFrom)) {
             setFromId(preselectedFrom);
             // Set "to" to the first stakeholder that isn't the "from"
             const other = s.find(st => st.id !== preselectedFrom);
-            setToId(other ? other.id : s[0].id);
+            setToId(other ? other.id : first.id);
           } else {
-            setFromId(s[0].id); 
-            setToId(s.length > 1 ? s[1].id : s[0].id); 
+            setFromId(first.id);
+            const second = s[1];
+            setToId(second ? second.id : first.id);
           }
-        } 
+        }
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load stakeholders'))
       .finally(() => setLoadingStakeholders(false));

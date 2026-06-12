@@ -2,45 +2,17 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { api, CompanyResponse } from '@/lib/api';
+import { api, CompanyResponse, EntityType } from '@/lib/api';
+import { formatSAR } from '@/lib/format';
+import { DonutChart } from '@/components/DonutChart';
 
-function DonutChart({ slices }: { slices: { pct: number; color: string }[] }) {
-  const r = 36;
-  const cx = 44;
-  const cy = 44;
-  const circ = 2 * Math.PI * r;
-  let offset = 0;
-
-  return (
-    <svg width="88" height="88" viewBox="0 0 88 88">
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--bg-elevated)" strokeWidth="10" />
-      {slices.map((s, i) => {
-        const dash = (s.pct / 100) * circ;
-        const rotation = (offset / 100) * 360 - 90;
-        offset += s.pct;
-        return (
-          <circle
-            key={i}
-            cx={cx} cy={cy} r={r}
-            fill="none"
-            stroke={s.color}
-            strokeWidth="10"
-            strokeDasharray={`${dash} ${circ - dash}`}
-            style={{ transform: `rotate(${rotation}deg)`, transformOrigin: `${cx}px ${cy}px`, transition: 'all 0.6s ease' }}
-          />
-        );
-      })}
-    </svg>
-  );
-}
-
-const ENTITY_COLORS: Record<string, string> = {
+const ENTITY_COLORS: Record<EntityType, string> = {
   LLC: 'var(--brand-purple)',
   SJSC: '#9b6ff0',
   JSC: '#c4a8f8',
 };
 
-const ENTITY_DESC: Record<string, string> = {
+const ENTITY_DESC: Record<EntityType, string> = {
   LLC: 'Limited Liability Company',
   SJSC: 'Simplified Joint Stock Company',
   JSC: 'Joint Stock Company',
@@ -60,12 +32,13 @@ export default function DashboardPage() {
 
   const totalCapital = companies.reduce((sum, c) => sum + (c.paid_up_capital ? Number(c.paid_up_capital) : 0), 0);
 
-  const entityCounts = companies.reduce<Record<string, number>>((acc, c) => {
+  const entityCounts = companies.reduce<Partial<Record<EntityType, number>>>((acc, c) => {
     acc[c.entity_type] = (acc[c.entity_type] ?? 0) + 1;
     return acc;
   }, {});
 
-  const donutSlices = Object.entries(entityCounts).map(([type, count]) => ({
+  // Cast is sound: entityCounts is keyed exclusively by EntityType writes above.
+  const donutSlices = (Object.entries(entityCounts) as [EntityType, number][]).map(([type, count]) => ({
     pct: companies.length > 0 ? (count / companies.length) * 100 : 0,
     color: ENTITY_COLORS[type] ?? '#666',
     type,
@@ -80,7 +53,7 @@ export default function DashboardPage() {
           <p style={styles.eyebrow}>Portfolio Overview</p>
           <h1 style={styles.heading}>
             {totalCapital > 0
-              ? `SAR ${totalCapital.toLocaleString('en-SA')}`
+              ? formatSAR(totalCapital)
               : 'Your companies'}
           </h1>
           {totalCapital > 0 && (
@@ -191,7 +164,7 @@ export default function DashboardPage() {
                     <p style={styles.metaLabel}>Paid-up capital</p>
                     <p style={styles.metaValue}>
                       {c.paid_up_capital
-                        ? `SAR ${Number(c.paid_up_capital).toLocaleString('en-SA')}`
+                        ? formatSAR(c.paid_up_capital)
                         : '—'}
                     </p>
                   </div>

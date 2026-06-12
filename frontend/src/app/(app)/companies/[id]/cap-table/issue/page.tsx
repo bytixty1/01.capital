@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { api, StakeholderResponse, CompanyResponse } from '@/lib/api';
 import { SHARE_CLASS_SUGGESTIONS, defaultShareClass, isShareClassLocked, shareClassLabel } from '@/lib/share-class';
+import { todayISO } from '@/lib/format';
 
 export default function IssueSharesPage() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -24,7 +25,7 @@ export default function IssueSharesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setEventDate(new Date().toISOString().slice(0, 10));
+    setEventDate(todayISO());
     api.companies.get(companyId)
       .then(c => {
         setCompany(c);
@@ -38,7 +39,7 @@ export default function IssueSharesPage() {
         // Pre-select from query param or default to first
         if (preselectedStakeholder && s.find(st => st.id === preselectedStakeholder)) {
           setStakeholderId(preselectedStakeholder);
-        } else if (s.length > 0) {
+        } else if (s[0]) {
           setStakeholderId(s[0].id);
         }
       })

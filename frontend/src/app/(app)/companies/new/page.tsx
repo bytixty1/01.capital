@@ -15,11 +15,12 @@ const CR_REGIONS: Record<string, string> = {
   '9': 'Northern Border',
 };
 
-function validateCR(cr: string): { ok: boolean; region?: string; error?: string } {
+function validateCR(cr: string): { ok: boolean; region?: string | undefined; error?: string | undefined } {
   if (!cr) return { ok: true };
   if (!/^\d+$/.test(cr)) return { ok: false, error: 'Digits only' };
   if (cr.length !== 10) return { ok: false, error: `${cr.length}/10 digits` };
-  const region = CR_REGIONS[cr[0]];
+  const firstDigit = cr[0];
+  const region = firstDigit ? CR_REGIONS[firstDigit] : undefined;
   if (!region) return { ok: false, error: 'Unrecognised region code' };
   return { ok: true, region };
 }

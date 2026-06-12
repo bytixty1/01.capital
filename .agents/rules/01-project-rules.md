@@ -32,7 +32,7 @@ This workspace is for building cap table and equity management software for Saud
 
 ## Technical stack
 
-- Frontend: Next.js 15 + TypeScript + Tailwind (or vanilla CSS with design tokens)
+- Frontend: Next.js 16 + TypeScript + vanilla CSS with design tokens (see ADR-0007)
 - Backend: FastAPI + Python 3.12
 - Database: PostgreSQL
 - Cache: Redis (when needed; not on day one)

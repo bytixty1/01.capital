@@ -76,3 +76,9 @@ temp/
 
 # Separate projects that live near this repo but are not part of it
 pixel-agents/
+
+# macOS Finder duplicate-file clones (e.g. "script 2.py")
+* 2.py
+
+# graphify generated output (rebuild with /graphify)
+graphify-out/

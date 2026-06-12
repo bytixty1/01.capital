@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api, CompanyResponse, RoundPreviewResponse, ProjectedSyntheticKind } from '@/lib/api';
 import { SHARE_CLASS_SUGGESTIONS, defaultShareClass, isShareClassLocked, shareClassLabel } from '@/lib/share-class';
+import { formatNumberWhole, formatSARWhole } from '@/lib/format';
+import { thCompact, tdCompact } from '@/lib/table-styles';
 
 const fieldLabel: React.CSSProperties = {
   fontSize: '11px',
@@ -16,24 +18,6 @@ const fieldLabel: React.CSSProperties = {
   display: 'block',
 };
 
-const tdStyle: React.CSSProperties = {
-  padding: '12px 16px',
-  fontSize: '13px',
-  color: 'var(--text-secondary)',
-};
-
-const thStyle: React.CSSProperties = {
-  padding: '12px 16px',
-  fontSize: '10px',
-  fontWeight: 600,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: 'var(--text-tertiary)',
-  textAlign: 'left',
-  borderBottom: '1px solid var(--glass-border)',
-  fontFamily: 'var(--font-mono)',
-};
-
 function syntheticMeta(kind: ProjectedSyntheticKind | null | undefined): { color: string; label: string } | null {
   switch (kind) {
     case 'esop_pool':    return { color: 'var(--info)',          label: 'ESOP POOL' };
@@ -43,10 +27,6 @@ function syntheticMeta(kind: ProjectedSyntheticKind | null | undefined): { color
     case 'new_investor': return { color: 'var(--pos)',           label: 'NEW INVESTOR' };
     default:             return null;
   }
-}
-
-function fmtSAR(n: number): string {
-  return n.toLocaleString('en-SA', { maximumFractionDigits: 0 });
 }
 
 export default function RoundModelerPage() {
@@ -254,10 +234,10 @@ export default function RoundModelerPage() {
           {/* Summary tiles */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
             {[
-              { label: 'Pre-money', value: `SAR ${fmtSAR(Number(result.pre_money_valuation_sar))}` },
-              { label: 'Post-money', value: `SAR ${fmtSAR(Number(result.post_money_valuation_sar))}` },
-              { label: 'New investor shares', value: fmtSAR(Number(result.new_investor_shares)) },
-              { label: 'ESOP top-up shares', value: fmtSAR(Number(result.esop_topup_shares)) },
+              { label: 'Pre-money', value: formatSARWhole(result.pre_money_valuation_sar) },
+              { label: 'Post-money', value: formatSARWhole(result.post_money_valuation_sar) },
+              { label: 'New investor shares', value: formatNumberWhole(result.new_investor_shares) },
+              { label: 'ESOP top-up shares', value: formatNumberWhole(result.esop_topup_shares) },
             ].map(tile => (
               <div key={tile.label} className="glass-panel" style={{ padding: '16px 18px' }}>
                 <div style={{ ...fieldLabel, marginBottom: '8px' }}>{tile.label}</div>
@@ -275,20 +255,20 @@ export default function RoundModelerPage() {
                 Pre-round → Post-round
               </h2>
               <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-                Pre {fmtSAR(Number(result.pre_round_total_shares))} shares · Post {fmtSAR(Number(result.post_round_total_shares))} shares
+                Pre {formatNumberWhole(result.pre_round_total_shares)} shares · Post {formatNumberWhole(result.post_round_total_shares)} shares
               </p>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
                 <thead>
                   <tr>
-                    <th style={thStyle}>Stakeholder</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Share class</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Pre shares</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Pre %</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Post shares</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Post %</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Δ pp</th>
+                    <th style={thCompact}>Stakeholder</th>
+                    <th style={{ ...thCompact, textAlign: 'right' }}>Share class</th>
+                    <th style={{ ...thCompact, textAlign: 'right' }}>Pre shares</th>
+                    <th style={{ ...thCompact, textAlign: 'right' }}>Pre %</th>
+                    <th style={{ ...thCompact, textAlign: 'right' }}>Post shares</th>
+                    <th style={{ ...thCompact, textAlign: 'right' }}>Post %</th>
+                    <th style={{ ...thCompact, textAlign: 'right' }}>Δ pp</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -304,7 +284,7 @@ export default function RoundModelerPage() {
                           borderLeft: meta ? `2px dashed ${meta.color}` : 'none',
                         }}
                       >
-                        <td style={tdStyle}>
+                        <td style={tdCompact}>
                           {meta ? (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
                               <span style={{
@@ -323,12 +303,12 @@ export default function RoundModelerPage() {
                             <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{h.stakeholder_name}</span>
                           )}
                         </td>
-                        <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{h.share_class}</td>
-                        <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{fmtSAR(Number(h.pre_round_quantity))}</td>
-                        <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{Number(h.pre_round_percentage).toFixed(2)}%</td>
-                        <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{fmtSAR(Number(h.post_round_quantity))}</td>
-                        <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{Number(h.post_round_percentage).toFixed(2)}%</td>
-                        <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', color: deltaColor, fontWeight: 600 }}>
+                        <td style={{ ...tdCompact, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{h.share_class}</td>
+                        <td style={{ ...tdCompact, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{formatNumberWhole(h.pre_round_quantity)}</td>
+                        <td style={{ ...tdCompact, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{Number(h.pre_round_percentage).toFixed(2)}%</td>
+                        <td style={{ ...tdCompact, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{formatNumberWhole(h.post_round_quantity)}</td>
+                        <td style={{ ...tdCompact, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{Number(h.post_round_percentage).toFixed(2)}%</td>
+                        <td style={{ ...tdCompact, textAlign: 'right', fontFamily: 'var(--font-mono)', color: deltaColor, fontWeight: 600 }}>
                           {delta > 0 ? '+' : ''}{delta.toFixed(2)}
                         </td>
                       </tr>

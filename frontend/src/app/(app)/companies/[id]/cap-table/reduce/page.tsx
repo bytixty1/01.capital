@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { api, StakeholderResponse, CompanyResponse } from '@/lib/api';
 import { SHARE_CLASS_SUGGESTIONS, defaultShareClass, isShareClassLocked, shareClassLabel } from '@/lib/share-class';
+import { todayISO } from '@/lib/format';
 
 export default function ReduceSharesPage() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -25,7 +26,7 @@ export default function ReduceSharesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setEventDate(new Date().toISOString().slice(0, 10));
+    setEventDate(todayISO());
     api.companies.get(companyId)
       .then(c => { setCompany(c); setShareClass(defaultShareClass(c.entity_type)); })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load company'));
@@ -34,7 +35,7 @@ export default function ReduceSharesPage() {
         setStakeholders(s);
         if (preselectedStakeholder && s.find(st => st.id === preselectedStakeholder)) {
           setStakeholderId(preselectedStakeholder);
-        } else if (s.length > 0) {
+        } else if (s[0]) {
           setStakeholderId(s[0].id);
         }
       })

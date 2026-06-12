@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { api, InstrumentResponse } from '@/lib/api';
+import { api, InstrumentResponse, InstrumentType } from '@/lib/api';
+import { formatNumber, formatSAR } from '@/lib/format';
 
-const TYPE_LABELS: Record<string, string> = {
+const TYPE_LABELS: Record<InstrumentType, string> = {
   sukuk_convertible: 'Sukuk Convertible',
   phantom: 'Phantom Shares',
   warrant: 'Warrant',
@@ -42,8 +43,8 @@ export default function InstrumentsPage() {
               <span style={{ ...s.statusBadge, color: inst.status === 'active' ? 'var(--pos)' : 'var(--text-tertiary)' }}>{inst.status}</span>
             </div>
             <div style={s.stats}>
-              <span style={s.stat}><span style={s.statLabel}>Quantity</span><span style={s.mono}>{Number(inst.quantity).toLocaleString()}</span></span>
-              {inst.face_value && <span style={s.stat}><span style={s.statLabel}>Face value</span><span style={s.mono}>SAR {Number(inst.face_value).toLocaleString()}</span></span>}
+              <span style={s.stat}><span style={s.statLabel}>Quantity</span><span style={s.mono}>{formatNumber(inst.quantity)}</span></span>
+              {inst.face_value && <span style={s.stat}><span style={s.statLabel}>Face value</span><span style={s.mono}>{formatSAR(inst.face_value)}</span></span>}
               <span style={s.stat}><span style={s.statLabel}>Issue date</span><span style={s.mono}>{inst.issue_date}</span></span>
               {inst.maturity_date && <span style={s.stat}><span style={s.statLabel}>Maturity</span><span style={s.mono}>{inst.maturity_date}</span></span>}
             </div>

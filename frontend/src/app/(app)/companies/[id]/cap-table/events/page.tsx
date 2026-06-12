@@ -3,28 +3,35 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { api, CapTableEventResponse } from '@/lib/api';
+import { api, CapTableEventResponse, CapTableEventType } from '@/lib/api';
+import { formatNumber } from '@/lib/format';
 
-const EVENT_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
-  issue: { label: 'Share Issuance', color: '#6ee7b7', icon: '↑' },
-  transfer: { label: 'Share Transfer', color: '#60a5fa', icon: '↔' },
+// Keys are the wire values from backend EventType. The previous keys ('issue',
+// 'transfer') never matched the wire, so three event types fell through to the
+// raw fallback — fixed with explicit approval (Step 3 of the 2026-06 refactor).
+const EVENT_CONFIG: Record<CapTableEventType, { label: string; color: string; icon: string }> = {
+  share_issuance: { label: 'Share Issuance', color: '#6ee7b7', icon: '↑' },
+  share_transfer: { label: 'Share Transfer', color: '#60a5fa', icon: '↔' },
+  share_cancellation: { label: 'Share Cancellation', color: '#f87171', icon: '↓' },
   capital_increase: { label: 'Capital Increase', color: '#a78bfa', icon: '+' },
   capital_decrease: { label: 'Capital Decrease', color: '#f87171', icon: '−' },
 };
 
-function formatPayload(eventType: string, payload: Record<string, unknown>): string {
+function formatPayload(eventType: CapTableEventType, payload: Record<string, unknown>): string {
   const qty = payload.quantity ?? payload.shares_issued;
   const shareClass = (payload.share_class as string) ?? 'ordinary';
 
   switch (eventType) {
-    case 'issue':
-      return `${Number(qty).toLocaleString('en-SA')} ${shareClass} shares issued`;
-    case 'transfer':
-      return `${Number(qty).toLocaleString('en-SA')} ${shareClass} shares transferred`;
+    case 'share_issuance':
+      return `${formatNumber(Number(qty))} ${shareClass} shares issued`;
+    case 'share_transfer':
+      return `${formatNumber(Number(qty))} ${shareClass} shares transferred`;
+    case 'share_cancellation':
+      return `${formatNumber(Number(qty))} ${shareClass} shares cancelled`;
     case 'capital_increase':
-      return qty ? `${Number(qty).toLocaleString('en-SA')} shares issued` : 'Capital increased';
+      return qty ? `${formatNumber(Number(qty))} shares issued` : 'Capital increased';
     case 'capital_decrease':
-      return `${Number(qty).toLocaleString('en-SA')} ${shareClass} shares reduced`;
+      return `${formatNumber(Number(qty))} ${shareClass} shares reduced`;
     default:
       return JSON.stringify(payload);
   }

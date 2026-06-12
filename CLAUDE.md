@@ -82,7 +82,7 @@ Do not skip steps 2-5 even if the user's request seems simple. The constraints t
 
 ### 9. Security baseline before real customer data
 - MFA (TOTP) required for all users before any real cap table data is entered
-- Role-based access control (RBAC): admin / viewer / employee — never mix permissions
+- Role-based access control (RBAC): admin / editor / viewer — never mix permissions
 - National IDs, IBANs, and other PII must be encrypted at the field level in the DB, not just at rest
 - Audit log of every login, export, and document access — not just cap table state changes
 - No real customer data in the system until: MFA live, RBAC live, field encryption live
@@ -100,7 +100,7 @@ Do not skip steps 2-5 even if the user's request seems simple. The constraints t
 ## Technical stack (locked)
 
 - **Backend:** FastAPI 0.115+, Python 3.12+, SQLAlchemy 2.0 async, Pydantic 2, Alembic
-- **Frontend:** Next.js 15, TypeScript strict mode, React 19
+- **Frontend:** Next.js 16, TypeScript strict mode, React 19 (see ADR-0007)
 - **Database:** PostgreSQL 16
 - **Cache:** Redis (when needed; not on day one)
 - **Local dev:** Docker Compose
@@ -160,7 +160,7 @@ Do not introduce new frameworks, libraries, or services without an ADR. "It woul
 │       ├── main.py                # Entry point
 │       └── core/                  # Config, DB, security primitives
 │
-├── frontend/                      # Next.js 15 app
+├── frontend/                      # Next.js 16 app
 │   └── src/app/                   # App router pages and layouts
 │
 ├── shared/                        # Shared contracts/types between BE/FE

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api, StakeholderResponse } from '@/lib/api';
+import { thData, tdData } from '@/lib/table-styles';
 
 export default function StakeholdersPage() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -67,17 +68,17 @@ export default function StakeholdersPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
             <thead>
               <tr>
-                <th style={thStyle}>Name</th>
-                <th style={thStyle}>Type</th>
-                <th style={thStyle}>Nationality / CR</th>
-                <th style={thStyle}>Email</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>Actions</th>
+                <th style={thData}>Name</th>
+                <th style={thData}>Type</th>
+                <th style={thData}>Nationality / CR</th>
+                <th style={thData}>Email</th>
+                <th style={{ ...thData, textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {stakeholders.map(st => (
                 <tr key={st.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                  <td style={tdStyle}>
+                  <td style={tdData}>
                     <Link
                       href={`/companies/${companyId}/stakeholders/${st.id}`}
                       style={{ textDecoration: 'none', transition: 'color 0.2s ease' }}
@@ -86,7 +87,7 @@ export default function StakeholdersPage() {
                       {st.name_ar && <p style={{ fontSize: '13px', color: 'var(--text-secondary)', direction: 'rtl', marginTop: '2px' }}>{st.name_ar}</p>}
                     </Link>
                   </td>
-                  <td style={tdStyle}>
+                  <td style={tdData}>
                     <span style={{ 
                       display: 'inline-block', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)', 
                       fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.04em', textTransform: 'uppercase', 
@@ -95,13 +96,13 @@ export default function StakeholdersPage() {
                       {st.stakeholder_type === 'natural_person' ? 'Individual' : 'Entity'}
                     </span>
                   </td>
-                  <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)' }}>
+                  <td style={{ ...tdData, fontFamily: 'var(--font-mono)' }}>
                     {st.nationality ?? st.cr_number ?? '—'}
                   </td>
-                  <td style={{ ...tdStyle, color: 'var(--text-secondary)' }}>
+                  <td style={{ ...tdData, color: 'var(--text-secondary)' }}>
                     {st.email ?? '—'}
                   </td>
-                  <td style={{ ...tdStyle, textAlign: 'right' }}>
+                  <td style={{ ...tdData, textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                       <Link
                         href={`/companies/${companyId}/stakeholders/${st.id}`}
@@ -128,21 +129,3 @@ export default function StakeholdersPage() {
   );
 }
 
-const thStyle: React.CSSProperties = {
-  padding: '16px 24px',
-  textAlign: 'left',
-  fontSize: '12px',
-  color: 'var(--text-tertiary)',
-  fontFamily: 'var(--font-mono)',
-  textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-  borderBottom: '1px solid var(--glass-border)',
-  background: 'rgba(255,255,255,0.02)',
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: '16px 24px',
-  fontSize: '14px',
-  color: 'var(--text-primary)',
-  verticalAlign: 'middle',
-};

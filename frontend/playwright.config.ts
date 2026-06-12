@@ -5,7 +5,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Spread instead of `workers: undefined` — exactOptionalPropertyTypes forbids
+  // assigning undefined to an optional property; omitting it behaves identically.
+  ...(process.env.CI ? { workers: 1 } : {}),
   reporter: [['html'], ['stdout']],
 
   use: {

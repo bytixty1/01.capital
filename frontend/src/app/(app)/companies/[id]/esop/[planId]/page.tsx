@@ -9,6 +9,7 @@ import {
   IFRS2ExpenseResponse,
   StakeholderResponse,
 } from '@/lib/api';
+import { formatNumber, formatNumberWhole, formatSAR, formatSARWhole } from '@/lib/format';
 
 export default function EsopPlanPage() {
   const { id: companyId, planId } = useParams<{ id: string; planId: string }>();
@@ -39,7 +40,7 @@ export default function EsopPlanPage() {
         setPlan(p);
         setGrants(g);
         setStakeholders(s);
-        if (g.length > 0) setSelectedGrantId(g[0].id);
+        if (g[0]) setSelectedGrantId(g[0].id);
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
@@ -95,9 +96,9 @@ export default function EsopPlanPage() {
 
       <div style={s.statsRow}>
         {[
-          { label: 'Total pool', value: Number(plan.total_pool).toLocaleString() },
-          { label: 'Allocated', value: Number(plan.allocated).toLocaleString() },
-          { label: 'Available', value: available.toLocaleString() },
+          { label: 'Total pool', value: formatNumber(plan.total_pool) },
+          { label: 'Allocated', value: formatNumber(plan.allocated) },
+          { label: 'Available', value: formatNumber(available) },
           { label: 'Share class', value: plan.share_class },
         ].map(({ label, value }) => (
           <div key={label} style={s.stat}>
@@ -124,7 +125,7 @@ export default function EsopPlanPage() {
               {grants.map(g => (
                 <tr key={g.id} style={s.row}>
                   <td style={s.td}>{stakeMap[g.stakeholder_id] ?? g.stakeholder_id}</td>
-                  <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>{Number(g.quantity).toLocaleString()}</td>
+                  <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>{formatNumber(g.quantity)}</td>
                   <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>{g.grant_date}</td>
                   <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>
                     {g.vesting_schedule.cliff_months}m cliff / {g.vesting_schedule.total_months}m total
@@ -155,7 +156,7 @@ export default function EsopPlanPage() {
                 <select value={selectedGrantId} onChange={e => setSelectedGrantId(e.target.value)} className="glass-input" style={{ fontFamily: 'var(--font-mono)' }}>
                   {grants.map(g => (
                     <option key={g.id} value={g.id}>
-                      {stakeMap[g.stakeholder_id] ?? g.stakeholder_id} — {Number(g.quantity).toLocaleString()} ({g.grant_date})
+                      {stakeMap[g.stakeholder_id] ?? g.stakeholder_id} — {formatNumber(g.quantity)} ({g.grant_date})
                     </option>
                   ))}
                 </select>
@@ -204,8 +205,8 @@ export default function EsopPlanPage() {
             <div style={{ borderTop: '1px solid var(--border-default)' }}>
               <div style={{ padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1px', background: 'var(--border-default)' }}>
                 {[
-                  { label: 'Fair value / option', value: `SAR ${Number(ifrs2Result.fair_value_per_option_sar).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
-                  { label: 'Total grant expense', value: `SAR ${Number(ifrs2Result.total_grant_expense_sar).toLocaleString(undefined, { maximumFractionDigits: 0 })}` },
+                  { label: 'Fair value / option', value: formatSAR(ifrs2Result.fair_value_per_option_sar, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
+                  { label: 'Total grant expense', value: formatSARWhole(ifrs2Result.total_grant_expense_sar) },
                   { label: 'Vesting period', value: `${ifrs2Result.total_vesting_months} months` },
                   { label: 'Method', value: ifrs2Result.method.replace(/_/g, ' ') },
                 ].map(tile => (
@@ -229,10 +230,10 @@ export default function EsopPlanPage() {
                       <td style={{ ...s.td, fontFamily: 'var(--font-mono)' }}>{row.period_start}</td>
                       <td style={{ ...s.td, fontFamily: 'var(--font-mono)' }}>{row.period_end}</td>
                       <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>
-                        {Number(row.period_expense_sar).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        {formatNumberWhole(row.period_expense_sar)}
                       </td>
                       <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                        {Number(row.cumulative_expense_sar).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        {formatNumberWhole(row.cumulative_expense_sar)}
                       </td>
                     </tr>
                   ))}

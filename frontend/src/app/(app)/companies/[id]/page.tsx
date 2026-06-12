@@ -4,50 +4,14 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api, CapTableResponse, CompanyResponse } from '@/lib/api';
-
-/* ── Donut Chart ──────────────────────────────────────────────────────────── */
+import { formatNumber, formatSAR } from '@/lib/format';
+import { DonutChart } from '@/components/DonutChart';
+import { thData, tdData } from '@/lib/table-styles';
 
 const COLORS = [
   'var(--brand-purple)', '#9b6ff0', '#c4a8f8', '#6ee7b7',
   '#fbbf24', '#f87171', '#60a5fa', '#a78bfa',
 ];
-
-function DonutChart({ slices, onHover }: { slices: { pct: number; color: string; label: string }[]; onHover: (i: number | null) => void }) {
-  const r = 36;
-  const cx = 44;
-  const cy = 44;
-  const circ = 2 * Math.PI * r;
-  let offset = 0;
-
-  return (
-    <svg width="120" height="120" viewBox="0 0 88 88" style={{ overflow: 'visible' }}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--bg-elevated)" strokeWidth="10" />
-      {slices.map((s, i) => {
-        const dash = (s.pct / 100) * circ;
-        const rotation = (offset / 100) * 360 - 90;
-        offset += s.pct;
-        return (
-          <circle
-            key={i}
-            cx={cx} cy={cy} r={r}
-            fill="none"
-            stroke={s.color}
-            strokeWidth="10"
-            strokeDasharray={`${dash} ${circ - dash}`}
-            style={{ 
-              transform: `rotate(${rotation}deg)`, 
-              transformOrigin: `${cx}px ${cy}px`, 
-              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={() => onHover(i)}
-            onMouseLeave={() => onHover(null)}
-          />
-        );
-      })}
-    </svg>
-  );
-}
 
 /* ── Delete Confirmation Modal ────────────────────────────────────────────── */
 
@@ -222,7 +186,8 @@ export default function CompanyPage() {
   // Build donut chart data from holdings
   const donutSlices = capTable.holdings.map((h, i) => ({
     pct: Number(h.percentage),
-    color: COLORS[i % COLORS.length],
+    // Non-null assertion is sound: i % COLORS.length always indexes the non-empty array.
+    color: COLORS[i % COLORS.length]!,
     label: h.stakeholder_name,
   }));
 
@@ -313,19 +278,22 @@ export default function CompanyPage() {
         <div style={{ background: 'var(--glass-bg)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Paid-up capital</span>
           <span style={{ fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-            {company.paid_up_capital ? `SAR ${Number(company.paid_up_capital).toLocaleString('en-SA')}` : '—'}
+            {company.paid_up_capital ? formatSAR(company.paid_up_capital) : '—'}
           </span>
         </div>
         <div style={{ background: 'var(--glass-bg)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total shares</span>
           <span style={{ fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-            {totalShares > 0 ? totalShares.toLocaleString('en-SA') : '—'}
+            {totalShares > 0 ? formatNumber(totalShares) : '—'}
           </span>
         </div>
         <div style={{ background: 'var(--glass-bg)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Par value</span>
           <span style={{ fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-            {company.par_value_per_share ? `SAR ${company.par_value_per_share}` : '—'}
+            {/* 4 fraction digits matches the backend's Numeric(_, 4) wire format. */}
+            {company.par_value_per_share
+              ? formatSAR(company.par_value_per_share, { minimumFractionDigits: 4, maximumFractionDigits: 4 })
+              : '—'}
           </span>
         </div>
         <div style={{ background: 'var(--glass-bg)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -372,7 +340,7 @@ export default function CompanyPage() {
             </div>
             {diluted && capTable.total_shares_diluted && capTable.total_shares_issued && (
               <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
-                Issued {Number(capTable.total_shares_issued).toLocaleString('en-SA')} · Diluted {Number(capTable.total_shares_diluted).toLocaleString('en-SA')}
+                Issued {formatNumber(capTable.total_shares_issued)} · Diluted {formatNumber(capTable.total_shares_diluted)}
               </span>
             )}
           </div>
@@ -409,7 +377,7 @@ export default function CompanyPage() {
           <>
             {/* Ownership Donut */}
             <div style={{ padding: '32px 24px', display: 'flex', alignItems: 'center', gap: '48px', borderBottom: '1px solid var(--glass-border)', flexWrap: 'wrap' }}>
-              <DonutChart slices={donutSlices} onHover={setHoveredSlice} />
+              <DonutChart slices={donutSlices} size={120} onHover={setHoveredSlice} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, minWidth: '240px' }}>
                 {donutSlices.map((s, i) => (
                   <div 
@@ -437,12 +405,12 @@ export default function CompanyPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
                 <thead>
                   <tr>
-                    <th style={thStyle}>Stakeholder</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Share class</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Shares</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Ownership</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Allocation</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Actions</th>
+                    <th style={thData}>Stakeholder</th>
+                    <th style={{ ...thData, textAlign: 'right' }}>Share class</th>
+                    <th style={{ ...thData, textAlign: 'right' }}>Shares</th>
+                    <th style={{ ...thData, textAlign: 'right' }}>Ownership</th>
+                    <th style={{ ...thData, textAlign: 'right' }}>Allocation</th>
+                    <th style={{ ...thData, textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -469,7 +437,7 @@ export default function CompanyPage() {
                       onMouseEnter={() => setHoveredSlice(index)}
                       onMouseLeave={() => setHoveredSlice(null)}
                     >
-                      <td style={tdStyle}>
+                      <td style={tdData}>
                         {isSynthetic ? (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
                             <span style={{
@@ -493,16 +461,16 @@ export default function CompanyPage() {
                           </Link>
                         )}
                       </td>
-                      <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
+                      <td style={{ ...tdData, textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
                         {h.share_class}
                       </td>
-                      <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-                        {Number(h.quantity).toLocaleString('en-SA')}
+                      <td style={{ ...tdData, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                        {formatNumber(h.quantity)}
                       </td>
-                      <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                      <td style={{ ...tdData, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
                         {Number(h.percentage).toFixed(2)}%
                       </td>
-                      <td style={{ ...tdStyle, textAlign: 'right' }}>
+                      <td style={{ ...tdData, textAlign: 'right' }}>
                         <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', width: '100px', overflow: 'hidden', display: 'inline-block', verticalAlign: 'middle' }}>
                           <div style={{
                             height: '100%',
@@ -515,7 +483,7 @@ export default function CompanyPage() {
                           }} />
                         </div>
                       </td>
-                      <td style={{ ...tdStyle, textAlign: 'right' }}>
+                      <td style={{ ...tdData, textAlign: 'right' }}>
                         {isSynthetic ? (
                           <span style={{ fontSize: '11px', color: 'var(--text-disabled)', fontStyle: 'italic' }}>—</span>
                         ) : (
@@ -561,21 +529,3 @@ export default function CompanyPage() {
   );
 }
 
-const thStyle: React.CSSProperties = {
-  padding: '16px 24px',
-  textAlign: 'left',
-  fontSize: '12px',
-  color: 'var(--text-tertiary)',
-  fontFamily: 'var(--font-mono)',
-  textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-  borderBottom: '1px solid var(--glass-border)',
-  background: 'rgba(255,255,255,0.02)',
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: '16px 24px',
-  fontSize: '14px',
-  color: 'var(--text-primary)',
-  verticalAlign: 'middle',
-};

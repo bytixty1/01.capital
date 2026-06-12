@@ -13,6 +13,8 @@ import {
   WaterfallPreference,
   WaterfallResponse,
 } from '@/lib/api';
+import { formatNumberWhole, formatSARWhole } from '@/lib/format';
+import { thCompact, tdCompact } from '@/lib/table-styles';
 
 const fieldLabel: React.CSSProperties = {
   fontSize: '11px',
@@ -22,24 +24,6 @@ const fieldLabel: React.CSSProperties = {
   textTransform: 'uppercase',
   marginBottom: '6px',
   display: 'block',
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: '12px 16px',
-  fontSize: '13px',
-  color: 'var(--text-secondary)',
-};
-
-const thStyle: React.CSSProperties = {
-  padding: '12px 16px',
-  fontSize: '10px',
-  fontWeight: 600,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: 'var(--text-tertiary)',
-  textAlign: 'left',
-  borderBottom: '1px solid var(--glass-border)',
-  fontFamily: 'var(--font-mono)',
 };
 
 function syntheticMeta(kind: SyntheticKind | null | undefined): { color: string; label: string } | null {
@@ -57,10 +41,6 @@ function breakpointMeta(type: Breakpoint['breakpoint_type']): { color: string; l
     case 'conversion':    return { color: 'var(--brand-purple)', label: 'CONVERSION' };
     case 'cap_hit':       return { color: 'var(--warn)',         label: 'CAP HIT' };
   }
-}
-
-function fmtSAR(n: number): string {
-  return n.toLocaleString('en-SA', { maximumFractionDigits: 0 });
 }
 
 type PrefRowState = {
@@ -239,12 +219,12 @@ export default function WaterfallPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
                   <thead>
                     <tr>
-                      <th style={thStyle}>Share class</th>
-                      <th style={{ ...thStyle, textAlign: 'right' }}>Seniority</th>
-                      <th style={{ ...thStyle, textAlign: 'right' }}>Multiplier</th>
-                      <th style={thStyle}>Participation</th>
-                      <th style={{ ...thStyle, textAlign: 'right' }}>Cap (x)</th>
-                      <th style={{ ...thStyle, textAlign: 'right' }}>Original investment (SAR)</th>
+                      <th style={thCompact}>Share class</th>
+                      <th style={{ ...thCompact, textAlign: 'right' }}>Seniority</th>
+                      <th style={{ ...thCompact, textAlign: 'right' }}>Multiplier</th>
+                      <th style={thCompact}>Participation</th>
+                      <th style={{ ...thCompact, textAlign: 'right' }}>Cap (x)</th>
+                      <th style={{ ...thCompact, textAlign: 'right' }}>Original investment (SAR)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -256,7 +236,7 @@ export default function WaterfallPage() {
                           opacity: r.isSynthetic ? 0.55 : 1,
                         }}
                       >
-                        <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 500 }}>
+                        <td style={{ ...tdCompact, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 500 }}>
                           {r.share_class}
                           {r.isSynthetic && (
                             <span style={{ fontSize: '10px', marginLeft: '8px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
@@ -264,7 +244,7 @@ export default function WaterfallPage() {
                             </span>
                           )}
                         </td>
-                        <td style={{ ...tdStyle, textAlign: 'right' }}>
+                        <td style={{ ...tdCompact, textAlign: 'right' }}>
                           <input
                             type="number"
                             min="1"
@@ -277,7 +257,7 @@ export default function WaterfallPage() {
                             style={{ width: '70px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}
                           />
                         </td>
-                        <td style={{ ...tdStyle, textAlign: 'right' }}>
+                        <td style={{ ...tdCompact, textAlign: 'right' }}>
                           <input
                             type="number"
                             min="0"
@@ -290,7 +270,7 @@ export default function WaterfallPage() {
                             style={{ width: '80px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}
                           />
                         </td>
-                        <td style={tdStyle}>
+                        <td style={tdCompact}>
                           <select
                             disabled={r.isSynthetic || Number(r.multiplier) === 0}
                             value={r.participation}
@@ -303,7 +283,7 @@ export default function WaterfallPage() {
                             <option value="capped">Capped</option>
                           </select>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: 'right' }}>
+                        <td style={{ ...tdCompact, textAlign: 'right' }}>
                           <input
                             type="number"
                             min="0"
@@ -317,7 +297,7 @@ export default function WaterfallPage() {
                             style={{ width: '80px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}
                           />
                         </td>
-                        <td style={{ ...tdStyle, textAlign: 'right' }}>
+                        <td style={{ ...tdCompact, textAlign: 'right' }}>
                           <input
                             type="number"
                             min="0"
@@ -373,13 +353,13 @@ export default function WaterfallPage() {
           {/* Summary tiles */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
             {[
-              { label: 'Exit value', value: `SAR ${fmtSAR(Number(result.exit_value_sar))}` },
-              { label: 'Total distributed', value: `SAR ${fmtSAR(Number(result.total_distributed_sar))}` },
+              { label: 'Exit value', value: formatSARWhole(result.exit_value_sar) },
+              { label: 'Total distributed', value: formatSARWhole(result.total_distributed_sar) },
               { label: 'Breakpoints', value: String(result.breakpoints.length) },
               {
                 label: 'Common starts at',
                 value: commonStartsAt != null && commonStartsAt > 0
-                  ? `SAR ${fmtSAR(commonStartsAt)}`
+                  ? formatSARWhole(commonStartsAt)
                   : 'SAR 0',
               },
             ].map(tile => (
@@ -405,10 +385,10 @@ export default function WaterfallPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
-                      <th style={thStyle}>Type</th>
-                      <th style={{ ...thStyle, textAlign: 'right' }}>Exit value (SAR)</th>
-                      <th style={thStyle}>Share class</th>
-                      <th style={thStyle}>Description</th>
+                      <th style={thCompact}>Type</th>
+                      <th style={{ ...thCompact, textAlign: 'right' }}>Exit value (SAR)</th>
+                      <th style={thCompact}>Share class</th>
+                      <th style={thCompact}>Description</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -419,7 +399,7 @@ export default function WaterfallPage() {
                           key={`${b.breakpoint_type}-${b.share_class}-${i}`}
                           style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
                         >
-                          <td style={tdStyle}>
+                          <td style={tdCompact}>
                             <span style={{
                               fontSize: '10px',
                               fontWeight: 700,
@@ -431,13 +411,13 @@ export default function WaterfallPage() {
                               fontFamily: 'var(--font-mono)',
                             }}>{meta.label}</span>
                           </td>
-                          <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 600 }}>
-                            {fmtSAR(Number(b.exit_value_sar))}
+                          <td style={{ ...tdCompact, textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 600 }}>
+                            {formatNumberWhole(b.exit_value_sar)}
                           </td>
-                          <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)' }}>
+                          <td style={{ ...tdCompact, fontFamily: 'var(--font-mono)' }}>
                             {b.share_class ?? '—'}
                           </td>
-                          <td style={{ ...tdStyle, fontStyle: 'italic' }}>{b.description}</td>
+                          <td style={{ ...tdCompact, fontStyle: 'italic' }}>{b.description}</td>
                         </tr>
                       );
                     })}
@@ -456,19 +436,19 @@ export default function WaterfallPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    <th style={thStyle}>Share class</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Distribution (SAR)</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>% of exit</th>
-                    <th style={thStyle}>Election</th>
+                    <th style={thCompact}>Share class</th>
+                    <th style={{ ...thCompact, textAlign: 'right' }}>Distribution (SAR)</th>
+                    <th style={{ ...thCompact, textAlign: 'right' }}>% of exit</th>
+                    <th style={thCompact}>Election</th>
                   </tr>
                 </thead>
                 <tbody>
                   {result.class_distributions.map(c => (
                     <tr key={c.share_class} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 500 }}>{c.share_class}</td>
-                      <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>SAR {fmtSAR(Number(c.total_distribution_sar))}</td>
-                      <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{Number(c.pct_of_exit).toFixed(2)}%</td>
-                      <td style={tdStyle}>
+                      <td style={{ ...tdCompact, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 500 }}>{c.share_class}</td>
+                      <td style={{ ...tdCompact, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{formatSARWhole(c.total_distribution_sar)}</td>
+                      <td style={{ ...tdCompact, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{Number(c.pct_of_exit).toFixed(2)}%</td>
+                      <td style={tdCompact}>
                         {c.converted ? (
                           <span style={{
                             fontSize: '10px',
@@ -500,11 +480,11 @@ export default function WaterfallPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
                 <thead>
                   <tr>
-                    <th style={thStyle}>Stakeholder</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Share class</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Shares</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Distribution (SAR)</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>% of exit</th>
+                    <th style={thCompact}>Stakeholder</th>
+                    <th style={{ ...thCompact, textAlign: 'right' }}>Share class</th>
+                    <th style={{ ...thCompact, textAlign: 'right' }}>Shares</th>
+                    <th style={{ ...thCompact, textAlign: 'right' }}>Distribution (SAR)</th>
+                    <th style={{ ...thCompact, textAlign: 'right' }}>% of exit</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -518,7 +498,7 @@ export default function WaterfallPage() {
                           borderLeft: meta ? `2px dashed ${meta.color}` : 'none',
                         }}
                       >
-                        <td style={tdStyle}>
+                        <td style={tdCompact}>
                           {meta ? (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
                               <span style={{
@@ -537,12 +517,12 @@ export default function WaterfallPage() {
                             <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{s.stakeholder_name}</span>
                           )}
                         </td>
-                        <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{s.share_class}</td>
-                        <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{fmtSAR(Number(s.quantity))}</td>
-                        <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 600 }}>
-                          SAR {fmtSAR(Number(s.distribution_sar))}
+                        <td style={{ ...tdCompact, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{s.share_class}</td>
+                        <td style={{ ...tdCompact, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{formatNumberWhole(s.quantity)}</td>
+                        <td style={{ ...tdCompact, textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 600 }}>
+                          {formatSARWhole(s.distribution_sar)}
                         </td>
-                        <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{Number(s.pct_of_exit).toFixed(2)}%</td>
+                        <td style={{ ...tdCompact, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{Number(s.pct_of_exit).toFixed(2)}%</td>
                       </tr>
                     );
                   })}

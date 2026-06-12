@@ -24,7 +24,9 @@ export async function createTestCompany(page: Page, namePrefix: string = 'TestCo
   await page.waitForTimeout(500);
   await page.click('button[type="submit"]:has-text("Create company")');
   await page.waitForURL(COMPANY_ID_RE);
-  return page.url().match(COMPANY_ID_RE)![1];
+  // Non-null assertions are sound: waitForURL above guarantees the URL matches
+  // COMPANY_ID_RE, so both the match and its capture group exist.
+  return page.url().match(COMPANY_ID_RE)![1]!;
 }
 
 interface StakeholderData {
