@@ -97,15 +97,15 @@ export default function NewCompanyPage() {
     setMocLoading(true);
     setError(null);
     try {
-      const data = await api.integrations.moc.fetchCompany(crNumber);
-      setNameEn(data.name_en || '');
-      setNameAr(data.name_ar || '');
-      if (data.entity_type) setEntityType(data.entity_type);
-      if (data.capital) {
-        setAuthorizedCapital(data.capital.toString());
-        setPaidUpCapital(data.capital.toString());
+      const mocCompany = await api.integrations.moc.fetchCompany(crNumber);
+      setNameEn(mocCompany.name_en || '');
+      setNameAr(mocCompany.name_ar || '');
+      if (mocCompany.entity_type) setEntityType(mocCompany.entity_type);
+      if (mocCompany.capital) {
+        setAuthorizedCapital(mocCompany.capital.toString());
+        setPaidUpCapital(mocCompany.capital.toString());
       }
-      if (data.incorporation_date) setIncorporationDate(data.incorporation_date);
+      if (mocCompany.incorporation_date) setIncorporationDate(mocCompany.incorporation_date);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch MoC data');
     } finally {
