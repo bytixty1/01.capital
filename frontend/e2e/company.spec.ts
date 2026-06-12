@@ -1,23 +1,25 @@
 import { test, expect } from '@playwright/test';
-import { registerUser, verifyOTP, generateUniqueEmail } from './helpers/auth';
+import { registerUser, verifyEmailViaDevAPI, generateUniqueEmail } from './helpers/auth';
+import { uniqueCrNumber } from './helpers/company';
 
 test.describe('Company Creation', () => {
   test.beforeEach(async ({ page }) => {
     const email = await generateUniqueEmail();
     await registerUser(page, email, 'ValidPass123', 'Test User');
-    await verifyOTP(page, '000000');
+    await verifyEmailViaDevAPI(page, email);
   });
 
   test('complete 3-step company creation wizard (LLC)', async ({ page }) => {
     await page.goto('/dashboard');
     await page.click('a:has-text("+ New company")');
+    await page.waitForURL('**/companies/new');
     expect(page.url()).toContain('/companies/new');
 
     // Step 1: Identity
     await page.click('button:has-text("LLC")');
     await page.fill('input[placeholder="Acme Saudi LLC"]', 'Test Company LLC');
     await page.fill('input[dir="rtl"][placeholder*="اسم الشركة"]', 'شركة الاختبار');
-    await page.fill('input[placeholder="10-digit number"]', '1234567890');
+    await page.fill('input[placeholder="10-digit number"]', uniqueCrNumber());
     const dateInput = page.locator('input[type="date"]').first();
     await dateInput.fill('2023-01-15');
     await page.click('button:has-text("Continue to Capital")');
@@ -35,8 +37,8 @@ test.describe('Company Creation', () => {
 
     // Step 3: Governance
     await page.click('button:has-text("Create company")');
-    await page.waitForURL(/\/companies\/\d+$/);
-    expect(page.url()).toMatch(/\/companies\/\d+$/);
+    await page.waitForURL(/\/companies\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(page.url()).toMatch(/\/companies\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 
   test('complete 3-step creation with SJSC', async ({ page }) => {
@@ -45,7 +47,7 @@ test.describe('Company Creation', () => {
     await page.click('button:has-text("SJSC")');
     await page.fill('input[placeholder="Acme Saudi LLC"]', 'Test SJSC Company');
     await page.fill('input[dir="rtl"]', 'شركة الاختبار');
-    await page.fill('input[placeholder="10-digit number"]', '1234567891');
+    await page.fill('input[placeholder="10-digit number"]', uniqueCrNumber());
     const dateInput = page.locator('input[type="date"]').first();
     await dateInput.fill('2023-02-20');
     await page.click('button:has-text("Continue to Capital")');
@@ -58,8 +60,8 @@ test.describe('Company Creation', () => {
     await page.click('button:has-text("Continue to Governance")');
     await page.waitForTimeout(500);
     await page.click('button:has-text("Create company")');
-    await page.waitForURL(/\/companies\/\d+$/);
-    expect(page.url()).toMatch(/\/companies\/\d+$/);
+    await page.waitForURL(/\/companies\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(page.url()).toMatch(/\/companies\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 
   test('cannot proceed to step 2 with invalid company name', async ({ page }) => {
@@ -82,7 +84,7 @@ test.describe('Company Creation', () => {
     const companyName = `Company ${Date.now()}`;
     await page.fill('input[placeholder="Acme Saudi LLC"]', companyName);
     await page.fill('input[dir="rtl"]', 'شركة');
-    await page.fill('input[placeholder="10-digit number"]', '1234567892');
+    await page.fill('input[placeholder="10-digit number"]', uniqueCrNumber());
     const dateInput = page.locator('input[type="date"]').first();
     await dateInput.fill('2023-03-10');
     await page.click('button:has-text("Continue to Capital")');
@@ -95,7 +97,7 @@ test.describe('Company Creation', () => {
     await page.click('button:has-text("Continue to Governance")');
     await page.waitForTimeout(500);
     await page.click('button[type="submit"]:has-text("Create company")');
-    await page.waitForURL(/\/companies\/\d+$/);
+    await page.waitForURL(/\/companies\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     await page.goto('/dashboard');
     await expect(page.locator(`text=${companyName}`)).toBeVisible();
   });

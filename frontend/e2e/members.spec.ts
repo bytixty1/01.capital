@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { registerUser, verifyOTP, generateUniqueEmail } from './helpers/auth';
+import { registerUser, verifyEmailViaDevAPI, generateUniqueEmail } from './helpers/auth';
 import { createTestCompany } from './helpers/company';
 
 test.describe('Company Members', () => {
   test.beforeEach(async ({ page }) => {
     const email = await generateUniqueEmail();
     await registerUser(page, email, 'ValidPass123', 'Test User');
-    await verifyOTP(page, '000000');
+    await verifyEmailViaDevAPI(page, email);
   });
 
   test('members page loads and displays', async ({ page }) => {
@@ -18,30 +18,17 @@ test.describe('Company Members', () => {
     expect(pageContent).toMatch(/[Mm]embers?/);
   });
 
-  test('change member role via select', async ({ page }) => {
+  test('changing your own role is rejected', async ({ page }) => {
     const companyId = await createTestCompany(page, 'MemberCo');
     await page.goto(`/companies/${companyId}/members`);
 
-    await page.waitForTimeout(1000);
-    const roleSelects = page.locator('select');
-    const selectCount = await roleSelects.count();
+    // The only member is the current user — the backend must refuse to let
+    // them change their own role (companies.py: "Cannot change your own role").
+    const roleSelect = page.locator('select').first();
+    await expect(roleSelect).toHaveValue('admin');
+    await roleSelect.selectOption('editor');
 
-    if (selectCount > 0) {
-      const firstSelect = roleSelects.first();
-      const currentValue = await firstSelect.inputValue();
-
-      if (currentValue === 'admin') {
-        await firstSelect.selectOption('editor');
-      } else if (currentValue === 'editor') {
-        await firstSelect.selectOption('viewer');
-      } else {
-        await firstSelect.selectOption('admin');
-      }
-
-      await page.waitForTimeout(1000);
-      const newValue = await firstSelect.inputValue();
-      expect(newValue).not.toBe(currentValue);
-    }
+    await expect(page.locator('text=Cannot change your own role')).toBeVisible();
   });
 
   test('remove member with confirmation', async ({ page }) => {
@@ -63,11 +50,8 @@ test.describe('Company Members', () => {
     const companyId = await createTestCompany(page, 'MemberCo');
     await page.goto(`/companies/${companyId}/members`);
 
-    await page.waitForTimeout(1000);
-    const pageContent = await page.content();
-    const hasRoles = pageContent.includes('admin') ||
-                     pageContent.includes('editor') ||
-                     pageContent.includes('viewer');
-    expect(hasRoles).toBeTruthy();
+    // Auto-waits for the members fetch — a fixed timeout races it
+    await expect(page.locator('th', { hasText: 'Role' })).toBeVisible();
+    await expect(page.locator('select').first()).toHaveValue('admin');
   });
 });

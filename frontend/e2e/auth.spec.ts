@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { registerUser, verifyOTP, loginViaUI, signOut, generateUniqueEmail } from './helpers/auth';
+import { registerUser, verifyEmailViaDevAPI, loginViaUI, signOut, generateUniqueEmail } from './helpers/auth';
 
 test.describe('Authentication', () => {
   test('register with valid credentials', async ({ page }) => {
@@ -32,14 +32,14 @@ test.describe('Authentication', () => {
   test('register and verify OTP flow', async ({ page }) => {
     const email = await generateUniqueEmail();
     await registerUser(page, email, 'ValidPass123', 'Test User');
-    await verifyOTP(page, '000000');
+    await verifyEmailViaDevAPI(page, email);
     expect(page.url()).toBe('http://localhost:3000/dashboard');
   });
 
   test('login with valid credentials', async ({ page }) => {
     const email = await generateUniqueEmail();
     await registerUser(page, email, 'ValidPass123', 'Test User');
-    await verifyOTP(page, '000000');
+    await verifyEmailViaDevAPI(page, email);
     await signOut(page);
     await loginViaUI(page, email, 'ValidPass123');
     expect(page.url()).toBe('http://localhost:3000/dashboard');
@@ -48,7 +48,7 @@ test.describe('Authentication', () => {
   test('login rejects invalid password', async ({ page }) => {
     const email = await generateUniqueEmail();
     await registerUser(page, email, 'ValidPass123', 'Test User');
-    await verifyOTP(page, '000000');
+    await verifyEmailViaDevAPI(page, email);
     await signOut(page);
     await page.goto('/login');
     await page.fill('input[autocomplete="email"]', email);
@@ -61,14 +61,15 @@ test.describe('Authentication', () => {
   test('logout redirects to login', async ({ page }) => {
     const email = await generateUniqueEmail();
     await registerUser(page, email, 'ValidPass123', 'Test User');
-    await verifyOTP(page, '000000');
+    await verifyEmailViaDevAPI(page, email);
     await signOut(page);
     expect(page.url()).toBe('http://localhost:3000/login');
   });
 
   test('unauthenticated user accessing /dashboard redirects to /login', async ({ page }) => {
     await page.goto('/dashboard');
-    expect(page.url()).toBe('http://localhost:3000/login');
+    // Route guard preserves the intended destination as ?next=
+    expect(page.url()).toBe('http://localhost:3000/login?next=%2Fdashboard');
   });
 
   test('verify page with invalid OTP shows error', async ({ page }) => {

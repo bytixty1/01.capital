@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { registerUser, verifyOTP, generateUniqueEmail } from './helpers/auth';
+import { registerUser, verifyEmailViaDevAPI, generateUniqueEmail } from './helpers/auth';
 import { createTestCompanyWithStakeholder } from './helpers/company';
 
-const COMPANY_ESOP_RE = /\/companies\/([\w-]+)\/esop\/([\w-]+)$/;
+const COMPANY_ESOP_RE = /\/companies\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/esop\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/;
 
 test.describe('ESOP Plans', () => {
   test.beforeEach(async ({ page }) => {
     const email = await generateUniqueEmail();
     await registerUser(page, email, 'ValidPass123', 'Test User');
-    await verifyOTP(page, '000000');
+    await verifyEmailViaDevAPI(page, email);
   });
 
   test('create ESOP plan', async ({ page }) => {
@@ -25,7 +25,6 @@ test.describe('ESOP Plans', () => {
     await page.fill('input[placeholder="Employee Stock Option Plan 2026"]', planName);
     const numberInputs = page.locator('input[type="number"]');
     await numberInputs.nth(0).fill('100000');
-    await page.fill('input[placeholder="e.g. ordinary"]', 'esop');
     const dateInput = page.locator('input[type="date"]').first();
     await dateInput.fill('2024-01-15');
     await page.fill('textarea', 'Standard ESOP rules and vesting schedule');
@@ -49,7 +48,6 @@ test.describe('ESOP Plans', () => {
     await page.fill('input[placeholder="Employee Stock Option Plan 2026"]', planName);
     const numberInputs = page.locator('input[type="number"]');
     await numberInputs.nth(0).fill('100000');
-    await page.fill('input[placeholder="e.g. ordinary"]', 'esop');
     const dateInput = page.locator('input[type="date"]').first();
     await dateInput.fill('2024-01-15');
     await page.fill('textarea', 'Standard ESOP rules');
@@ -86,7 +84,6 @@ test.describe('ESOP Plans', () => {
     await page.fill('input[placeholder="Employee Stock Option Plan 2026"]', planName);
     const numberInputs = page.locator('input[type="number"]');
     await numberInputs.nth(0).fill('50000');
-    await page.fill('input[placeholder="e.g. ordinary"]', 'esop');
     const dateInput = page.locator('input[type="date"]').first();
     await dateInput.fill('2024-01-20');
     await page.fill('textarea', 'Test plan');

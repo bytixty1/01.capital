@@ -8,7 +8,8 @@ export default defineConfig({
   // Spread instead of `workers: undefined` — exactOptionalPropertyTypes forbids
   // assigning undefined to an optional property; omitting it behaves identically.
   ...(process.env.CI ? { workers: 1 } : {}),
-  reporter: [['html'], ['stdout']],
+  // 'list' prints per-test results ('stdout' is not a valid reporter name).
+  reporter: [['html'], ['list']],
 
   use: {
     baseURL: 'http://localhost:3000',

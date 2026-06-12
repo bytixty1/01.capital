@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { registerUser, verifyOTP, generateUniqueEmail } from './helpers/auth';
+import { registerUser, verifyEmailViaDevAPI, generateUniqueEmail } from './helpers/auth';
 import { createTestCompanyWithStakeholder } from './helpers/company';
 
 const INVESTOR = {
@@ -14,7 +14,7 @@ test.describe('Instruments', () => {
   test.beforeEach(async ({ page }) => {
     const email = await generateUniqueEmail();
     await registerUser(page, email, 'ValidPass123', 'Test User');
-    await verifyOTP(page, '000000');
+    await verifyEmailViaDevAPI(page, email);
   });
 
   test('create sukuk convertible instrument', async ({ page }) => {

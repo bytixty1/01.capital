@@ -82,6 +82,53 @@ Step 9≡Phase 10. This log uses the Phase numbering.
   `.env*.local` added to frontend/.gitignore. Out of frontend scope, still
   open: Postgres RLS migration (backend), pen test before first customer.
 
+## E2E VERIFICATION (post-refactor, 2026-06-13) — 32/32 PASSING
+
+Full Playwright suite run against the real local stack (prod `next build` +
+`next start` on :3000, uvicorn on :8000, Supabase DB). Started at 28 failed /
+4 passed; ended **32 passed / 0 failed, confirmed twice in a row**. Five
+distinct root causes, in the order found:
+
+1. **iCloud dataless eviction (environment, again):** Turbopack dev server hit
+   `Operation timed out (os error 60)` reading `AuthBrandPanel.tsx` → every
+   auth page rendered "default export is not a React Component" → all 28
+   register/login-dependent tests failed. Fix: materialized `frontend/src`
+   (`find … -exec cat`) and switched e2e to run against the production build
+   instead of the Turbopack dev watcher.
+2. **Deprecated `verifyOTP('000000')` still used by all 7 spec files** — the
+   backend no longer accepts the magic OTP. Replaced with
+   `verifyEmailViaDevAPI(page, email)` (dev endpoint → token → /api/session
+   cookie) everywhere.
+3. **Register rate limit (10/min/IP) vs ~30 registrations per suite run.**
+   Added `rate_limit_enabled` setting (default **true**; both slowapi Limiters
+   wired to it). Local e2e backend runs with `RATE_LIMIT_ENABLED=false`.
+   Deployed environments are unaffected — flag this for a mini-ADR if desired.
+4. **Helper regexes matched route literals:** `COMPANY_ID_RE` (`[\w-]+`)
+   matched `/companies/new` → `createTestCompany` returned `"new"` as the
+   company id before the post-create redirect; same bug in `COMPANY_ESOP_RE`
+   (`planId = "new"`). Three members tests had been passing **vacuously**
+   behind `if (count > 0)` guards because of this. Both regexes now match
+   UUIDs only. Also: `waitForURL(/\/companies\/\d+$/)` expected numeric ids —
+   Supabase ids are UUIDs.
+5. **Specs stale vs. refactored UI + persistent DB:**
+   - Stakeholder form: type is a button toggle (not `<select>`), name
+     placeholder changed, nationality is a dropdown defaulting to SAU.
+   - LLC share-class inputs are locked to `quota` (disabled) — fills removed.
+   - ESOP share-class input has no placeholder and defaults to `esop`.
+   - Hardcoded CR numbers collided with the **persistent Supabase DB** unique
+     index `ix_companies_cr_number` → `uniqueCrNumber()` helper (leading digit
+     forced to 1-9: `validateCR` requires a Saudi region code).
+   - "Change member role" test rewritten: sole member is yourself and the
+     backend correctly rejects changing your own role — now asserts the
+     rejection. Role-column test: fixed 1s timeout replaced with auto-waiting
+     assertions.
+   - `/login` redirect assertion updated for the `?next=` param the new route
+     guard appends.
+
+**New bug found (not fixed):** duplicate CR number on POST /api/companies
+returns **500** (raw IntegrityError) instead of 409 — backend should catch
+`UniqueViolationError` and return a clean conflict error. Added below.
+
 ## FINAL SUMMARY (phases 1-10 complete)
 
 - **Commits:** c4786ab (ph 2-5) · 741cb7a (universe) · 1034455 (ph 6) ·
@@ -200,7 +247,10 @@ useCursorLens/useDualClock/useLangToggle when the landing page is next touched.
 2. **Screenshots mislabeled** (found by graphify vision pass):
    `companies.png`/`onboarding.png` are 404 pages; `dashboard.png`/`account.png`
    show the login page.
-3. Pre-existing lint errors remaining (8 of original 10), headline items:
+3. **Backend:** duplicate `cr_number` on POST /api/companies surfaces as a raw
+   500 (asyncpg `UniqueViolationError` on `ix_companies_cr_number`) instead of
+   a 409 with a user-readable message.
+4. Pre-existing lint errors remaining (8 of original 10), headline items:
    `react-hooks/set-state-in-effect` in `app/(app)/layout.tsx` (company-name
    fetch) — to be removed wholesale by the Phase 7 RSC/state migration.
 
