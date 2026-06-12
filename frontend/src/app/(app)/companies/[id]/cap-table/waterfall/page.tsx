@@ -9,12 +9,12 @@ import {
   CapTableResponse,
   CompanyResponse,
   ParticipationType,
-  SyntheticKind,
   WaterfallPreference,
   WaterfallResponse,
 } from '@/lib/api';
 import { formatNumberWhole, formatSARWhole } from '@/lib/format';
 import { thCompact, tdCompact } from '@/lib/table-styles';
+import { syntheticMeta } from '@/lib/synthetic-meta';
 
 const fieldLabel: React.CSSProperties = {
   fontSize: '11px',
@@ -25,15 +25,6 @@ const fieldLabel: React.CSSProperties = {
   marginBottom: '6px',
   display: 'block',
 };
-
-function syntheticMeta(kind: SyntheticKind | null | undefined): { color: string; label: string } | null {
-  switch (kind) {
-    case 'esop_pool':   return { color: 'var(--info)',         label: 'ESOP POOL' };
-    case 'esop_grants': return { color: 'var(--warn)',         label: 'ESOP GRANTS' };
-    case 'convertible': return { color: 'var(--brand-purple)', label: 'CONVERTIBLE' };
-    default:            return null;
-  }
-}
 
 function breakpointMeta(type: Breakpoint['breakpoint_type']): { color: string; label: string } {
   switch (type) {

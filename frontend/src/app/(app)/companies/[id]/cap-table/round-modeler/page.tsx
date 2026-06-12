@@ -3,10 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { api, CompanyResponse, RoundPreviewResponse, ProjectedSyntheticKind } from '@/lib/api';
+import { api, CompanyResponse, RoundPreviewResponse } from '@/lib/api';
 import { SHARE_CLASS_SUGGESTIONS, defaultShareClass, isShareClassLocked, shareClassLabel } from '@/lib/share-class';
 import { formatNumberWhole, formatSARWhole } from '@/lib/format';
 import { thCompact, tdCompact } from '@/lib/table-styles';
+import { syntheticMeta } from '@/lib/synthetic-meta';
 
 const fieldLabel: React.CSSProperties = {
   fontSize: '11px',
@@ -17,17 +18,6 @@ const fieldLabel: React.CSSProperties = {
   marginBottom: '6px',
   display: 'block',
 };
-
-function syntheticMeta(kind: ProjectedSyntheticKind | null | undefined): { color: string; label: string } | null {
-  switch (kind) {
-    case 'esop_pool':    return { color: 'var(--info)',          label: 'ESOP POOL' };
-    case 'esop_grants':  return { color: 'var(--warn)',          label: 'ESOP GRANTS' };
-    case 'convertible':  return { color: 'var(--brand-purple)',  label: 'CONVERTIBLE' };
-    case 'esop_topup':   return { color: 'var(--info)',          label: 'ESOP TOP-UP' };
-    case 'new_investor': return { color: 'var(--pos)',           label: 'NEW INVESTOR' };
-    default:             return null;
-  }
-}
 
 export default function RoundModelerPage() {
   const { id: companyId } = useParams<{ id: string }>();

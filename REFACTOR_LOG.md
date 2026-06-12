@@ -11,9 +11,12 @@ Step 9≡Phase 10. This log uses the Phase numbering.
 
 ## CURRENT POSITION
 
-- **Phases 1-5: COMPLETE and verified** (tsc 0 errors, production build passing).
-- **Next: Phase 6 — component/function boundaries (SRP).**
-- Committed as a single consolidated commit (see Decisions #3).
+- **Phases 1-6: COMPLETE and verified** (tsc 0 errors, production build passing).
+- **Next: Phase 7 — state architecture.** Inputs: the 8 remaining lint errors
+  (all `react-hooks/set-state-in-effect`): 7 form pages initializing date state
+  in an effect (fix: useState initializer), plus `app/(app)/layout.tsx`
+  company-name fetch-in-effect (fix: proper server/state pattern).
+- Commits: c4786ab (phases 2-5), 741cb7a (universe tool), phase 6 commit follows.
 
 ---
 
@@ -81,6 +84,31 @@ before this log existed. Key approved architecture decisions:
 - Grep-verified: zero surviving duplicates of any consolidated pattern.
 - Normalized one drifted header padding (stakeholder detail page 14px → 16px
   shared `thData`). Visual change ~2px; intentional drift-kill.
+
+## Phase 6 — Component & function boundaries (complete)
+
+Splits (verbatim moves, zero behavior change; tsc + build verified):
+- `companies/[id]/page.tsx` 531→402: `DeleteCompanyModal` (125 lines) →
+  `components/DeleteCompanyModal.tsx`.
+- `app/page.tsx` 755→272: the 225-line imperative fx effect (lang toggle,
+  cursor lens rAF, clocks, reveals) → `hooks/useLandingEffects.ts`; the
+  260-line inline CSS string → `app/landing-styles.ts` (kept as raw CSS, not a
+  CSS Module — the fx layer toggles global classes like `body.lp-ar-mode`
+  whose descendant selectors module scoping would break).
+- Late DRY catch: `syntheticMeta` duplicated across waterfall + round-modeler
+  (round-modeler's is a strict superset — `ProjectedSyntheticKind` extends
+  `SyntheticKind`) → consolidated into `lib/synthetic-meta.ts`.
+
+Evaluated and intentionally NOT split:
+- `companies/new/page.tsx` (585): `Toggle` + `validateCR` are single-use
+  (one-use abstraction rule) and the 3 wizard steps share ~20 state fields —
+  splitting steps would force prop drilling. Cohesive as-is.
+- `waterfall/page.tsx` (536): form + results sections share the simulation
+  response; no clean seam.
+- `lib/api.ts` (535): per-resource split is Phase 8 scope.
+
+Future work logged: decompose `useLandingEffects` rAF internals into
+useCursorLens/useDualClock/useLangToggle when the landing page is next touched.
 
 ## BUGS FOUND (not fixed — separate task)
 
