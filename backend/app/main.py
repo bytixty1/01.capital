@@ -23,7 +23,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("01capital")
 
-limiter = Limiter(key_func=lambda request: request.client.host if request.client else "unknown")
+limiter = Limiter(
+    key_func=lambda request: request.client.host if request.client else "unknown",
+    enabled=settings.rate_limit_enabled,
+)
 
 
 @asynccontextmanager

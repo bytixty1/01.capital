@@ -44,7 +44,7 @@ from app.schemas.auth import (
 
 logger = logging.getLogger("01capital.auth")
 router = APIRouter(prefix="/auth", tags=["auth"])
-_limiter = Limiter(key_func=get_remote_address)
+_limiter = Limiter(key_func=get_remote_address, enabled=settings.rate_limit_enabled)
 
 _OTP_TTL_MINUTES = 15
 
