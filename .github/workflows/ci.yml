@@ -45,6 +45,9 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: postgresql+asyncpg://01capital:01capital@localhost:5432/01capital_test
+          # conftest.py refuses to run without an explicit TEST_DATABASE_URL —
+          # the CI service container is a dedicated throwaway test DB.
+          TEST_DATABASE_URL: postgresql+asyncpg://01capital:01capital@localhost:5432/01capital_test
         run: pytest --cov=app --cov-report=term-missing -v
 
   frontend:
