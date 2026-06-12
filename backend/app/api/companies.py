@@ -4,6 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -68,7 +69,16 @@ async def create_company(
 ) -> Company:
     company = Company(**body.model_dump())
     db.add(company)
-    await db.flush()
+    try:
+        await db.flush()
+    except IntegrityError as exc:
+        # ix_companies_cr_number is unique — surface a clean conflict instead
+        # of a raw 500 (CR numbers are issued by MoC and globally unique).
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A company with this CR number already exists.",
+        ) from exc
 
     member = CompanyMember(
         company_id=company.id,
