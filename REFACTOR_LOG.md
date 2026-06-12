@@ -46,9 +46,30 @@ Step 9≡Phase 10. This log uses the Phase numbering.
   localStorage token is no longer read). Backend CORS can now be tightened to
   server-to-server. Full login E2E against the real backend still needs the
   dev stack up — run the Playwright suite before deploying.
-- **Next: Phase 8 — API layer hardening** (zod per ADR-0008, typed errors,
-  retry on network failures, 401 → login redirect in `request()`).
-- Commits: c4786ab (ph 2-5), 741cb7a (universe), 1034455 (ph 6), 60c0973 (ph 7a).
+- **Phase 8 COMPLETE — API layer hardened:**
+  - `ApiError` class (status + detail; status 0 = network). Extends Error, so
+    every existing `err instanceof Error` handler keeps working.
+  - 401 interceptor in `request()`: clears the session cookie and redirects to
+    /login — except for credential endpoints (login/register/verify/mfa-verify)
+    where 401 means "wrong credentials" and must surface inline.
+  - Network-failure retry (3 attempts, 250ms·n backoff) for **GET only** —
+    mutations are never retried: cap table events are a legal record and the
+    API has no idempotency keys yet; a blind resend could double-issue shares.
+  - **zod at the boundary (ADR-0008):** `lib/schemas.ts` with schemas for
+    TokenResponse, UserResponse, CompanyResponse, Stakeholder(+Detail),
+    CapTableResponse, CapTableEventResponse; wired into 10 endpoints
+    (`request(path, init, schema)`); compile-time AssertExtends drift guards
+    fail the build if a schema diverges from its api.ts type. Remaining
+    endpoints (waterfall, round preview, ESOP, filings, instruments, members)
+    keep the documented trusted cast — coverage is incremental,
+    legal-correctness surface first.
+  - Optional response fields widened to `| undefined` per
+    exactOptionalPropertyTypes (no consumer-visible change).
+- **Next: Phase 9 (naming pass — light; most names already comply) and
+  Phase 10 (security headers/CSP in next.config; RLS migration is backend
+  scope and stays flagged).**
+- Commits: c4786ab (ph 2-5), 741cb7a (universe), 1034455 (ph 6),
+  60c0973 (ph 7a), 7fa2e80 (ph 7b).
 
 ---
 

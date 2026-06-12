@@ -1,15 +1,82 @@
+import type { ZodType } from 'zod';
+import { clearSession } from './auth';
+import {
+  CapTableEventResponseSchema,
+  CapTableResponseSchema,
+  CompanyResponseSchema,
+  StakeholderDetailResponseSchema,
+  StakeholderResponseSchema,
+  TokenResponseSchema,
+  UserResponseSchema,
+} from './schemas';
+import { z } from 'zod';
+
 // All requests go through the Next.js proxy route (/api/backend/*), which
 // attaches the Bearer token from the httpOnly session cookie server-side.
 // Client code never handles the JWT. (When RSC reads land, a server-side
 // variant of this client will call the backend directly with cookies().)
 const API_BASE = '/api/backend';
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+/** Normalized API failure: HTTP status + human-readable detail. status 0 = network failure. */
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+// 401 from these endpoints means "bad credentials/code", not "session expired"
+// — they must surface the error instead of redirecting to /login.
+const NO_REDIRECT_ON_401 = [
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/verify-email',
+  '/api/auth/resend-verification',
+  '/api/auth/mfa/verify',
+];
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function request<T>(path: string, init?: RequestInit, schema?: ZodType<unknown>): Promise<T> {
   const { headers, ...restInit } = init || {};
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...restInit,
-    headers: { 'Content-Type': 'application/json', ...headers },
-  });
+  const doFetch = () =>
+    fetch(`${API_BASE}${path}`, {
+      ...restInit,
+      headers: { 'Content-Type': 'application/json', ...headers },
+    });
+
+  // Retry network-level failures (not HTTP errors) for reads only. Mutations
+  // are never retried: cap table events are a legal record and the API has no
+  // idempotency keys yet — a blind resend could double-issue shares.
+  const isRead = !init?.method || init.method === 'GET';
+  let res: Response | null = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      res = await doFetch();
+      break;
+    } catch {
+      if (!isRead || attempt === 3) {
+        throw new ApiError(0, 'Network error — check your connection and try again.');
+      }
+      await sleep(250 * attempt);
+    }
+  }
+  if (!res) throw new ApiError(0, 'Network error — check your connection and try again.');
+
+  if (
+    res.status === 401 &&
+    typeof window !== 'undefined' &&
+    !NO_REDIRECT_ON_401.some(p => path.startsWith(p))
+  ) {
+    // Session expired or revoked: clear the cookie and return to login.
+    void clearSession();
+    window.location.href = '/login';
+    throw new ApiError(401, 'Session expired — redirecting to login.');
+  }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     const detail = (err as { detail?: string | Array<{ msg: string }> }).detail;
@@ -17,18 +84,33 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (typeof detail === 'string') message = detail;
     else if (Array.isArray(detail) && detail.length > 0)
       message = detail.map(d => d.msg).join(', ');
-    throw new Error(message);
+    throw new ApiError(res.status, message);
   }
+
   // 204 carries no body; the affected endpoints are typed Promise<void> by their callers.
   if (res.status === 204) return undefined as T;
-  // Trusted cast: responses are not runtime-validated yet. Zod validation at this
-  // boundary is scheduled for the API-hardening step (ADR-0008).
-  return res.json() as Promise<T>;
+
+  const data: unknown = await res.json();
+  if (schema) {
+    const parsed = schema.safeParse(data);
+    if (!parsed.success) {
+      // Intentional error reporting: a contract break between backend and
+      // frontend must be loud in development, not silently mis-rendered.
+      console.error(`API response validation failed for ${path}`, parsed.error.issues);
+      throw new ApiError(500, `Unexpected response shape from ${path} — see console for details.`);
+    }
+    // Runtime-validated by the schema; drift guards in schemas.ts keep the
+    // schema aligned with T at compile time.
+    return parsed.data as T;
+  }
+  // Trusted cast for endpoints whose zod schema hasn't landed yet (ADR-0008
+  // coverage is incremental, legal-correctness surface first).
+  return data as T;
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type TokenResponse = { access_token: string; token_type: string; mfa_required?: boolean };
+export type TokenResponse = { access_token: string; token_type: string; mfa_required?: boolean | undefined };
 export type RegisterResponse = { message: string; email: string };
 
 export type UserResponse = {
@@ -111,15 +193,15 @@ export type HoldingResponse = {
   share_class: string;
   quantity: string;
   percentage: string;
-  synthetic?: SyntheticKind | null;
+  synthetic?: SyntheticKind | null | undefined;
 };
 
 export type CapTableResponse = {
   company_id: string;
   total_shares: string;
   holdings: HoldingResponse[];
-  total_shares_issued?: string | null;
-  total_shares_diluted?: string | null;
+  total_shares_issued?: string | null | undefined;
+  total_shares_diluted?: string | null | undefined;
 };
 
 export type ProjectedSyntheticKind = SyntheticKind | 'esop_topup' | 'new_investor';
@@ -323,7 +405,7 @@ export const api = {
       request<TokenResponse>('/api/auth/verify-email', {
         method: 'POST',
         body: JSON.stringify({ email, otp }),
-      }),
+      }, TokenResponseSchema),
     resendVerification: (email: string) =>
       request<RegisterResponse>('/api/auth/resend-verification', {
         method: 'POST',
@@ -333,9 +415,9 @@ export const api = {
       request<TokenResponse>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
-      }),
+      }, TokenResponseSchema),
     me: () =>
-      request<UserResponse>('/api/auth/me'),
+      request<UserResponse>('/api/auth/me', undefined, UserResponseSchema),
     mfaSetup: () =>
       request<MFASetupResponse>('/api/auth/mfa/setup', { method: 'POST' }),
     mfaQrUrl: () => `${API_BASE}/api/auth/mfa/qr`,
@@ -346,7 +428,7 @@ export const api = {
     mfaVerify: (code: string) =>
       request<TokenResponse>('/api/auth/mfa/verify', {
         method: 'POST', body: JSON.stringify({ code }),
-      }),
+      }, TokenResponseSchema),
     mfaDisable: (code: string) =>
       request<{ mfa_enabled: boolean }>('/api/auth/mfa/disable', {
         method: 'POST', body: JSON.stringify({ code }),
@@ -355,9 +437,9 @@ export const api = {
 
   companies: {
     list: () =>
-      request<CompanyResponse[]>('/api/companies'),
+      request<CompanyResponse[]>('/api/companies', undefined, z.array(CompanyResponseSchema)),
     get: (id: string) =>
-      request<CompanyResponse>(`/api/companies/${id}`),
+      request<CompanyResponse>(`/api/companies/${id}`, undefined, CompanyResponseSchema),
     create: (body: {
       name_en: string; name_ar?: string | undefined; entity_type: EntityType;
       cr_number?: string | undefined; authorized_capital?: number | undefined;
@@ -382,9 +464,9 @@ export const api = {
 
   stakeholders: {
     list: (companyId: string) =>
-      request<StakeholderResponse[]>(`/api/companies/${companyId}/stakeholders`),
+      request<StakeholderResponse[]>(`/api/companies/${companyId}/stakeholders`, undefined, z.array(StakeholderResponseSchema)),
     get: (companyId: string, stakeholderId: string) =>
-      request<StakeholderDetailResponse>(`/api/companies/${companyId}/stakeholders/${stakeholderId}`),
+      request<StakeholderDetailResponse>(`/api/companies/${companyId}/stakeholders/${stakeholderId}`, undefined, StakeholderDetailResponseSchema),
     create: (companyId: string, body: {
       stakeholder_type: StakeholderType; name_en: string; name_ar?: string | undefined;
       national_id?: string | undefined; nationality?: string | undefined;
@@ -401,7 +483,7 @@ export const api = {
 
   capTable: {
     get: (companyId: string, opts?: { diluted?: boolean }) =>
-      request<CapTableResponse>(`/api/companies/${companyId}/cap-table${opts?.diluted ? '?diluted=true' : ''}`),
+      request<CapTableResponse>(`/api/companies/${companyId}/cap-table${opts?.diluted ? '?diluted=true' : ''}`, undefined, CapTableResponseSchema),
     previewRound: (companyId: string, body: {
       round_size_sar: number; price_per_share: number;
       new_share_class?: string | undefined; new_investor_name?: string | undefined;
@@ -448,7 +530,7 @@ export const api = {
         method: 'POST', body: JSON.stringify(body),
       }),
     events: (companyId: string) =>
-      request<CapTableEventResponse[]>(`/api/companies/${companyId}/cap-table/events`),
+      request<CapTableEventResponse[]>(`/api/companies/${companyId}/cap-table/events`, undefined, z.array(CapTableEventResponseSchema)),
     zatcaExport: (companyId: string) =>
       request<Record<string, unknown>>(`/api/companies/${companyId}/exports/zatca`),
   },
