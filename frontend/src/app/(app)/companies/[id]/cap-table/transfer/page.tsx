@@ -19,8 +19,10 @@ export default function TransferSharesPage() {
   const [toId, setToId] = useState('');
   const [shareClass, setShareClass] = useState('ordinary');
   const [quantity, setQuantity] = useState('');
+  const [pricePerShare, setPricePerShare] = useState('');
   const [eventDate, setEventDate] = useState(todayISO);
   const [notes, setNotes] = useState('');
+  const [rofrWaived, setRofrWaived] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingStakeholders, setLoadingStakeholders] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,13 +58,15 @@ export default function TransferSharesPage() {
     if (fromId === toId) { setError('From and To stakeholders must be different'); return; }
     setError(null); setLoading(true);
     try {
-      await api.capTable.transfer(companyId, { 
-        from_stakeholder_id: fromId, 
-        to_stakeholder_id: toId, 
-        share_class: shareClass, 
-        quantity: Number(quantity), 
-        event_date: eventDate, 
-        notes: notes || undefined 
+      await api.capTable.transfer(companyId, {
+        from_stakeholder_id: fromId,
+        to_stakeholder_id: toId,
+        share_class: shareClass,
+        quantity: Number(quantity),
+        price_per_share: pricePerShare ? Number(pricePerShare) : undefined,
+        event_date: eventDate,
+        notes: notes || undefined,
+        rofr_waived: rofrWaived,
       });
       router.push(`/companies/${companyId}`);
     } catch (err) { 
@@ -150,11 +154,28 @@ export default function TransferSharesPage() {
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                Number of shares *
-              </label>
-              <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} required min="1" step="1" className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                  Number of shares *
+                </label>
+                <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} required min="1" step="1" className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                  Price per share (SAR) <span style={{ opacity: 0.5, fontWeight: 400 }}>optional</span>
+                </label>
+                <input
+                  type="number"
+                  value={pricePerShare}
+                  onChange={e => setPricePerShare(e.target.value)}
+                  min="0"
+                  step="0.01"
+                  className="glass-input"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                  placeholder="For audit trail"
+                />
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -163,6 +184,19 @@ export default function TransferSharesPage() {
               </label>
               <input type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} required className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} />
             </div>
+
+            {/* ROFR waiver — shown for all companies; relevant for LLCs with ROFR */}
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={rofrWaived}
+                onChange={e => setRofrWaived(e.target.checked)}
+                style={{ marginTop: '2px', accentColor: 'var(--brand-purple)', flexShrink: 0 }}
+              />
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                I confirm that the pre-emption (ROFR) period has elapsed or been waived in writing by all other quota holders, as required by the AoA and Art. 170 of the Saudi Companies Law.
+              </span>
+            </label>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>

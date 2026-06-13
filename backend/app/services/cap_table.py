@@ -139,6 +139,31 @@ async def apply_capital_increase(
         await apply_share_issuance(db, company_id, stakeholder_id, share_class, shares_issued)
 
 
+async def apply_share_split(
+    db: AsyncSession,
+    company_id: uuid.UUID,
+    share_class: str,
+    numerator: int,
+    denominator: int,
+) -> None:
+    """Multiply all holdings in share_class by (numerator / denominator).
+
+    For a 2-for-1 split: numerator=2, denominator=1 → every holder's shares double.
+    For a 1-for-10 reverse split: numerator=1, denominator=10.
+    Quantities are rounded to the nearest whole share (ROUND_HALF_UP) since fractional
+    shares are not recognised under the 2023 Saudi Companies Law.
+    """
+    result = await db.execute(
+        select(Holding)
+        .where(Holding.company_id == company_id, Holding.share_class == share_class)
+        .with_for_update()
+    )
+    holdings = result.scalars().all()
+    ratio = Decimal(numerator) / Decimal(denominator)
+    for h in holdings:
+        h.quantity = (h.quantity * ratio).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+
+
 async def apply_capital_decrease(
     db: AsyncSession,
     company_id: uuid.UUID,

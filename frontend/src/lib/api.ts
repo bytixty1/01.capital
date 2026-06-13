@@ -517,9 +517,17 @@ export const api = {
       }),
     transfer: (companyId: string, body: {
       from_stakeholder_id: string; to_stakeholder_id: string; share_class?: string | undefined;
-      quantity: number; event_date: string; notes?: string | undefined;
+      quantity: number; price_per_share?: number | undefined;
+      event_date: string; notes?: string | undefined; rofr_waived?: boolean | undefined;
     }) =>
       request<CapTableEventResponse>(`/api/companies/${companyId}/cap-table/transfer`, {
+        method: 'POST', body: JSON.stringify(body),
+      }),
+    split: (companyId: string, body: {
+      share_class: string; split_ratio_numerator: number;
+      split_ratio_denominator: number; event_date: string; notes?: string | undefined;
+    }) =>
+      request<CapTableEventResponse>(`/api/companies/${companyId}/cap-table/split`, {
         method: 'POST', body: JSON.stringify(body),
       }),
     capitalIncrease: (companyId: string, body: {

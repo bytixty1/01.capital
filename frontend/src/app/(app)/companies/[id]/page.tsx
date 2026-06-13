@@ -222,6 +222,12 @@ export default function CompanyPage() {
             <Link href={`/companies/${id}/cap-table/capital-increase`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
               Capital increase
             </Link>
+            <Link href={`/companies/${id}/cap-table/reduce`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
+              Reduce
+            </Link>
+            <Link href={`/companies/${id}/cap-table/split`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
+              Split
+            </Link>
             <Link href={`/companies/${id}/cap-table/round-modeler`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
               Round modeler
             </Link>

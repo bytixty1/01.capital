@@ -22,6 +22,7 @@ from app.schemas.cap_table import (
     IssueSharesRequest,
     RoundPreviewRequest,
     RoundPreviewResponse,
+    ShareSplitRequest,
     TransferSharesRequest,
     WaterfallRequest,
     WaterfallResponse,
@@ -32,6 +33,7 @@ from app.services.cap_table import (
     apply_capital_decrease,
     apply_capital_increase,
     apply_share_issuance,
+    apply_share_split,
     apply_share_transfer,
     get_cap_table,
     preview_round as preview_round_service,
@@ -474,6 +476,22 @@ async def transfer_shares(
     company = company_result.scalar_one()
     validate_share_class_for_entity(company.entity_type, body.share_class)
 
+    # ROFR enforcement (Saudi Companies Law, Art. 170 for LLCs):
+    # LLC quota transfers are subject to a pre-emption period defined in the AoA.
+    # Admin must explicitly confirm ROFR has been observed (rofr_waived=True) before
+    # the transfer is recorded. This surfaces the obligation without auto-enforcing
+    # the clock, per Rule 8 (never auto-submit / auto-waive compliance steps).
+    if company.entity_type == "LLC" and company.has_rofr and not body.rofr_waived:
+        rofr_days = company.rofr_days or 30
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                f"This LLC has a ROFR period of {rofr_days} days (per AoA). "
+                "Other quota holders must be offered the quota first. "
+                "Set rofr_waived=true once the pre-emption period has elapsed or been waived in writing."
+            ),
+        )
+
     # Verify both stakeholders belong to this company
     for sid in (body.from_stakeholder_id, body.to_stakeholder_id):
         r = await db.execute(
@@ -491,6 +509,8 @@ async def transfer_shares(
             "to_stakeholder_id": str(body.to_stakeholder_id),
             "share_class": body.share_class,
             "quantity": str(body.quantity),
+            "price_per_share": str(body.price_per_share) if body.price_per_share is not None else None,
+            "rofr_waived": body.rofr_waived,
         },
         notes=body.notes,
         created_by=current_user.id,
@@ -634,6 +654,56 @@ async def capital_decrease(
     await detect_and_create_filings(
         db, company_id=member.company_id, entity_type=company.entity_type,
         event_id=event.id, event_type=EventType.CAPITAL_DECREASE, event_date=body.event_date,
+    )
+
+    await db.commit()
+    await db.refresh(event)
+    return event
+
+
+@router.post(
+    "/{company_id}/cap-table/split",
+    response_model=CapTableEventResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def split_shares(
+    body: ShareSplitRequest,
+    member: CompanyMember = Depends(require_admin),
+    current_user: User = Depends(require_mfa),
+    db: AsyncSession = Depends(get_db),
+) -> CapTableEvent:
+    """Apply a share split (or reverse split) to all holders of a given share class.
+
+    A 2-for-1 split: numerator=2, denominator=1. Every holder's shares double.
+    A 1-for-10 reverse split: numerator=1, denominator=10.
+    Fractional shares are rounded to whole shares (Saudi Companies Law does not
+    recognise fractional ownership of LLC quotas or SJSC shares).
+    """
+    company_result = await db.execute(select(Company).where(Company.id == member.company_id))
+    company = company_result.scalar_one()
+    validate_share_class_for_entity(company.entity_type, body.share_class)
+
+    event = CapTableEvent(
+        company_id=member.company_id,
+        event_type=EventType.SHARE_SPLIT,
+        event_date=body.event_date,
+        payload={
+            "share_class": body.share_class,
+            "split_ratio_numerator": body.split_ratio_numerator,
+            "split_ratio_denominator": body.split_ratio_denominator,
+            "ratio_display": f"{body.split_ratio_numerator}:{body.split_ratio_denominator}",
+        },
+        notes=body.notes,
+        created_by=current_user.id,
+    )
+    db.add(event)
+    await db.flush()
+
+    await apply_share_split(
+        db, company_id=member.company_id,
+        share_class=body.share_class,
+        numerator=body.split_ratio_numerator,
+        denominator=body.split_ratio_denominator,
     )
 
     await db.commit()

@@ -23,6 +23,17 @@ class TransferSharesRequest(BaseModel):
     to_stakeholder_id: uuid.UUID
     share_class: str = Field(default="ordinary", min_length=1, max_length=50)
     quantity: Decimal = Field(..., gt=0)
+    price_per_share: Decimal | None = Field(None, ge=0)  # SAR; optional for audit trail
+    event_date: date
+    notes: str | None = None
+    # For LLC entities: admin must explicitly confirm ROFR period has been observed
+    rofr_waived: bool = False
+
+
+class ShareSplitRequest(BaseModel):
+    share_class: str = Field(default="ordinary", min_length=1, max_length=50)
+    split_ratio_numerator: int = Field(..., gt=1)    # e.g. 2 in a 2-for-1 split
+    split_ratio_denominator: int = Field(..., ge=1)  # e.g. 1 in a 2-for-1 split
     event_date: date
     notes: str | None = None
 
