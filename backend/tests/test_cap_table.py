@@ -12,7 +12,9 @@ async def _issue(
     company_id: str,
     stakeholder_id: str,
     quantity: int,
-    share_class: str = "ordinary",
+    # The company_id fixture creates an LLC — only "quota" is legal there
+    # (2023 Saudi Companies Law: LLC ownership is partner quotas, not shares).
+    share_class: str = "quota",
 ) -> dict:
     res = await client.post(
         f"/api/companies/{company_id}/cap-table/issue",
@@ -109,6 +111,7 @@ async def test_transfer_shares_between_stakeholders(
             "from_stakeholder_id": stakeholder_id,
             "to_stakeholder_id": second_id,
             "quantity": 300,
+            "share_class": "quota",
             "event_date": "2026-02-01",
         },
         headers=auth_headers,
@@ -140,6 +143,7 @@ async def test_transfer_more_than_held_is_400(
             "from_stakeholder_id": stakeholder_id,
             "to_stakeholder_id": second_id,
             "quantity": 999,
+            "share_class": "quota",
             "event_date": "2026-02-01",
         },
         headers=auth_headers,
@@ -183,6 +187,7 @@ async def test_multiple_events_all_recorded(
             "from_stakeholder_id": stakeholder_id,
             "to_stakeholder_id": second_id,
             "quantity": 200,
+            "share_class": "quota",
             "event_date": "2026-03-01",
         },
         headers=auth_headers,

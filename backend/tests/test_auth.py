@@ -36,9 +36,20 @@ async def test_register_with_full_name(db_client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_register_duplicate_email_is_409(db_client: AsyncClient) -> None:
+async def test_register_duplicate_unverified_email_is_201(db_client: AsyncClient) -> None:
+    # Re-registering an unverified email is allowed (refreshes password + OTP)
+    # so users aren't locked out when the verification email fails.
     payload = {"email": "dup@example.com", "password": "password123"}
     await db_client.post("/api/auth/register", json=payload)
+    res = await db_client.post("/api/auth/register", json=payload)
+    assert res.status_code == 201
+
+
+@pytest.mark.asyncio
+async def test_register_duplicate_verified_email_is_409(db_client: AsyncClient) -> None:
+    payload = {"email": "dup-verified@example.com", "password": "password123"}
+    await _register_and_verify(db_client, email=payload["email"], password=payload["password"])
+
     res = await db_client.post("/api/auth/register", json=payload)
     assert res.status_code == 409
 
