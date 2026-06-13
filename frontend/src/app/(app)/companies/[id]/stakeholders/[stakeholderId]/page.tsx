@@ -79,6 +79,17 @@ export default function StakeholderDetailPage() {
             Remove
           </button>
           <Link
+            href={`/companies/${companyId}/stakeholders/${stakeholderId}/edit`}
+            style={{
+              background: 'transparent', border: '1px solid var(--border-default)',
+              borderRadius: '8px', padding: '10px 16px', fontSize: '13px',
+              color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 500,
+              textDecoration: 'none', display: 'inline-flex', alignItems: 'center',
+            }}
+          >
+            Edit
+          </Link>
+          <Link
             href={`/companies/${companyId}/cap-table/issue?stakeholder=${stakeholderId}`}
             className="btn-primary"
             style={{ textDecoration: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 500 }}

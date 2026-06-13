@@ -475,6 +475,15 @@ export const api = {
       request<StakeholderResponse>(`/api/companies/${companyId}/stakeholders`, {
         method: 'POST', body: JSON.stringify(body),
       }),
+    update: (companyId: string, stakeholderId: string, body: {
+      name_en?: string | undefined; name_ar?: string | undefined;
+      nationality?: string | undefined; cr_number?: string | undefined;
+      email?: string | undefined; national_id?: string | undefined;
+      iban?: string | undefined;
+    }) =>
+      request<StakeholderResponse>(`/api/companies/${companyId}/stakeholders/${stakeholderId}`, {
+        method: 'PATCH', body: JSON.stringify(body),
+      }),
     delete: (companyId: string, stakeholderId: string) =>
       request<void>(`/api/companies/${companyId}/stakeholders/${stakeholderId}`, {
         method: 'DELETE',
