@@ -35,6 +35,9 @@ async function proxy(
   const headers = new Headers();
   const contentType = backendRes.headers.get('Content-Type');
   if (contentType) headers.set('Content-Type', contentType);
+  // Forward the download filename for binary documents (PDF exports).
+  const contentDisposition = backendRes.headers.get('Content-Disposition');
+  if (contentDisposition) headers.set('Content-Disposition', contentDisposition);
   return new Response(backendRes.body, { status: backendRes.status, headers });
 }
 

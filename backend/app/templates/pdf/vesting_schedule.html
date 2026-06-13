@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1 class="doc-title">Vesting Schedule</h1>
+  <div class="doc-title-ar ar">جدول الاستحقاق</div>
+
+  <div class="entity-line">
+    {{ company.name_en }}{% if company.name_ar %} · <span class="ar">{{ company.name_ar }}</span>{% endif %}<br/>
+    {{ t_plan_en }}: <strong>{{ plan.name }}</strong> · {{ t_holder_en }}: {{ holder_name }}
+  </div>
+
+  <table class="data">
+    <tbody>
+      <tr><th style="width:38%;">{{ t_granted_en }} · {{ t_granted_ar }}</th><td class="num" style="text-align:left;">{{ grant.quantity | num }}</td></tr>
+      <tr><th>{{ t_vested_en }} · {{ t_vested_ar }}</th><td class="num" style="text-align:left;">{{ vested | num }} ({{ vesting_pct | pct }})</td></tr>
+      <tr><th>{{ t_exercised_en }} · {{ t_exercised_ar }}</th><td class="num" style="text-align:left;">{{ grant.exercised_quantity | num }}</td></tr>
+      <tr><th>{{ t_grant_date_en }} · {{ t_grant_date_ar }}</th><td class="mono">{{ grant.grant_date }}</td></tr>
+      {% if grant.exercise_price is not none %}
+      <tr><th>{{ t_strike_en }} · {{ t_strike_ar }}</th><td class="num" style="text-align:left;">{{ grant.exercise_price | sar }}</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  {% if schedule_type == 'performance' %}
+  <div class="section-title">Milestones · المراحل</div>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>{{ t_milestone_en }} · {{ t_milestone_ar }}</th>
+        <th style="text-align:right;">{{ t_fraction_en }}</th>
+        <th style="text-align:right;">{{ t_status_en }} · {{ t_status_ar }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in milestones %}
+      <tr>
+        <td>{{ m.label }}</td>
+        <td class="num">{{ (m.fraction | float * 100) | round(0) | int }}%</td>
+        <td class="num">{% if m.achieved %}✓ {{ m.achieved_date or '' }}{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="section-title">Time-based vesting · الاستحقاق الزمني</div>
+  <table class="data">
+    <tbody>
+      <tr><th style="width:38%;">{{ t_cliff_en }} · {{ t_cliff_ar }}</th><td class="num" style="text-align:left;">{{ cliff_months }} {{ t_months_en }}</td></tr>
+      <tr><th>{{ t_total_period_en }} · {{ t_total_period_ar }}</th><td class="num" style="text-align:left;">{{ total_months }} {{ t_months_en }}</td></tr>
+    </tbody>
+  </table>
+  {% endif %}
+{% endblock %}

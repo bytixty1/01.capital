@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1 class="doc-title">{{ cert_title_en }}</h1>
+  <div class="doc-title-ar ar">{{ cert_title_ar }}</div>
+
+  <div class="entity-line">
+    {{ company.name_en }}{% if company.name_ar %} · <span class="ar">{{ company.name_ar }}</span>{% endif %}<br/>
+    {{ t_entity_type_en }}: <strong>{{ company.entity_type }}</strong>
+    {% if company.cr_number %} · {{ t_cr_en }}: <span class="mono">{{ company.cr_number }}</span>{% endif %}
+  </div>
+
+  <table class="data">
+    <tbody>
+      <tr>
+        <th style="width:38%;">{{ t_holder_en }} · {{ t_holder_ar }}</th>
+        <td>{{ holder.name_en }}{% if holder.name_ar %} · <span class="ar">{{ holder.name_ar }}</span>{% endif %}</td>
+      </tr>
+      {% if holder.nationality %}
+      <tr><th>{{ t_nationality_en }} · {{ t_nationality_ar }}</th><td class="mono">{{ holder.nationality }}</td></tr>
+      {% endif %}
+      <tr><th>{{ t_class_en }} · {{ t_class_ar }}</th><td>{{ share_class }}</td></tr>
+      <tr><th>{{ t_shares_en }} · {{ t_shares_ar }}</th><td class="num" style="text-align:left;font-size:11pt;font-weight:700;">{{ quantity | num }}</td></tr>
+      <tr><th>{{ t_ownership_en }} · {{ t_ownership_ar }}</th><td class="num" style="text-align:left;">{{ percentage | pct }}</td></tr>
+      <tr><th>{{ t_issue_date_en }} · {{ t_issue_date_ar }}</th><td class="mono">{{ generated_at }}</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:50px; display:flex; justify-content:space-between;">
+    <div style="width:45%; border-top:0.75px solid #999; padding-top:6px; font-size:8pt; color:#6a6a6a;">
+      {{ t_authorized_en }}<br/><span class="ar">{{ t_authorized_ar }}</span>
+    </div>
+    <div style="width:45%; border-top:0.75px solid #999; padding-top:6px; font-size:8pt; color:#6a6a6a;">
+      {{ t_date_en }}<br/><span class="ar">{{ t_date_ar }}</span>
+    </div>
+  </div>
+{% endblock %}

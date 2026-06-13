@@ -25,6 +25,19 @@ export default function CompanyPage() {
   const [deleting, setDeleting] = useState(false);
   const [hoveredSlice, setHoveredSlice] = useState<number | null>(null);
   const [diluted, setDiluted] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExportPdf() {
+    setExporting(true);
+    setError(null);
+    try {
+      await api.documents.capTablePdf(id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'PDF export failed');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   useEffect(() => {
     Promise.all([api.companies.get(id), api.capTable.get(id, { diluted })])
@@ -234,6 +247,13 @@ export default function CompanyPage() {
             <Link href={`/companies/${id}/cap-table/waterfall`} style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
               Waterfall
             </Link>
+            <button
+              onClick={handleExportPdf}
+              disabled={exporting}
+              style={{ background: 'transparent', border: 'none', padding: 0, color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 500, cursor: exporting ? 'wait' : 'pointer' }}
+            >
+              {exporting ? 'Exporting…' : 'Export PDF'}
+            </button>
             <Link href={`/companies/${id}/cap-table/issue`} className="link-accent" style={{ fontSize: '14px', textDecoration: 'none', fontWeight: 500 }}>
               Issue shares
             </Link>

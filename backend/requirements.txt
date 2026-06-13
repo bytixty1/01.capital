@@ -24,6 +24,12 @@ slowapi==0.1.9
 # Date utilities
 python-dateutil==2.9.0.post0
 
+# Document generation (bilingual PDF). WeasyPrint needs native libs at runtime
+# (libpango, libcairo, libgdk-pixbuf) — installed in the Dockerfile. It is
+# imported lazily so the app and test suite run even where those libs are absent.
+weasyprint==62.3
+Jinja2==3.1.4
+
 # Dev / testing
 pytest==8.3.4
 pytest-asyncio==0.25.2

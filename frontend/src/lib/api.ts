@@ -108,6 +108,35 @@ async function request<T>(path: string, init?: RequestInit, schema?: ZodType<unk
   return data as T;
 }
 
+/**
+ * Fetch a binary document (PDF) through the authenticated proxy and trigger a
+ * browser download. The proxy injects the JWT from the session cookie, so no
+ * Authorization header is set here. Throws ApiError on non-2xx so callers can
+ * surface the message (e.g. 503 when PDF rendering is unavailable).
+ */
+async function downloadFile(path: string, fallbackFilename: string): Promise<void> {
+  const res = await fetch(`${API_BASE}${path}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    const detail = (err as { detail?: string }).detail;
+    throw new ApiError(res.status, typeof detail === 'string' ? detail : 'Download failed');
+  }
+  // Prefer the server-provided filename from Content-Disposition.
+  const cd = res.headers.get('content-disposition') ?? '';
+  const match = cd.match(/filename="?([^"]+)"?/);
+  const filename = match?.[1] ?? fallbackFilename;
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type TokenResponse = { access_token: string; token_type: string; mfa_required?: boolean | undefined };
@@ -649,6 +678,21 @@ export const api = {
       request<IFRS2ExpenseResponse>(
         `/api/companies/${companyId}/esop/${planId}/grants/${grantId}/ifrs2-expense`,
         { method: 'POST', body: JSON.stringify(body) },
+      ),
+  },
+
+  documents: {
+    capTablePdf: (companyId: string) =>
+      downloadFile(`/api/companies/${companyId}/documents/cap-table.pdf`, 'cap-table.pdf'),
+    certificatePdf: (companyId: string, stakeholderId: string, shareClass?: string) =>
+      downloadFile(
+        `/api/companies/${companyId}/documents/stakeholders/${stakeholderId}/certificate.pdf${shareClass ? `?share_class=${encodeURIComponent(shareClass)}` : ''}`,
+        'certificate.pdf',
+      ),
+    vestingPdf: (companyId: string, planId: string, grantId: string) =>
+      downloadFile(
+        `/api/companies/${companyId}/esop/${planId}/grants/${grantId}/vesting.pdf`,
+        'vesting.pdf',
       ),
   },
 

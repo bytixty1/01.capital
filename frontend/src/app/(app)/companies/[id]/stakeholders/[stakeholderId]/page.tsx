@@ -15,6 +15,19 @@ export default function StakeholderDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExportCertificate() {
+    setExporting(true);
+    setError(null);
+    try {
+      await api.documents.certificatePdf(companyId, stakeholderId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Certificate export failed');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   useEffect(() => {
     api.stakeholders.get(companyId, stakeholderId)
@@ -78,6 +91,19 @@ export default function StakeholderDetailPage() {
           >
             Remove
           </button>
+          {totalShares > 0 && (
+            <button
+              onClick={handleExportCertificate}
+              disabled={exporting}
+              style={{
+                background: 'transparent', border: '1px solid var(--border-default)',
+                borderRadius: '8px', padding: '10px 16px', fontSize: '13px',
+                color: 'var(--text-secondary)', cursor: exporting ? 'wait' : 'pointer', fontWeight: 500,
+              }}
+            >
+              {exporting ? 'Exporting…' : 'Certificate PDF'}
+            </button>
+          )}
           <Link
             href={`/companies/${companyId}/stakeholders/${stakeholderId}/edit`}
             style={{

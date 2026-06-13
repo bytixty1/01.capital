@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1 class="doc-title">Capitalization Table</h1>
+  <div class="doc-title-ar ar">جدول الملكية</div>
+
+  <div class="entity-line">
+    {{ company.name_en }}{% if company.name_ar %} · <span class="ar">{{ company.name_ar }}</span>{% endif %}<br/>
+    {{ t_entity_type_en }}: <strong>{{ company.entity_type }}</strong>
+    {% if company.cr_number %} · {{ t_cr_en }}: <span class="mono">{{ company.cr_number }}</span>{% endif %}
+  </div>
+
+  <div class="section-title">Issued &amp; Outstanding · المُصدرة والقائمة</div>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>{{ t_holder_en }} · {{ t_holder_ar }}</th>
+        <th>{{ t_class_en }} · {{ t_class_ar }}</th>
+        <th style="text-align:right;">{{ t_shares_en }} · {{ t_shares_ar }}</th>
+        <th style="text-align:right;">%</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for h in issued.holdings %}
+      <tr>
+        <td>{{ h.stakeholder_name }}</td>
+        <td>{{ h.share_class }}</td>
+        <td class="num">{{ h.quantity | num }}</td>
+        <td class="num">{{ h.percentage | pct }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td colspan="2">{{ t_total_en }} · {{ t_total_ar }}</td>
+        <td class="num">{{ issued.total_shares_issued | num }}</td>
+        <td class="num">100.00%</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Fully Diluted · بالكامل بعد التخفيف</div>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>{{ t_holder_en }} · {{ t_holder_ar }}</th>
+        <th>{{ t_class_en }} · {{ t_class_ar }}</th>
+        <th style="text-align:right;">{{ t_shares_en }} · {{ t_shares_ar }}</th>
+        <th style="text-align:right;">%</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for h in diluted.holdings %}
+      <tr>
+        <td>{{ h.stakeholder_name }}{% if h.synthetic %} <span style="color:#9a7ad0;font-size:7pt;">({{ h.synthetic }})</span>{% endif %}</td>
+        <td>{{ h.share_class }}</td>
+        <td class="num">{{ h.quantity | num }}</td>
+        <td class="num">{{ h.percentage | pct }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td colspan="2">{{ t_total_en }} · {{ t_total_ar }}</td>
+        <td class="num">{{ diluted.total_shares_diluted | num }}</td>
+        <td class="num">100.00%</td>
+      </tr>
+    </tbody>
+  </table>
+{% endblock %}

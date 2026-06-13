@@ -115,6 +115,14 @@ export default function EsopPlanPage() {
     }
   }
 
+  async function downloadVesting(grantId: string) {
+    try {
+      await api.documents.vestingPdf(companyId, planId, grantId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Vesting PDF export failed');
+    }
+  }
+
   async function achieveMilestone(index: number) {
     if (!actionGrant) return;
     setActionBusy(true);
@@ -256,6 +264,7 @@ export default function EsopPlanPage() {
                             <button onClick={() => openAction(g, 'terminate')} style={{ ...s.linkBtn, color: 'var(--neg)' }}>Terminate</button>
                           </>
                         )}
+                        <button onClick={() => downloadVesting(g.id)} style={{ ...s.linkBtn, color: 'var(--brand-purple)' }}>PDF</button>
                       </div>
                     </td>
                   </tr>
