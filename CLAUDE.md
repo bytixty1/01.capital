@@ -29,9 +29,10 @@ When you begin a session in this repo, do this in order:
 3. Read `.agents/rules/01-project-rules.md` — the locked project rules
 4. Read `docs/decisions/0001-pivot-to-cap-table.md` — the strategic anchor
 5. Read `docs/discovery/14-day-sprint.md` — the active sprint plan
-6. Then read whatever else is relevant to the specific task
+6. Read `graphify-out/GRAPH_REPORT.md` — codebase knowledge graph (1072 nodes, 68 communities); gives instant orientation on what files exist and how they connect. Run `/graphify --update` after significant code changes to keep it fresh.
+7. Then read whatever else is relevant to the specific task
 
-Do not skip steps 2-5 even if the user's request seems simple. The constraints there will change how you should approach almost any task.
+Do not skip steps 2-6 even if the user's request seems simple. The constraints there will change how you should approach almost any task.
 
 ---
 
@@ -227,7 +228,7 @@ cd frontend && npm run build
 
 ---
 
-## The four documents to read before writing code
+## The five documents to read before writing code
 
 These are linked above but listed here for emphasis. Read them in this order:
 
@@ -235,8 +236,9 @@ These are linked above but listed here for emphasis. Read them in this order:
 2. **`.agents/rules/01-project-rules.md`** — what the rules are
 3. **`docs/decisions/0001-pivot-to-cap-table.md`** — why the project exists in this form
 4. **`docs/discovery/14-day-sprint.md`** — what the team is doing right now
+5. **`graphify-out/GRAPH_REPORT.md`** — codebase knowledge graph for instant orientation
 
-If you have not read these four documents in your current session, you do not have enough context to do good work in this repo. Read them first.
+If you have not read these five documents in your current session, you do not have enough context to do good work in this repo. Read them first.
 
 ---
 
