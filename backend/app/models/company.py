@@ -10,7 +10,7 @@ from decimal import Decimal
 from enum import Enum
 
 from sqlalchemy import Boolean, Date, DateTime, Numeric, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -55,6 +55,7 @@ class Company(Base):
     rofr_days: Mapped[int | None] = mapped_column()  # pre-emption window in days
     has_drag_tag: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     has_tag_along: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    has_family_charter: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     profit_allocation_notes: Mapped[str | None] = mapped_column(Text)
 
     created_at: Mapped[datetime] = mapped_column(

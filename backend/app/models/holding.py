@@ -9,7 +9,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import DateTime, ForeignKey, Numeric, String, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -34,6 +34,9 @@ class Holding(Base):
         String(50), nullable=False, default="ordinary"
     )
     quantity: Mapped[Decimal] = mapped_column(Numeric(20, 4), nullable=False, default=0)
+
+    # Flexible attributes for restrictions, AoA-specific notes, or lock-up periods
+    custom_fields: Mapped[dict | None] = mapped_column(JSON)
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False

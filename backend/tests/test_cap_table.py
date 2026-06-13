@@ -34,11 +34,11 @@ async def _issue(
 
 @pytest.mark.asyncio
 async def test_issue_shares_creates_holding(
-    db_client: AsyncClient, auth_headers: dict, company_id: str, stakeholder_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str, stakeholder_id: str
 ) -> None:
-    await _issue(db_client, auth_headers, company_id, stakeholder_id, 1000)
+    await _issue(db_client, mfa_headers, company_id, stakeholder_id, 1000)
 
-    res = await db_client.get(f"/api/companies/{company_id}/cap-table", headers=auth_headers)
+    res = await db_client.get(f"/api/companies/{company_id}/cap-table", headers=mfa_headers)
     assert res.status_code == 200
     holdings = res.json()["holdings"]
     assert len(holdings) == 1
@@ -48,19 +48,19 @@ async def test_issue_shares_creates_holding(
 
 @pytest.mark.asyncio
 async def test_issue_shares_to_two_stakeholders_percentage(
-    db_client: AsyncClient, auth_headers: dict, company_id: str, stakeholder_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str, stakeholder_id: str
 ) -> None:
     second = await db_client.post(
         f"/api/companies/{company_id}/stakeholders",
         json={"stakeholder_type": "natural_person", "name_en": "Co-Founder"},
-        headers=auth_headers,
+        headers=mfa_headers,
     )
     second_id = second.json()["id"]
 
-    await _issue(db_client, auth_headers, company_id, stakeholder_id, 600)
-    await _issue(db_client, auth_headers, company_id, second_id, 400)
+    await _issue(db_client, mfa_headers, company_id, stakeholder_id, 600)
+    await _issue(db_client, mfa_headers, company_id, second_id, 400)
 
-    res = await db_client.get(f"/api/companies/{company_id}/cap-table", headers=auth_headers)
+    res = await db_client.get(f"/api/companies/{company_id}/cap-table", headers=mfa_headers)
     body = res.json()
     assert Decimal(body["total_shares"]) == 1000
 
@@ -71,12 +71,12 @@ async def test_issue_shares_to_two_stakeholders_percentage(
 
 @pytest.mark.asyncio
 async def test_issue_shares_accumulate(
-    db_client: AsyncClient, auth_headers: dict, company_id: str, stakeholder_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str, stakeholder_id: str
 ) -> None:
-    await _issue(db_client, auth_headers, company_id, stakeholder_id, 500)
-    await _issue(db_client, auth_headers, company_id, stakeholder_id, 500)
+    await _issue(db_client, mfa_headers, company_id, stakeholder_id, 500)
+    await _issue(db_client, mfa_headers, company_id, stakeholder_id, 500)
 
-    res = await db_client.get(f"/api/companies/{company_id}/cap-table", headers=auth_headers)
+    res = await db_client.get(f"/api/companies/{company_id}/cap-table", headers=mfa_headers)
     holding = res.json()["holdings"][0]
     assert Decimal(holding["quantity"]) == 1000
 
@@ -94,16 +94,16 @@ async def test_issue_requires_auth(db_client: AsyncClient, company_id: str, stak
 
 @pytest.mark.asyncio
 async def test_transfer_shares_between_stakeholders(
-    db_client: AsyncClient, auth_headers: dict, company_id: str, stakeholder_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str, stakeholder_id: str
 ) -> None:
     second = await db_client.post(
         f"/api/companies/{company_id}/stakeholders",
         json={"stakeholder_type": "natural_person", "name_en": "Investor"},
-        headers=auth_headers,
+        headers=mfa_headers,
     )
     second_id = second.json()["id"]
 
-    await _issue(db_client, auth_headers, company_id, stakeholder_id, 1000)
+    await _issue(db_client, mfa_headers, company_id, stakeholder_id, 1000)
 
     res = await db_client.post(
         f"/api/companies/{company_id}/cap-table/transfer",
@@ -114,11 +114,11 @@ async def test_transfer_shares_between_stakeholders(
             "share_class": "quota",
             "event_date": "2026-02-01",
         },
-        headers=auth_headers,
+        headers=mfa_headers,
     )
     assert res.status_code == 201
 
-    cap = await db_client.get(f"/api/companies/{company_id}/cap-table", headers=auth_headers)
+    cap = await db_client.get(f"/api/companies/{company_id}/cap-table", headers=mfa_headers)
     holdings = {h["stakeholder_id"]: Decimal(h["quantity"]) for h in cap.json()["holdings"]}
     assert holdings[stakeholder_id] == Decimal("700")
     assert holdings[second_id] == Decimal("300")
@@ -126,16 +126,16 @@ async def test_transfer_shares_between_stakeholders(
 
 @pytest.mark.asyncio
 async def test_transfer_more_than_held_is_400(
-    db_client: AsyncClient, auth_headers: dict, company_id: str, stakeholder_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str, stakeholder_id: str
 ) -> None:
     second = await db_client.post(
         f"/api/companies/{company_id}/stakeholders",
         json={"stakeholder_type": "natural_person", "name_en": "Buyer"},
-        headers=auth_headers,
+        headers=mfa_headers,
     )
     second_id = second.json()["id"]
 
-    await _issue(db_client, auth_headers, company_id, stakeholder_id, 100)
+    await _issue(db_client, mfa_headers, company_id, stakeholder_id, 100)
 
     res = await db_client.post(
         f"/api/companies/{company_id}/cap-table/transfer",
@@ -146,7 +146,7 @@ async def test_transfer_more_than_held_is_400(
             "share_class": "quota",
             "event_date": "2026-02-01",
         },
-        headers=auth_headers,
+        headers=mfa_headers,
     )
     assert res.status_code == 400
 
@@ -155,12 +155,12 @@ async def test_transfer_more_than_held_is_400(
 
 @pytest.mark.asyncio
 async def test_cap_table_events_are_recorded(
-    db_client: AsyncClient, auth_headers: dict, company_id: str, stakeholder_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str, stakeholder_id: str
 ) -> None:
-    await _issue(db_client, auth_headers, company_id, stakeholder_id, 500)
+    await _issue(db_client, mfa_headers, company_id, stakeholder_id, 500)
 
     res = await db_client.get(
-        f"/api/companies/{company_id}/cap-table/events", headers=auth_headers
+        f"/api/companies/{company_id}/cap-table/events", headers=mfa_headers
     )
     assert res.status_code == 200
     events = res.json()
@@ -171,16 +171,16 @@ async def test_cap_table_events_are_recorded(
 
 @pytest.mark.asyncio
 async def test_multiple_events_all_recorded(
-    db_client: AsyncClient, auth_headers: dict, company_id: str, stakeholder_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str, stakeholder_id: str
 ) -> None:
     second = await db_client.post(
         f"/api/companies/{company_id}/stakeholders",
         json={"stakeholder_type": "natural_person", "name_en": "Second"},
-        headers=auth_headers,
+        headers=mfa_headers,
     )
     second_id = second.json()["id"]
 
-    await _issue(db_client, auth_headers, company_id, stakeholder_id, 800)
+    await _issue(db_client, mfa_headers, company_id, stakeholder_id, 800)
     await db_client.post(
         f"/api/companies/{company_id}/cap-table/transfer",
         json={
@@ -190,11 +190,11 @@ async def test_multiple_events_all_recorded(
             "share_class": "quota",
             "event_date": "2026-03-01",
         },
-        headers=auth_headers,
+        headers=mfa_headers,
     )
 
     events = (await db_client.get(
-        f"/api/companies/{company_id}/cap-table/events", headers=auth_headers
+        f"/api/companies/{company_id}/cap-table/events", headers=mfa_headers
     )).json()
     types = [e["event_type"] for e in events]
     assert "share_issuance" in types
@@ -205,7 +205,7 @@ async def test_multiple_events_all_recorded(
 
 @pytest.mark.asyncio
 async def test_capital_increase_records_event(
-    db_client: AsyncClient, auth_headers: dict, company_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str
 ) -> None:
     res = await db_client.post(
         f"/api/companies/{company_id}/cap-table/capital-increase",
@@ -214,7 +214,7 @@ async def test_capital_increase_records_event(
             "new_paid_up_capital": 2500000,
             "event_date": "2026-04-01",
         },
-        headers=auth_headers,
+        headers=mfa_headers,
     )
     assert res.status_code == 201
     assert res.json()["event_type"] == "capital_increase"

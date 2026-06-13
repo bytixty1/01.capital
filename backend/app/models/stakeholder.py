@@ -9,7 +9,7 @@ from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import DateTime, ForeignKey, String, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -34,14 +34,18 @@ class Stakeholder(Base):
     name_en: Mapped[str] = mapped_column(String(255), nullable=False)
     name_ar: Mapped[str | None] = mapped_column(String(255))
 
-    # Natural persons: national_id stored AES-GCM encrypted (plain value never logged)
+    # Natural persons: national_id and iban stored AES-GCM encrypted (plain value never logged)
     national_id: Mapped[str | None] = mapped_column(String(512))
+    iban: Mapped[str | None] = mapped_column(String(512))  # AES-GCM encrypted; used for exercise payouts
     nationality: Mapped[str | None] = mapped_column(String(3))  # ISO 3166-1 alpha-3
 
     # Legal entities: CR number
     cr_number: Mapped[str | None] = mapped_column(String(20))
 
     email: Mapped[str | None] = mapped_column(String(255))
+
+    # Flexible attributes for AoA-specific or onboarding fields not in core schema
+    custom_fields: Mapped[dict | None] = mapped_column(JSON)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

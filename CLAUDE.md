@@ -27,7 +27,8 @@ Read these in order — do not skip any:
 3. `.agents/rules/01-project-rules.md` — the locked project rules
 4. `docs/decisions/0001-pivot-to-cap-table.md` — strategic anchor
 5. `docs/discovery/14-day-sprint.md` — active sprint plan
-6. `graphify-out/GRAPH_REPORT.md` — codebase knowledge graph (1072 nodes, 68 communities); run `/graphify --update` after significant code changes
+6. `docs/STANDARDS.md` — engineering standards (API design, data model rules, Saudi law compliance, definition of done)
+7. `graphify-out/GRAPH_REPORT.md` — codebase knowledge graph (1072 nodes, 68 communities); run `/graphify --update` after significant code changes
 
 ---
 

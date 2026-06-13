@@ -24,6 +24,7 @@ class CreateCompanyRequest(BaseModel):
     rofr_days: int | None = Field(None, ge=1, le=365)
     has_drag_tag: bool = False
     has_tag_along: bool = False
+    has_family_charter: bool = False
     profit_allocation_notes: str | None = None
 
     @model_validator(mode="before")
@@ -49,6 +50,7 @@ class UpdateCompanyRequest(BaseModel):
     rofr_days: int | None = Field(None, ge=1, le=365)
     has_drag_tag: bool | None = None
     has_tag_along: bool | None = None
+    has_family_charter: bool | None = None
     profit_allocation_notes: str | None = None
 
 
@@ -68,6 +70,7 @@ class CompanyResponse(BaseModel):
     rofr_days: int | None
     has_drag_tag: bool
     has_tag_along: bool
+    has_family_charter: bool
     profit_allocation_notes: str | None
     created_at: datetime
 

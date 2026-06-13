@@ -199,6 +199,29 @@ async def dev_verify_email(
     return TokenResponse(access_token=create_access_token(str(user.id)))
 
 
+@router.post("/dev/enable-mfa", response_model=TokenResponse, include_in_schema=False)
+async def dev_enable_mfa(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> TokenResponse:
+    """Enable MFA for the authenticated user without a real TOTP code — only outside production.
+
+    Used by automated tests that need a fully-authenticated MFA token to access
+    cap-table endpoints protected by require_mfa. Returns a full (mfa_verified=True) token.
+    """
+    if settings.environment == "production":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    if not current_user.mfa_secret:
+        # Auto-generate a secret if setup hasn't been called
+        secret = generate_totp_secret()
+        current_user.mfa_secret = encrypt_field(secret)
+
+    current_user.mfa_enabled = True
+    await db.commit()
+    return TokenResponse(access_token=create_access_token(str(current_user.id), mfa_verified=True))
+
+
 # ── Resend verification ───────────────────────────────────────────────────────
 
 @router.post("/resend-verification", response_model=RegisterResponse)

@@ -90,3 +90,18 @@ def require_admin(member: CompanyMember = Depends(get_company_member)) -> Compan
     if member.role != MemberRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin role required")
     return member
+
+
+def require_mfa(current_user: User = Depends(get_current_user)) -> User:
+    """Block access to sensitive cap table routes until MFA is enrolled.
+
+    Per Sprint 1 security baseline: no real equity data accessible until MFA
+    is live. This is enforced per-user, not per-company, so it applies even
+    on the first company a user creates.
+    """
+    if not current_user.mfa_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="MFA must be enabled before accessing cap table data. Set it up in Account Settings.",
+        )
+    return current_user

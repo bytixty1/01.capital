@@ -60,9 +60,9 @@ async def test_list_companies_empty_for_new_user(db_client: AsyncClient, auth_he
 
 @pytest.mark.asyncio
 async def test_get_company_detail(
-    db_client: AsyncClient, auth_headers: dict, company_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str
 ) -> None:
-    res = await db_client.get(f"/api/companies/{company_id}", headers=auth_headers)
+    res = await db_client.get(f"/api/companies/{company_id}", headers=mfa_headers)
     assert res.status_code == 200
     assert res.json()["id"] == company_id
     assert res.json()["name_en"] == "Test Co"
@@ -83,12 +83,12 @@ async def test_get_company_not_member_is_403(
 
 @pytest.mark.asyncio
 async def test_update_company_name(
-    db_client: AsyncClient, auth_headers: dict, company_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str
 ) -> None:
     res = await db_client.patch(
         f"/api/companies/{company_id}",
         json={"name_en": "Updated Name"},
-        headers=auth_headers,
+        headers=mfa_headers,
     )
     assert res.status_code == 200
     assert res.json()["name_en"] == "Updated Name"
@@ -96,12 +96,12 @@ async def test_update_company_name(
 
 @pytest.mark.asyncio
 async def test_update_company_with_cr_number(
-    db_client: AsyncClient, auth_headers: dict, company_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str
 ) -> None:
     res = await db_client.patch(
         f"/api/companies/{company_id}",
         json={"cr_number": "4030123456"},
-        headers=auth_headers,
+        headers=mfa_headers,
     )
     assert res.status_code == 200
     assert res.json()["cr_number"] == "4030123456"
@@ -111,12 +111,12 @@ async def test_update_company_with_cr_number(
 
 @pytest.mark.asyncio
 async def test_create_stakeholder_natural_person(
-    db_client: AsyncClient, auth_headers: dict, company_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str
 ) -> None:
     res = await db_client.post(
         f"/api/companies/{company_id}/stakeholders",
         json={"stakeholder_type": "natural_person", "name_en": "Khalid Al-Mutairi"},
-        headers=auth_headers,
+        headers=mfa_headers,
     )
     assert res.status_code == 201
     body = res.json()
@@ -127,12 +127,12 @@ async def test_create_stakeholder_natural_person(
 
 @pytest.mark.asyncio
 async def test_create_stakeholder_legal_entity(
-    db_client: AsyncClient, auth_headers: dict, company_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str
 ) -> None:
     res = await db_client.post(
         f"/api/companies/{company_id}/stakeholders",
         json={"stakeholder_type": "legal_entity", "name_en": "SVC Fund LP", "cr_number": "1010000001"},
-        headers=auth_headers,
+        headers=mfa_headers,
     )
     assert res.status_code == 201
     assert res.json()["stakeholder_type"] == "legal_entity"
@@ -141,9 +141,9 @@ async def test_create_stakeholder_legal_entity(
 
 @pytest.mark.asyncio
 async def test_list_stakeholders(
-    db_client: AsyncClient, auth_headers: dict, company_id: str, stakeholder_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str, stakeholder_id: str
 ) -> None:
-    res = await db_client.get(f"/api/companies/{company_id}/stakeholders", headers=auth_headers)
+    res = await db_client.get(f"/api/companies/{company_id}/stakeholders", headers=mfa_headers)
     assert res.status_code == 200
     assert any(s["id"] == stakeholder_id for s in res.json())
 
@@ -158,9 +158,9 @@ async def test_stakeholder_requires_auth(db_client: AsyncClient, company_id: str
 
 @pytest.mark.asyncio
 async def test_list_members_includes_creator(
-    db_client: AsyncClient, auth_headers: dict, company_id: str
+    db_client: AsyncClient, mfa_headers: dict, company_id: str
 ) -> None:
-    res = await db_client.get(f"/api/companies/{company_id}/members", headers=auth_headers)
+    res = await db_client.get(f"/api/companies/{company_id}/members", headers=mfa_headers)
     assert res.status_code == 200
     members = res.json()
     assert len(members) == 1

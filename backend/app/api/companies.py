@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_company_member, get_current_user, require_admin
+from app.core.deps import get_company_member, get_current_user, require_admin, require_mfa
 from app.models.cap_table_event import CapTableEvent, EventType
 from app.models.company import Company
 from app.models.company_member import CompanyMember, MemberRole
@@ -27,7 +27,7 @@ from app.schemas.cap_table import (
     WaterfallResponse,
 )
 from app.schemas.company import CompanyResponse, CreateCompanyRequest, UpdateCompanyRequest
-from app.schemas.stakeholder import CreateStakeholderRequest, StakeholderResponse
+from app.schemas.stakeholder import CreateStakeholderRequest, StakeholderResponse, UpdateStakeholderRequest
 from app.services.cap_table import (
     apply_capital_decrease,
     apply_capital_increase,
@@ -245,6 +245,8 @@ async def create_stakeholder(
     data = body.model_dump()
     if data.get("national_id"):
         data["national_id"] = encrypt_field(data["national_id"])
+    if data.get("iban"):
+        data["iban"] = encrypt_field(data["iban"])
     stakeholder = Stakeholder(company_id=member.company_id, **data)
     db.add(stakeholder)
     await db.commit()
@@ -299,6 +301,40 @@ async def get_stakeholder(
     }
 
 
+@router.patch(
+    "/{company_id}/stakeholders/{stakeholder_id}",
+    response_model=StakeholderResponse,
+)
+async def update_stakeholder(
+    stakeholder_id: uuid.UUID,
+    body: UpdateStakeholderRequest,
+    member: CompanyMember = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Stakeholder:
+    result = await db.execute(
+        select(Stakeholder).where(
+            Stakeholder.id == stakeholder_id,
+            Stakeholder.company_id == member.company_id,
+        )
+    )
+    stakeholder = result.scalar_one_or_none()
+    if stakeholder is None:
+        raise HTTPException(status_code=404, detail="Stakeholder not found")
+
+    updates = body.model_dump(exclude_unset=True)
+    if "national_id" in updates and updates["national_id"]:
+        updates["national_id"] = encrypt_field(updates["national_id"])
+    if "iban" in updates and updates["iban"]:
+        updates["iban"] = encrypt_field(updates["iban"])
+
+    for key, value in updates.items():
+        setattr(stakeholder, key, value)
+
+    await db.commit()
+    await db.refresh(stakeholder)
+    return stakeholder
+
+
 @router.delete(
     "/{company_id}/stakeholders/{stakeholder_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -328,6 +364,7 @@ async def delete_stakeholder(
 async def cap_table(
     diluted: bool = False,
     member: CompanyMember = Depends(get_company_member),
+    _mfa: User = Depends(require_mfa),
     db: AsyncSession = Depends(get_db),
 ) -> CapTableResponse:
     return await get_cap_table(db, member.company_id, diluted=diluted)
@@ -375,7 +412,7 @@ async def waterfall_endpoint(
 async def issue_shares(
     body: IssueSharesRequest,
     member: CompanyMember = Depends(require_admin),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_mfa),
     db: AsyncSession = Depends(get_db),
 ) -> CapTableEvent:
     company_result = await db.execute(select(Company).where(Company.id == member.company_id))
@@ -430,7 +467,7 @@ async def issue_shares(
 async def transfer_shares(
     body: TransferSharesRequest,
     member: CompanyMember = Depends(require_admin),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_mfa),
     db: AsyncSession = Depends(get_db),
 ) -> CapTableEvent:
     company_result = await db.execute(select(Company).where(Company.id == member.company_id))
@@ -486,7 +523,7 @@ async def transfer_shares(
 async def capital_increase(
     body: CapitalIncreaseRequest,
     member: CompanyMember = Depends(require_admin),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_mfa),
     db: AsyncSession = Depends(get_db),
 ) -> CapTableEvent:
     company_result = await db.execute(select(Company).where(Company.id == member.company_id))
@@ -553,7 +590,7 @@ async def capital_increase(
 async def capital_decrease(
     body: CapitalDecreaseRequest,
     member: CompanyMember = Depends(require_admin),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_mfa),
     db: AsyncSession = Depends(get_db),
 ) -> CapTableEvent:
     company_result = await db.execute(select(Company).where(Company.id == member.company_id))
@@ -607,6 +644,7 @@ async def capital_decrease(
 @router.get("/{company_id}/cap-table/events", response_model=list[CapTableEventResponse])
 async def list_events(
     member: CompanyMember = Depends(get_company_member),
+    _mfa: User = Depends(require_mfa),
     db: AsyncSession = Depends(get_db),
 ) -> list[CapTableEvent]:
     result = await db.execute(
