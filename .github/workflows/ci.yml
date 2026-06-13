@@ -48,6 +48,10 @@ jobs:
           # conftest.py refuses to run without an explicit TEST_DATABASE_URL —
           # the CI service container is a dedicated throwaway test DB.
           TEST_DATABASE_URL: postgresql+asyncpg://01capital:01capital@localhost:5432/01capital_test
+          # The suite registers dozens of users from one client; the 10/min
+          # register limit would 429 most of them. Tests only — never disable
+          # rate limiting in deployed environments.
+          RATE_LIMIT_ENABLED: "false"
         run: pytest --cov=app --cov-report=term-missing -v
 
   frontend:
