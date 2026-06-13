@@ -13,7 +13,7 @@ from alembic import op
 from sqlalchemy.dialects.postgresql import JSON
 
 revision: str = "0009_sprint1_remaining_fields"
-down_revision: str | None = "0008_cap_table_events_created_by_on_delete_set_null"
+down_revision: str | None = "0008"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
