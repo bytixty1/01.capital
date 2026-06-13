@@ -22,6 +22,7 @@ class EventType(str, Enum):
     CAPITAL_INCREASE = "capital_increase"
     CAPITAL_DECREASE = "capital_decrease"
     SHARE_SPLIT = "share_split"
+    OPTION_EXERCISE = "option_exercise"
 
 
 class CapTableEvent(Base):

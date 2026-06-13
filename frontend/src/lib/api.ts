@@ -136,7 +136,16 @@ export type CapTableEventType =
   | 'capital_increase'
   | 'capital_decrease';
 export type EsopPlanStatus = 'active' | 'exhausted' | 'closed';
-export type GrantStatus = 'active' | 'exercised' | 'partially_exercised' | 'forfeited' | 'expired';
+export type GrantStatus = 'active' | 'exercised' | 'partially_exercised' | 'forfeited' | 'expired' | 'terminated';
+export type LeaverType = 'good_leaver' | 'bad_leaver';
+export type VestingType = 'cliff_monthly' | 'performance';
+
+export type PerformanceMilestone = {
+  label: string;
+  fraction: string;
+  achieved: boolean;
+  achieved_date: string | null;
+};
 export type FilingType =
   | 'moc_partner_register'
   | 'moc_aoa_amendment'
@@ -337,10 +346,34 @@ export type GrantResponse = {
   grant_date: string;
   expiry_date: string | null;
   exercise_price: string | null;
-  vesting_schedule: { type: string; cliff_months: number; total_months: number };
+  vesting_schedule: {
+    type: string;
+    cliff_months?: number;
+    total_months?: number;
+    milestones?: PerformanceMilestone[];
+  };
   status: GrantStatus;
+  termination_date?: string | null;
+  leaver_type?: LeaverType | null;
   notes: string | null;
   created_at: string;
+};
+
+export type BulkGrantRowResult = {
+  stakeholder_id: string;
+  quantity: string;
+  ok: boolean;
+  error: string | null;
+};
+
+export type BulkGrantResponse = {
+  dry_run: boolean;
+  total_rows: number;
+  valid_rows: number;
+  total_quantity: string;
+  pool_remaining_after: string;
+  committed: number;
+  results: BulkGrantRowResult[];
 };
 
 export type FilingResponse = {
@@ -569,10 +602,42 @@ export const api = {
     createGrant: (companyId: string, planId: string, body: {
       stakeholder_id: string; quantity: number; grant_date: string;
       expiry_date?: string | undefined; exercise_price?: number | undefined;
+      vesting_type?: VestingType | undefined;
       cliff_months?: number | undefined; total_months?: number | undefined;
+      milestones?: { label: string; fraction: number }[] | undefined;
       notes?: string | undefined;
     }) =>
       request<GrantResponse>(`/api/companies/${companyId}/esop/${planId}/grants`, {
+        method: 'POST', body: JSON.stringify(body),
+      }),
+    exerciseGrant: (companyId: string, planId: string, grantId: string, body: {
+      quantity: number; exercise_type: 'cash' | 'net'; exercise_date: string;
+      notes?: string | undefined;
+    }) =>
+      request<GrantResponse>(`/api/companies/${companyId}/esop/${planId}/grants/${grantId}/exercise`, {
+        method: 'POST', body: JSON.stringify(body),
+      }),
+    terminateGrant: (companyId: string, planId: string, grantId: string, body: {
+      leaver_type: LeaverType; termination_date: string; notes?: string | undefined;
+    }) =>
+      request<GrantResponse>(`/api/companies/${companyId}/esop/${planId}/grants/${grantId}/terminate`, {
+        method: 'POST', body: JSON.stringify(body),
+      }),
+    achieveMilestone: (companyId: string, planId: string, grantId: string, body: {
+      milestone_index: number; achieved_date: string;
+    }) =>
+      request<GrantResponse>(`/api/companies/${companyId}/esop/${planId}/grants/${grantId}/achieve-milestone`, {
+        method: 'POST', body: JSON.stringify(body),
+      }),
+    bulkGrants: (companyId: string, planId: string, body: {
+      dry_run: boolean;
+      grants: {
+        stakeholder_id: string; quantity: number; grant_date: string;
+        exercise_price?: number | undefined; cliff_months?: number | undefined;
+        total_months?: number | undefined;
+      }[];
+    }) =>
+      request<BulkGrantResponse>(`/api/companies/${companyId}/esop/${planId}/grants/bulk`, {
         method: 'POST', body: JSON.stringify(body),
       }),
     ifrs2Expense: (

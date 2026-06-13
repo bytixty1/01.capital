@@ -18,6 +18,12 @@ class GrantStatus(str, Enum):
     PARTIALLY_EXERCISED = "partially_exercised"
     FORFEITED = "forfeited"
     EXPIRED = "expired"
+    TERMINATED = "terminated"
+
+
+class LeaverType(str, Enum):
+    GOOD_LEAVER = "good_leaver"
+    BAD_LEAVER = "bad_leaver"
 
 
 class EsopGrant(Base):
@@ -43,6 +49,7 @@ class EsopGrant(Base):
     vesting_schedule: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     status: Mapped[str] = mapped_column(String(30), nullable=False, default=GrantStatus.ACTIVE)
     termination_date: Mapped[date | None] = mapped_column(Date)
+    leaver_type: Mapped[str | None] = mapped_column(String(20))  # good_leaver | bad_leaver | None
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

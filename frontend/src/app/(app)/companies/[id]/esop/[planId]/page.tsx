@@ -7,9 +7,22 @@ import {
   EsopPlanResponse,
   GrantResponse,
   IFRS2ExpenseResponse,
+  LeaverType,
   StakeholderResponse,
 } from '@/lib/api';
 import { formatNumber, formatNumberWhole, formatSAR, formatSARWhole } from '@/lib/format';
+import { todayISO } from '@/lib/format';
+
+function vestingLabel(vs: GrantResponse['vesting_schedule']): string {
+  if (vs.type === 'performance') {
+    const ms = vs.milestones ?? [];
+    const done = ms.filter(m => m.achieved).length;
+    return `Performance — ${done}/${ms.length} milestones`;
+  }
+  return `${vs.cliff_months ?? 0}m cliff / ${vs.total_months ?? 0}m total`;
+}
+
+type ActionKind = 'exercise' | 'terminate' | 'milestones';
 
 export default function EsopPlanPage() {
   const { id: companyId, planId } = useParams<{ id: string; planId: string }>();
@@ -29,6 +42,96 @@ export default function EsopPlanPage() {
   const [ifrs2Result, setIfrs2Result] = useState<IFRS2ExpenseResponse | null>(null);
   const [ifrs2Loading, setIfrs2Loading] = useState(false);
   const [ifrs2Error, setIfrs2Error] = useState<string | null>(null);
+
+  // ── Grant action panel state ────────────────────────────────────────────────
+  const [actionGrant, setActionGrant] = useState<GrantResponse | null>(null);
+  const [actionKind, setActionKind] = useState<ActionKind | null>(null);
+  const [actionQty, setActionQty] = useState('');
+  const [exerciseType, setExerciseType] = useState<'cash' | 'net'>('cash');
+  const [leaverType, setLeaverType] = useState<LeaverType>('good_leaver');
+  const [actionDate, setActionDate] = useState(todayISO);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  async function reloadGrantsAndPlan() {
+    const [p, g] = await Promise.all([
+      api.esop.getPlan(companyId, planId),
+      api.esop.listGrants(companyId, planId),
+    ]);
+    setPlan(p);
+    setGrants(g);
+  }
+
+  function openAction(grant: GrantResponse, kind: ActionKind) {
+    setActionGrant(grant);
+    setActionKind(kind);
+    setActionQty('');
+    setExerciseType('cash');
+    setLeaverType('good_leaver');
+    setActionDate(todayISO());
+    setActionError(null);
+  }
+
+  function closeAction() {
+    setActionGrant(null);
+    setActionKind(null);
+    setActionError(null);
+  }
+
+  async function submitExercise() {
+    if (!actionGrant) return;
+    setActionBusy(true);
+    setActionError(null);
+    try {
+      await api.esop.exerciseGrant(companyId, planId, actionGrant.id, {
+        quantity: Number(actionQty),
+        exercise_type: exerciseType,
+        exercise_date: actionDate,
+      });
+      await reloadGrantsAndPlan();
+      closeAction();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Exercise failed');
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function submitTerminate() {
+    if (!actionGrant) return;
+    setActionBusy(true);
+    setActionError(null);
+    try {
+      await api.esop.terminateGrant(companyId, planId, actionGrant.id, {
+        leaver_type: leaverType,
+        termination_date: actionDate,
+      });
+      await reloadGrantsAndPlan();
+      closeAction();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Termination failed');
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function achieveMilestone(index: number) {
+    if (!actionGrant) return;
+    setActionBusy(true);
+    setActionError(null);
+    try {
+      const updated = await api.esop.achieveMilestone(companyId, planId, actionGrant.id, {
+        milestone_index: index,
+        achieved_date: actionDate,
+      });
+      await reloadGrantsAndPlan();
+      setActionGrant(updated); // keep panel open with refreshed milestone state
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to mark milestone');
+    } finally {
+      setActionBusy(false);
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -91,7 +194,12 @@ export default function EsopPlanPage() {
           <h1 style={s.heading}>{plan.name}</h1>
           <span style={{ ...s.badge, color: plan.status === 'active' ? 'var(--pos)' : 'var(--text-tertiary)' }}>{plan.status}</span>
         </div>
-        {plan.status === 'active' && <a href={`/companies/${companyId}/esop/${planId}/grant`} className="btn-primary" style={s.cta}>+ Issue grant</a>}
+        {plan.status === 'active' && (
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <a href={`/companies/${companyId}/esop/${planId}/bulk`} style={{ ...s.cta, textDecoration: 'none', border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}>Bulk import</a>
+            <a href={`/companies/${companyId}/esop/${planId}/grant`} className="btn-primary" style={s.cta}>+ Issue grant</a>
+          </div>
+        )}
       </div>
 
       <div style={s.statsRow}>
@@ -117,22 +225,42 @@ export default function EsopPlanPage() {
             <thead><tr>
               <th style={s.th}>Stakeholder</th>
               <th style={{ ...s.th, textAlign: 'right' as const }}>Quantity</th>
+              <th style={{ ...s.th, textAlign: 'right' as const }}>Exercised</th>
               <th style={{ ...s.th, textAlign: 'right' as const }}>Grant date</th>
               <th style={{ ...s.th, textAlign: 'right' as const }}>Vesting</th>
               <th style={{ ...s.th, textAlign: 'right' as const }}>Status</th>
+              <th style={{ ...s.th, textAlign: 'right' as const }}>Actions</th>
             </tr></thead>
             <tbody>
-              {grants.map(g => (
-                <tr key={g.id} style={s.row}>
-                  <td style={s.td}>{stakeMap[g.stakeholder_id] ?? g.stakeholder_id}</td>
-                  <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>{formatNumber(g.quantity)}</td>
-                  <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>{g.grant_date}</td>
-                  <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>
-                    {g.vesting_schedule.cliff_months}m cliff / {g.vesting_schedule.total_months}m total
-                  </td>
-                  <td style={{ ...s.td, textAlign: 'right' as const }}>{g.status}</td>
-                </tr>
-              ))}
+              {grants.map(g => {
+                const isPerf = g.vesting_schedule.type === 'performance';
+                const canManage = g.status === 'active' || g.status === 'partially_exercised';
+                return (
+                  <tr key={g.id} style={s.row}>
+                    <td style={s.td}>{stakeMap[g.stakeholder_id] ?? g.stakeholder_id}</td>
+                    <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>{formatNumber(g.quantity)}</td>
+                    <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>{formatNumber(g.exercised_quantity)}</td>
+                    <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)' }}>{g.grant_date}</td>
+                    <td style={{ ...s.td, textAlign: 'right' as const, fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
+                      {vestingLabel(g.vesting_schedule)}
+                    </td>
+                    <td style={{ ...s.td, textAlign: 'right' as const }}>{g.status}</td>
+                    <td style={{ ...s.td, textAlign: 'right' as const }}>
+                      <div style={{ display: 'inline-flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        {isPerf && (
+                          <button onClick={() => openAction(g, 'milestones')} style={s.linkBtn}>Milestones</button>
+                        )}
+                        {canManage && (
+                          <>
+                            <button onClick={() => openAction(g, 'exercise')} style={s.linkBtn}>Exercise</button>
+                            <button onClick={() => openAction(g, 'terminate')} style={{ ...s.linkBtn, color: 'var(--neg)' }}>Terminate</button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -243,6 +371,117 @@ export default function EsopPlanPage() {
           )}
         </div>
       )}
+
+      {/* ── Grant action modal ─────────────────────────────────────────────── */}
+      {actionGrant && actionKind && (
+        <div
+          onClick={closeAction}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '20px',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="glass-panel"
+            style={{ width: '100%', maxWidth: '460px', padding: '24px 26px', display: 'flex', flexDirection: 'column', gap: '18px' }}
+          >
+            <div>
+              <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                {actionKind === 'exercise' && 'Exercise options'}
+                {actionKind === 'terminate' && 'Terminate grant'}
+                {actionKind === 'milestones' && 'Performance milestones'}
+              </h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                {stakeMap[actionGrant.stakeholder_id] ?? actionGrant.stakeholder_id} · {formatNumber(actionGrant.quantity)} options
+              </p>
+            </div>
+
+            {actionKind === 'exercise' && (
+              <>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={styles.fieldLabel}>Quantity to exercise *</span>
+                  <input type="number" min="1" step="1" value={actionQty} onChange={e => setActionQty(e.target.value)} className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} placeholder="Only vested options" />
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={styles.fieldLabel}>Exercise type</span>
+                  <select value={exerciseType} onChange={e => setExerciseType(e.target.value as 'cash' | 'net')} className="glass-input">
+                    <option value="cash">Cash exercise</option>
+                    <option value="net">Net exercise</option>
+                  </select>
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={styles.fieldLabel}>Exercise date *</span>
+                  <input type="date" value={actionDate} onChange={e => setActionDate(e.target.value)} className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} />
+                </label>
+              </>
+            )}
+
+            {actionKind === 'terminate' && (
+              <>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={styles.fieldLabel}>Leaver type</span>
+                  <select value={leaverType} onChange={e => setLeaverType(e.target.value as LeaverType)} className="glass-input">
+                    <option value="good_leaver">Good leaver — keeps vested, forfeits unvested</option>
+                    <option value="bad_leaver">Bad leaver — forfeits all unexercised</option>
+                  </select>
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={styles.fieldLabel}>Termination date *</span>
+                  <input type="date" value={actionDate} onChange={e => setActionDate(e.target.value)} className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} />
+                </label>
+                <div style={{ padding: '10px 12px', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  Forfeited options return to the plan pool. Already-exercised shares are never clawed back.
+                </div>
+              </>
+            )}
+
+            {actionKind === 'milestones' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={styles.fieldLabel}>Achievement date</span>
+                  <input type="date" value={actionDate} onChange={e => setActionDate(e.target.value)} className="glass-input" style={{ fontFamily: 'var(--font-mono)' }} />
+                </label>
+                {(actionGrant.vesting_schedule.milestones ?? []).map((m, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{m.label}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>{(Number(m.fraction) * 100).toFixed(0)}% of grant</div>
+                    </div>
+                    {m.achieved ? (
+                      <span style={{ fontSize: '12px', color: 'var(--pos)', fontWeight: 600 }}>✓ {m.achieved_date ?? 'Achieved'}</span>
+                    ) : (
+                      <button onClick={() => achieveMilestone(i)} disabled={actionBusy} style={{ ...styles.linkBtn, color: 'var(--brand-purple)' }}>Mark achieved</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {actionError && (
+              <div style={{ padding: '10px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', color: 'var(--neg)', fontSize: '13px' }}>
+                {actionError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', alignItems: 'center', paddingTop: '4px', borderTop: '1px solid var(--glass-border)' }}>
+              <button onClick={closeAction} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '13px', cursor: 'pointer' }}>
+                {actionKind === 'milestones' ? 'Done' : 'Cancel'}
+              </button>
+              {actionKind === 'exercise' && (
+                <button onClick={submitExercise} disabled={actionBusy} className="btn-primary" style={{ borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 600, cursor: actionBusy ? 'not-allowed' : 'pointer', opacity: actionBusy ? 0.6 : 1 }}>
+                  {actionBusy ? 'Exercising…' : 'Confirm exercise'}
+                </button>
+              )}
+              {actionKind === 'terminate' && (
+                <button onClick={submitTerminate} disabled={actionBusy} style={{ background: 'var(--neg)', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 600, color: '#fff', cursor: actionBusy ? 'not-allowed' : 'pointer', opacity: actionBusy ? 0.6 : 1 }}>
+                  {actionBusy ? 'Terminating…' : 'Confirm termination'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -267,4 +506,5 @@ const styles: Record<string, React.CSSProperties> = {
   row: { borderBottom: '1px solid var(--border-subtle)' },
   td: { padding: '12px 20px', fontSize: '13px', color: 'var(--text-primary)' },
   fieldLabel: { fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase' as const },
+  linkBtn: { background: 'transparent', border: 'none', padding: 0, fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' },
 };

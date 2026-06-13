@@ -24,10 +24,16 @@ def compute_vested(
     """
     Returns the number of shares vested as of `as_of`.
 
-    vesting_schedule shape:
-        { "type": "cliff_monthly", "cliff_months": 12, "total_months": 48 }
+    vesting_schedule shapes:
+        Time-based:
+          { "type": "cliff_monthly", "cliff_months": 12, "total_months": 48 }
+        Performance / milestone-based (common in Saudi family-business CEO grants):
+          { "type": "performance", "milestones": [
+              {"label": "Revenue SAR 10M", "fraction": "0.5", "achieved": true,  "achieved_date": "2026-03-01"},
+              {"label": "IPO filing",      "fraction": "0.5", "achieved": false}
+          ] }
 
-    Only cliff_monthly is supported in Sprint 3. Others return 0.
+    Unknown types return 0 to fail safe.
     """
     if as_of < grant_date:
         return Decimal("0")
@@ -47,6 +53,27 @@ def compute_vested(
             return quantity
 
         vested = (quantity * elapsed / total).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+        return min(vested, quantity)
+
+    if schedule_type == "performance":
+        # Sum the fractions of milestones achieved on or before `as_of`.
+        achieved_fraction = Decimal("0")
+        for m in vesting_schedule.get("milestones", []):
+            if not m.get("achieved"):
+                continue
+            achieved_on = m.get("achieved_date")
+            if achieved_on:
+                try:
+                    if date.fromisoformat(achieved_on) > as_of:
+                        continue
+                except ValueError:
+                    pass  # malformed date → treat as achieved without a date gate
+            try:
+                achieved_fraction += Decimal(str(m.get("fraction", "0")))
+            except (ArithmeticError, ValueError):
+                continue
+        achieved_fraction = min(achieved_fraction, Decimal("1"))
+        vested = (quantity * achieved_fraction).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
         return min(vested, quantity)
 
     # Unsupported type — return 0 to be safe
