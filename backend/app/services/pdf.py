@@ -187,4 +187,7 @@ def html_to_pdf(html: str) -> bytes:
             "installed in this environment."
         ) from e
 
-    return HTML(string=html).write_pdf()
+    try:
+        return HTML(string=html).write_pdf()
+    except Exception as e:  # noqa: BLE001 — any rendering failure → clean 503, never a 500
+        raise RuntimeError(f"PDF rendering failed: {e}") from e

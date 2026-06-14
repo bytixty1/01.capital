@@ -27,7 +27,10 @@ python-dateutil==2.9.0.post0
 # Document generation (bilingual PDF). WeasyPrint needs native libs at runtime
 # (libpango, libcairo, libgdk-pixbuf) — installed in the Dockerfile. It is
 # imported lazily so the app and test suite run even where those libs are absent.
+# pydyf is pinned: WeasyPrint 62.3 calls pydyf APIs removed in pydyf 0.11+
+# (AttributeError: 'super' object has no attribute 'transform' at render time).
 weasyprint==62.3
+pydyf==0.10.0
 Jinja2==3.1.4
 
 # Dev / testing
