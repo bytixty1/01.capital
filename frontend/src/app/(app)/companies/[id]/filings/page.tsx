@@ -30,6 +30,8 @@ export default function FilingsPage() {
     api.filings.list(companyId).then(setFilings).catch(e => setError(e.message)).finally(() => setLoading(false));
   }, [companyId]);
 
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
   async function markStatus(id: string, newStatus: FilingStatus) {
     setError(null);
     try {
@@ -37,6 +39,18 @@ export default function FilingsPage() {
       setFilings(prev => prev.map(f => f.id === id ? updated : f));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to update filing status');
+    }
+  }
+
+  async function downloadDraft(id: string) {
+    setDownloadingId(id);
+    setError(null);
+    try {
+      await api.documents.filingDraftPdf(companyId, id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Draft download failed');
+    } finally {
+      setDownloadingId(null);
     }
   }
 
@@ -51,15 +65,38 @@ export default function FilingsPage() {
       {!loading && filings.length === 0 && <p style={s.muted}>No filings triggered yet. Issue shares or record capital changes to generate filing requirements.</p>}
       <div style={s.list}>
         {filings.map(f => (
-          <div key={f.id} style={s.card}>
+          <div key={f.id} style={{ ...s.card, ...(f.is_overdue ? { borderColor: 'rgba(239,68,68,0.4)' } : {}) }}>
             <div style={s.cardTop}>
               <span style={s.filingType}>{FILING_LABELS[f.filing_type] ?? f.filing_type}</span>
-              <span style={{ ...s.statusBadge, color: STATUS_COLORS[f.status] ?? 'var(--text-tertiary)' }}>{f.status.replace('_', ' ')}</span>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                {f.is_overdue && <span style={{ ...s.statusBadge, color: 'var(--neg)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '4px', padding: '2px 6px' }}>Overdue</span>}
+                <span style={{ ...s.statusBadge, color: STATUS_COLORS[f.status] ?? 'var(--text-tertiary)' }}>{f.status.replace('_', ' ')}</span>
+              </div>
             </div>
-            {f.due_date && <p style={s.meta}>Due: <span style={s.mono}>{f.due_date}</span></p>}
+
+            {f.reference && (
+              <p style={s.refLine}>
+                {f.reference.authority} · {f.reference.portal_section}
+              </p>
+            )}
+            {f.due_date && <p style={s.meta}>Due: <span style={s.mono}>{f.due_date}</span>{f.reference ? ` (${f.reference.deadline_days}-day window)` : ''}</p>}
             {f.submitted_date && <p style={s.meta}>Submitted: <span style={s.mono}>{f.submitted_date}</span></p>}
+            {f.reference?.fee_note_en && <p style={s.meta}>Fees: {f.reference.fee_note_en}</p>}
+
+            {f.reference?.required_documents?.length ? (
+              <div style={{ marginTop: '10px' }}>
+                <span style={s.docsHeading}>Required documents</span>
+                <ul style={s.docsList}>
+                  {f.reference.required_documents.map((d, i) => <li key={i} style={s.docItem}>{d}</li>)}
+                </ul>
+              </div>
+            ) : null}
+
             {f.notes && <p style={s.notes}>{f.notes}</p>}
             <div style={s.actions}>
+              <button onClick={() => downloadDraft(f.id)} disabled={downloadingId === f.id} style={{ ...s.actionBtn, color: 'var(--brand-purple)', borderColor: 'var(--brand-purple)' }}>
+                {downloadingId === f.id ? 'Generating…' : 'Download draft'}
+              </button>
               {f.status === 'pending' && <button onClick={() => markStatus(f.id, 'in_progress')} style={s.actionBtn}>Mark in progress</button>}
               {f.status === 'in_progress' && <button onClick={() => markStatus(f.id, 'submitted')} style={s.actionBtn}>Mark submitted</button>}
               {f.status === 'pending' && <button onClick={() => markStatus(f.id, 'not_required')} style={{ ...s.actionBtn, color: 'var(--text-tertiary)' }}>Not required</button>}
@@ -83,6 +120,10 @@ const styles: Record<string, React.CSSProperties> = {
   filingType: { fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' },
   statusBadge: { fontSize: '11px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' as const, letterSpacing: '0.06em' },
   meta: { fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' },
+  refLine: { fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 500 },
+  docsHeading: { fontSize: '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.06em', fontWeight: 600 },
+  docsList: { margin: '6px 0 0 0', paddingInlineStart: '18px' },
+  docItem: { fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '3px' },
   mono: { fontFamily: 'var(--font-mono)' },
   notes: { fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '8px' },
   actions: { display: 'flex', gap: '12px', marginTop: '14px' },

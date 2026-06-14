@@ -4,13 +4,15 @@ import uuid
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_company_member, require_admin, require_mfa
+from app.models.audit_log import AuditAction, AuditLog
 from app.models.cap_table_event import CapTableEvent, EventType
+from app.models.company import Company
 from app.models.company_member import CompanyMember
 from app.models.esop_grant import EsopGrant, GrantStatus, LeaverType
 from app.models.esop_plan import EsopPlan, EsopPlanStatus
@@ -32,7 +34,9 @@ from app.schemas.esop import (
     VestingStatusResponse,
 )
 from app.services.cap_table import apply_share_issuance
+from app.services.cma_reference import article_29_checklist
 from app.services.ifrs2 import compute_grant_ifrs2_expense
+from app.services.pdf import html_to_pdf, render_cma_esop_plan_html
 from app.services.vesting import compute_vested
 
 router = APIRouter(prefix="/companies", tags=["esop"])
@@ -62,6 +66,15 @@ async def create_plan(
     await db.commit()
     await db.refresh(plan)
     return plan
+
+
+# Static route — must precede "/esop/{plan_id}" so it is not captured as a plan id.
+@router.get("/{company_id}/esop/article-29-checklist")
+async def cma_article_29_checklist(
+    _member: CompanyMember = Depends(get_company_member),
+) -> dict:
+    """The CMA Article 29 safe-harbour checklist (informational, bilingual)."""
+    return {"checklist": article_29_checklist()}
 
 
 @router.get("/{company_id}/esop/{plan_id}", response_model=EsopPlanResponse)
@@ -527,4 +540,50 @@ async def bulk_create_grants(
         pool_remaining_after=(available - running_total).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP),
         committed=committed,
         results=results,
+    )
+
+
+# ── CMA ESOP compliance ──────────────────────────────────────────────────────
+
+@router.get("/{company_id}/esop/{plan_id}/cma-plan.pdf")
+async def cma_esop_plan_pdf(
+    plan_id: uuid.UUID,
+    request: Request,
+    member: CompanyMember = Depends(get_company_member),
+    current_user: User = Depends(require_mfa),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Generate a CMA-aligned ESOP plan document (Arabic-primary, watermarked)."""
+    plan = (await db.execute(
+        select(EsopPlan).where(EsopPlan.id == plan_id, EsopPlan.company_id == member.company_id)
+    )).scalar_one_or_none()
+    if plan is None:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    company = (await db.execute(
+        select(Company).where(Company.id == member.company_id)
+    )).scalar_one()
+
+    available = plan.total_pool - plan.allocated
+    html = render_cma_esop_plan_html(company, plan, available, article_29_checklist(), is_draft=True)
+    try:
+        pdf = html_to_pdf(html)
+    except RuntimeError as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e)) from e
+
+    db.add(AuditLog(
+        user_id=current_user.id,
+        company_id=member.company_id,
+        action=AuditAction.DOCUMENT_EXPORTED.value,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        detail=f"cma-plan.pdf plan={plan_id}",
+    ))
+    await db.commit()
+
+    safe_name = plan.name.replace(" ", "_")
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="cma-esop-plan-{safe_name}.pdf"'},
     )

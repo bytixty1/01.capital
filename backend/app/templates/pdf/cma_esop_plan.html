@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1 class="doc-title">Employee Share Program — CMA-Aligned Plan</h1>
+  <div class="doc-title-ar ar">برنامج أسهم الموظفين — خطة متوافقة مع هيئة السوق المالية</div>
+
+  <div class="entity-line">
+    {{ company.name_en }}{% if company.name_ar %} · <span class="ar">{{ company.name_ar }}</span>{% endif %}<br/>
+    {{ t_entity_type_en }}: <strong>{{ company.entity_type }}</strong>
+    {% if company.cr_number %} · {{ t_cr_en }}: <span class="mono">{{ company.cr_number }}</span>{% endif %}
+  </div>
+
+  <div class="section-title">Plan parameters · معايير البرنامج</div>
+  <table class="data">
+    <tbody>
+      <tr><th style="width:38%;">Plan name · اسم البرنامج</th><td>{{ plan.name }}</td></tr>
+      <tr><th>Total pool · إجمالي المجموع</th><td class="num" style="text-align:left;">{{ plan.total_pool | num }}</td></tr>
+      <tr><th>Allocated · المخصص</th><td class="num" style="text-align:left;">{{ plan.allocated | num }}</td></tr>
+      <tr><th>Available · المتاح</th><td class="num" style="text-align:left;">{{ available | num }}</td></tr>
+      <tr><th>Share class · فئة الأسهم</th><td>{{ plan.share_class }}</td></tr>
+      <tr><th>Authorised date · تاريخ الاعتماد</th><td class="mono">{{ plan.authorized_date or '—' }}</td></tr>
+    </tbody>
+  </table>
+
+  {% if plan.plan_rules %}
+  <div class="section-title">Plan rules · قواعد البرنامج</div>
+  <p style="font-size:9pt; color:#2a2a2a; white-space:pre-wrap;">{{ plan.plan_rules }}</p>
+  {% endif %}
+
+  <div class="section-title">Article 29 safe-harbour checklist · قائمة المادة 29</div>
+  <table class="data">
+    <thead><tr><th>#</th><th>Condition · الشرط</th><th style="text-align:right;">Confirmed</th></tr></thead>
+    <tbody>
+      {% for item in checklist %}
+      <tr>
+        <td class="num" style="text-align:left;">{{ loop.index }}</td>
+        <td>{{ item.requirement_en }}<br/><span class="ar">{{ item.requirement_ar }}</span></td>
+        <td style="text-align:right;">☐</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div style="margin-top:40px; display:flex; justify-content:space-between;">
+    <div style="width:45%; border-top:0.75px solid #999; padding-top:6px; font-size:8pt; color:#6a6a6a;">
+      {{ t_authorized_en }}<br/><span class="ar">{{ t_authorized_ar }}</span>
+    </div>
+    <div style="width:45%; border-top:0.75px solid #999; padding-top:6px; font-size:8pt; color:#6a6a6a;">
+      {{ t_date_en }}<br/><span class="ar">{{ t_date_ar }}</span>
+    </div>
+  </div>
+{% endblock %}

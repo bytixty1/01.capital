@@ -18,6 +18,9 @@ class FilingResponse(BaseModel):
     submitted_date: date | None
     notes: str | None
     created_at: datetime
+    # Computed/enriched fields (set by the endpoint, not stored).
+    is_overdue: bool = False
+    reference: dict | None = None
 
     model_config = {"from_attributes": True}
 

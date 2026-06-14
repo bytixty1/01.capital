@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1 class="doc-title">{{ ref.title_en }}</h1>
+  <div class="doc-title-ar ar">{{ ref.title_ar }}</div>
+
+  <div class="entity-line">
+    {{ company.name_en }}{% if company.name_ar %} · <span class="ar">{{ company.name_ar }}</span>{% endif %}<br/>
+    {{ t_entity_type_en }}: <strong>{{ company.entity_type }}</strong>
+    {% if company.cr_number %} · {{ t_cr_en }}: <span class="mono">{{ company.cr_number }}</span>{% endif %}
+  </div>
+
+  <table class="data">
+    <tbody>
+      <tr><th style="width:38%;">Authority · الجهة</th><td>{{ ref.authority }}</td></tr>
+      <tr><th>Portal section · القسم</th><td>{{ ref.portal_section }}</td></tr>
+      <tr><th>Filing deadline · الموعد النهائي</th><td class="mono">{{ due_date or '—' }} ({{ ref.deadline_days }} days)</td></tr>
+      <tr><th>Fees · الرسوم</th><td>{{ ref.fee_note_en }}</td></tr>
+      {% if trigger %}
+      <tr><th>Triggering event · الحدث</th><td>{{ trigger.event_type }} — <span class="mono">{{ trigger.event_date }}</span></td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  {% if trigger and trigger.payload %}
+  <div class="section-title">Event details · تفاصيل الحدث</div>
+  <table class="data">
+    <tbody>
+      {% for k, v in trigger.payload.items() %}
+      <tr><th style="width:38%;">{{ k }}</th><td>{{ v if v is not none else '—' }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <div class="section-title">Required supporting documents · المستندات المطلوبة</div>
+  <table class="data">
+    <thead><tr><th>#</th><th>Document · المستند</th><th style="text-align:right;">Attached</th></tr></thead>
+    <tbody>
+      {% for d in ref.required_documents %}
+      <tr><td class="num" style="text-align:left;">{{ loop.index }}</td><td>{{ d }}</td><td style="text-align:right;">☐</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p style="font-size:8.5pt; color:#4a4a4a; margin-top:14px;">{{ ref.description_en }}</p>
+
+  <div style="margin-top:44px; display:flex; justify-content:space-between;">
+    <div style="width:45%; border-top:0.75px solid #999; padding-top:6px; font-size:8pt; color:#6a6a6a;">
+      {{ t_authorized_en }}<br/><span class="ar">{{ t_authorized_ar }}</span>
+    </div>
+    <div style="width:45%; border-top:0.75px solid #999; padding-top:6px; font-size:8pt; color:#6a6a6a;">
+      {{ t_date_en }}<br/><span class="ar">{{ t_date_ar }}</span>
+    </div>
+  </div>
+{% endblock %}

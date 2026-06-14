@@ -421,6 +421,17 @@ export type SigningRecordResponse = {
   completed_at: string | null;
 };
 
+export type FilingReference = {
+  authority: string;
+  title_en: string;
+  title_ar: string;
+  deadline_days: number;
+  fee_note_en: string;
+  portal_section: string;
+  required_documents: string[];
+  description_en: string;
+};
+
 export type FilingResponse = {
   id: string;
   company_id: string;
@@ -431,6 +442,8 @@ export type FilingResponse = {
   submitted_date: string | null;
   notes: string | null;
   created_at: string;
+  is_overdue: boolean;
+  reference: FilingReference | null;
 };
 
 export type InstrumentResponse = {
@@ -712,6 +725,10 @@ export const api = {
       ),
     auditPackZip: (companyId: string) =>
       downloadFile(`/api/companies/${companyId}/documents/audit-pack.zip`, 'audit-pack.zip'),
+    filingDraftPdf: (companyId: string, filingId: string) =>
+      downloadFile(`/api/companies/${companyId}/filings/${filingId}/draft.pdf`, 'filing-draft.pdf'),
+    cmaPlanPdf: (companyId: string, planId: string) =>
+      downloadFile(`/api/companies/${companyId}/esop/${planId}/cma-plan.pdf`, 'cma-esop-plan.pdf'),
   },
 
   signing: {

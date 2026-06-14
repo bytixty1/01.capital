@@ -123,6 +123,19 @@ export default function EsopPlanPage() {
     }
   }
 
+  const [cmaBusy, setCmaBusy] = useState(false);
+  async function downloadCmaPlan() {
+    setCmaBusy(true);
+    setError(null);
+    try {
+      await api.documents.cmaPlanPdf(companyId, planId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'CMA plan PDF export failed');
+    } finally {
+      setCmaBusy(false);
+    }
+  }
+
   async function achieveMilestone(index: number) {
     if (!actionGrant) return;
     setActionBusy(true);
@@ -202,12 +215,17 @@ export default function EsopPlanPage() {
           <h1 style={s.heading}>{plan.name}</h1>
           <span style={{ ...s.badge, color: plan.status === 'active' ? 'var(--pos)' : 'var(--text-tertiary)' }}>{plan.status}</span>
         </div>
-        {plan.status === 'active' && (
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <a href={`/companies/${companyId}/esop/${planId}/bulk`} style={{ ...s.cta, textDecoration: 'none', border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}>Bulk import</a>
-            <a href={`/companies/${companyId}/esop/${planId}/grant`} className="btn-primary" style={s.cta}>+ Issue grant</a>
-          </div>
-        )}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={downloadCmaPlan} disabled={cmaBusy} style={{ ...s.cta, background: 'transparent', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', cursor: cmaBusy ? 'wait' : 'pointer' }}>
+            {cmaBusy ? 'Generating…' : 'CMA plan PDF'}
+          </button>
+          {plan.status === 'active' && (
+            <>
+              <a href={`/companies/${companyId}/esop/${planId}/bulk`} style={{ ...s.cta, textDecoration: 'none', border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}>Bulk import</a>
+              <a href={`/companies/${companyId}/esop/${planId}/grant`} className="btn-primary" style={s.cta}>+ Issue grant</a>
+            </>
+          )}
+        </div>
       </div>
 
       <div style={s.statsRow}>

@@ -170,6 +170,28 @@ def render_vesting_schedule_html(
     return _env().get_template("vesting_schedule.html").render(**ctx)
 
 
+def render_filing_document_html(
+    company: Any, ref: Any, due_date: Any, trigger: Any = None, is_draft: bool = True
+) -> str:
+    """Render a draft compliance filing document.
+
+    `ref` is a FilingReference; `trigger` is an optional object with
+    .event_type / .event_date / .payload describing the cap table event.
+    """
+    ctx = _common_context(is_draft)
+    ctx.update({"company": company, "ref": ref, "due_date": due_date, "trigger": trigger})
+    return _env().get_template("filing_document.html").render(**ctx)
+
+
+def render_cma_esop_plan_html(
+    company: Any, plan: Any, available: Any, checklist: list[dict], is_draft: bool = True
+) -> str:
+    """Render a CMA-aligned ESOP plan document with the Article 29 checklist."""
+    ctx = _common_context(is_draft)
+    ctx.update({"company": company, "plan": plan, "available": available, "checklist": checklist})
+    return _env().get_template("cma_esop_plan.html").render(**ctx)
+
+
 # ── PDF conversion (lazy native dependency) ──────────────────────────────────
 
 def html_to_pdf(html: str) -> bytes:
