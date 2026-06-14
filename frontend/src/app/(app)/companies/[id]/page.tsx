@@ -26,6 +26,7 @@ export default function CompanyPage() {
   const [hoveredSlice, setHoveredSlice] = useState<number | null>(null);
   const [diluted, setDiluted] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [packing, setPacking] = useState(false);
 
   async function handleExportPdf() {
     setExporting(true);
@@ -36,6 +37,18 @@ export default function CompanyPage() {
       setError(err instanceof Error ? err.message : 'PDF export failed');
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handleAuditPack() {
+    setPacking(true);
+    setError(null);
+    try {
+      await api.documents.auditPackZip(id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Audit pack export failed');
+    } finally {
+      setPacking(false);
     }
   }
 
@@ -140,6 +153,7 @@ export default function CompanyPage() {
           { label: 'ESOP', href: `/companies/${id}/esop`, active: false },
           { label: 'Instruments', href: `/companies/${id}/instruments`, active: false },
           { label: 'Filings', href: `/companies/${id}/filings`, active: false },
+          { label: 'Signing', href: `/companies/${id}/signing`, active: false },
           { label: 'Members', href: `/companies/${id}/members`, active: false },
         ].map(({ label, href, active }) => (
           <Link key={label} href={href} style={{
@@ -253,6 +267,13 @@ export default function CompanyPage() {
               style={{ background: 'transparent', border: 'none', padding: 0, color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 500, cursor: exporting ? 'wait' : 'pointer' }}
             >
               {exporting ? 'Exporting…' : 'Export PDF'}
+            </button>
+            <button
+              onClick={handleAuditPack}
+              disabled={packing}
+              style={{ background: 'transparent', border: 'none', padding: 0, color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 500, cursor: packing ? 'wait' : 'pointer' }}
+            >
+              {packing ? 'Building…' : 'Audit pack'}
             </button>
             <Link href={`/companies/${id}/cap-table/issue`} className="link-accent" style={{ fontSize: '14px', textDecoration: 'none', fontWeight: 500 }}>
               Issue shares

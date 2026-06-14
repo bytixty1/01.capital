@@ -6,6 +6,7 @@ log (Rule 8: audit every document access).
 """
 
 import uuid
+from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -13,16 +14,23 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_company_member, require_mfa
+from app.core.deps import get_company_member, require_admin, require_mfa
 from app.models.audit_log import AuditAction, AuditLog
 from app.models.company import Company
 from app.models.company_member import CompanyMember
 from app.models.esop_grant import EsopGrant
 from app.models.esop_plan import EsopPlan
 from app.models.holding import Holding
+from app.models.signing_record import SigningRecord, SigningStatus
 from app.models.stakeholder import Stakeholder
 from app.models.user import User
+from app.schemas.signing import (
+    CreateSigningRequest,
+    SigningRecordResponse,
+)
+from app.services.audit_pack import build_audit_pack
 from app.services.cap_table import get_cap_table
+from app.services.esign import Signer, get_signing_adapter
 from app.services.pdf import (
     html_to_pdf,
     render_cap_table_html,
@@ -181,3 +189,112 @@ async def vesting_schedule_pdf(
         db, current_user.id, member.company_id, request, f"vesting.pdf grant={grant_id}"
     )
     return _pdf_response(pdf, f"vesting-{holder_name.replace(' ', '_')}.pdf")
+
+
+# ── Audit pack (one-click ZIP) ───────────────────────────────────────────────
+
+@router.get("/{company_id}/documents/audit-pack.zip")
+async def audit_pack_zip(
+    request: Request,
+    member: CompanyMember = Depends(get_company_member),
+    current_user: User = Depends(require_mfa),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Bundle cap table (PDF+CSV) + event log + grant register into one ZIP."""
+    zip_bytes, filename = await build_audit_pack(db, member.company_id)
+    await _audit_export(db, current_user.id, member.company_id, request, "audit-pack.zip")
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ── E-signing (vendor-neutral adapter) ───────────────────────────────────────
+
+@router.post(
+    "/{company_id}/signing",
+    response_model=SigningRecordResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def send_for_signature(
+    body: CreateSigningRequest,
+    member: CompanyMember = Depends(require_admin),
+    current_user: User = Depends(require_mfa),
+    db: AsyncSession = Depends(get_db),
+) -> SigningRecord:
+    """Send a document for e-signature via the configured adapter (stub in V1).
+
+    Produces an audit-traceable signing record. No external delivery happens
+    with the stub adapter — the record tracks intent until a real provider is
+    wired in behind the same interface.
+    """
+    adapter = get_signing_adapter()
+    result = adapter.send_for_signature(
+        body.document_name,
+        [Signer(name=s.name, email=s.email) for s in body.signers],
+    )
+
+    record = SigningRecord(
+        company_id=member.company_id,
+        document_type=body.document_type,
+        document_name=body.document_name,
+        provider=result.provider,
+        envelope_id=result.envelope_id,
+        status=SigningStatus.SENT,
+        signers=[{"name": s.name, "email": s.email} for s in body.signers],
+        notes=body.notes,
+        created_by=current_user.id,
+    )
+    db.add(record)
+    await db.commit()
+    await db.refresh(record)
+    return record
+
+
+@router.get("/{company_id}/signing", response_model=list[SigningRecordResponse])
+async def list_signing_records(
+    member: CompanyMember = Depends(get_company_member),
+    _mfa: User = Depends(require_mfa),
+    db: AsyncSession = Depends(get_db),
+) -> list[SigningRecord]:
+    result = await db.execute(
+        select(SigningRecord)
+        .where(SigningRecord.company_id == member.company_id)
+        .order_by(SigningRecord.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+@router.post(
+    "/{company_id}/signing/{record_id}/mark-signed",
+    response_model=SigningRecordResponse,
+)
+async def mark_signed(
+    record_id: uuid.UUID,
+    member: CompanyMember = Depends(require_admin),
+    _mfa: User = Depends(require_mfa),
+    db: AsyncSession = Depends(get_db),
+) -> SigningRecord:
+    """Mark a signing envelope as completed.
+
+    With the stub adapter there is no provider webhook, so completion is
+    recorded manually by an admin. A real provider would drive this from a
+    signed-event callback instead.
+    """
+    record = (await db.execute(
+        select(SigningRecord).where(
+            SigningRecord.id == record_id,
+            SigningRecord.company_id == member.company_id,
+        )
+    )).scalar_one_or_none()
+    if record is None:
+        raise HTTPException(status_code=404, detail="Signing record not found")
+    if record.status != SigningStatus.SENT:
+        raise HTTPException(status_code=422, detail=f"Record is {record.status}, cannot mark signed")
+
+    record.status = SigningStatus.SIGNED
+    record.completed_at = datetime.now(timezone.utc)
+    await db.commit()
+    await db.refresh(record)
+    return record

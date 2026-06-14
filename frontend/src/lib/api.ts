@@ -405,6 +405,22 @@ export type BulkGrantResponse = {
   results: BulkGrantRowResult[];
 };
 
+export type SigningStatus = 'sent' | 'signed' | 'declined' | 'voided';
+
+export type SigningRecordResponse = {
+  id: string;
+  company_id: string;
+  document_type: string;
+  document_name: string;
+  provider: string;
+  envelope_id: string;
+  status: SigningStatus;
+  signers: { name: string; email: string }[];
+  notes: string | null;
+  created_at: string;
+  completed_at: string | null;
+};
+
 export type FilingResponse = {
   id: string;
   company_id: string;
@@ -694,6 +710,24 @@ export const api = {
         `/api/companies/${companyId}/esop/${planId}/grants/${grantId}/vesting.pdf`,
         'vesting.pdf',
       ),
+    auditPackZip: (companyId: string) =>
+      downloadFile(`/api/companies/${companyId}/documents/audit-pack.zip`, 'audit-pack.zip'),
+  },
+
+  signing: {
+    list: (companyId: string) =>
+      request<SigningRecordResponse[]>(`/api/companies/${companyId}/signing`),
+    send: (companyId: string, body: {
+      document_type: string; document_name: string;
+      signers: { name: string; email: string }[]; notes?: string | undefined;
+    }) =>
+      request<SigningRecordResponse>(`/api/companies/${companyId}/signing`, {
+        method: 'POST', body: JSON.stringify(body),
+      }),
+    markSigned: (companyId: string, recordId: string) =>
+      request<SigningRecordResponse>(`/api/companies/${companyId}/signing/${recordId}/mark-signed`, {
+        method: 'POST',
+      }),
   },
 
   filings: {
