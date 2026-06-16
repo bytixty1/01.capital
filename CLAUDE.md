@@ -12,9 +12,33 @@ The repository was previously used for a TASI stock analysis platform — fully 
 
 ## Current phase
 
-**Build — Sprint 1 active.** Discovery concluded. ADR-0004 (Accepted, 2026-05-06) authorises build. The implementation plan in `docs/product/implementation-plan.md` is the active plan.
+**Build — Sprint 5 active.** Sprints 0–4 complete. Sprint 5 in progress (sophisticated instruments, anti-dilution, waterfall). The implementation plan in `docs/product/implementation-plan.md` is the active plan.
 
 Do not add features outside the current sprint scope without an ADR. If asked to build something not in the current sprint, flag it and ask for explicit override.
+
+---
+
+## Development workflow (Gstack)
+
+This project uses [Gstack](https://github.com/garrytan/gstack) — a structured AI workflow system installed at `~/.claude/skills/gstack`. Follow this loop for every feature or sprint task:
+
+| Phase | Skill | When to use |
+|-------|-------|-------------|
+| Brainstorm / scope | `/office-hours` | Starting a new sprint feature or unclear requirement |
+| Architecture review | `/plan-eng-review` | Before implementing anything non-trivial |
+| Code review | `/review` | After every implementation — auto-fixes obvious issues |
+| Frontend QA | `/qa http://localhost:3000` | After UI changes — opens real browser, finds bugs |
+| Security audit | `/cso` | Before any auth, encryption, or RBAC change |
+| Ship | `/ship` | Runs tests, opens PR, pushes — replaces manual git flow |
+| Weekly reflection | `/retro` | End of each sprint week |
+
+**Safety tools:**
+- `/careful` — warns before destructive commands (DROP TABLE, rm -rf, force-push)
+- `/freeze` — locks edits to one directory while debugging a tricky issue
+
+**GBrain** (persistent knowledge base): run `/setup-gbrain` once to connect to Supabase, then `/sync-gbrain` after significant code changes to keep the knowledge graph current.
+
+**Browser daemon** (`browse`): starts automatically on first `/qa` call. Frontend must be running on `localhost:3000` and backend on `localhost:8000`.
 
 ---
 
@@ -26,9 +50,11 @@ Read these in order — do not skip any:
 2. `CONSULTANT_SPEC.md` — how an AI consultant works with this team
 3. `.agents/rules/01-project-rules.md` — the locked project rules
 4. `docs/decisions/0001-pivot-to-cap-table.md` — strategic anchor
-5. `docs/discovery/14-day-sprint.md` — active sprint plan
+5. `docs/product/implementation-plan.md` — active sprint plan (Sprint 5 in progress)
 6. `docs/STANDARDS.md` — engineering standards (API design, data model rules, Saudi law compliance, definition of done)
-7. `graphify-out/GRAPH_REPORT.md` — codebase knowledge graph (1072 nodes, 68 communities); run `/graphify --update` after significant code changes
+7. `graphify-out/GRAPH_REPORT.md` — codebase knowledge graph; run `/graphify --update` after significant code changes
+
+Then check Gstack is ready: `ls ~/.claude/skills/gstack/` should list skill directories.
 
 ---
 

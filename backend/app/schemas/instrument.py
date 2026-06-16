@@ -3,6 +3,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -37,3 +38,42 @@ class InstrumentResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ConvertInstrumentRequest(BaseModel):
+    # Required for SAFE/note conversions; ignored when terms fix shares or price.
+    round_price_per_share: Decimal | None = Field(None, gt=0)
+    share_class: str = Field(default="preferred-a", min_length=1, max_length=50)
+    accrued_amount: Decimal | None = Field(None, ge=0)  # profit/interest added to principal
+    event_date: date
+    notes: str | None = None
+    preview: bool = False  # if true, compute without persisting
+
+
+class ConversionResultResponse(BaseModel):
+    instrument_id: uuid.UUID
+    shares: Decimal
+    conversion_price: Decimal | None
+    method: str
+    principal: Decimal
+    share_class: str
+    committed: bool
+
+
+class AntiDilutionRequest(BaseModel):
+    mechanism: Literal["broad_based_weighted_average", "full_ratchet"]
+    old_conversion_price: Decimal = Field(..., gt=0)
+    new_issue_price: Decimal = Field(..., gt=0)
+    amount_invested: Decimal = Field(..., gt=0)
+    # Required for broad-based weighted average:
+    pre_round_fd_shares: Decimal | None = Field(None, gt=0)
+    new_shares_issued: Decimal | None = Field(None, gt=0)
+
+
+class AntiDilutionResponse(BaseModel):
+    mechanism: str
+    old_conversion_price: Decimal
+    new_conversion_price: Decimal
+    old_shares_on_conversion: Decimal
+    new_shares_on_conversion: Decimal
+    extra_shares: Decimal

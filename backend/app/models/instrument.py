@@ -18,8 +18,19 @@ from app.core.database import Base
 
 class InstrumentType(str, Enum):
     SUKUK_CONVERTIBLE = "sukuk_convertible"
+    CONVERTIBLE_NOTE = "convertible_note"
+    SAFE = "safe"  # Saudi-adapted SAFE-equivalent (not a Delaware template)
     PHANTOM = "phantom"
     WARRANT = "warrant"
+
+
+# Instrument types that convert into shares at a priced round.
+CONVERTIBLE_TYPES = {
+    InstrumentType.SUKUK_CONVERTIBLE,
+    InstrumentType.CONVERTIBLE_NOTE,
+    InstrumentType.SAFE,
+    InstrumentType.WARRANT,
+}
 
 
 class InstrumentStatus(str, Enum):
