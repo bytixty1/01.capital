@@ -67,7 +67,7 @@ async def compute_waterfall(
             return p
         return WaterfallPreference(
             share_class=cls,
-            seniority=999,
+            seniority=100,  # lowest valid priority; never used (multiplier=0 ⇒ excluded from seniority sort)
             multiplier=ZERO,
             participation="non_participating",
             original_investment_sar=ZERO,
