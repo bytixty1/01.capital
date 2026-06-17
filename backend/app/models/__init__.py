@@ -10,9 +10,11 @@ from app.models.filing import Filing  # noqa: F401
 from app.models.instrument import Instrument  # noqa: F401
 from app.models.audit_log import AuditLog  # noqa: F401
 from app.models.signing_record import SigningRecord  # noqa: F401
+from app.models.pro_rata_right import ProRataRight  # noqa: F401
 
 __all__ = [
     "User", "Company", "CompanyMember", "Stakeholder",
     "CapTableEvent", "Holding", "EsopPlan", "EsopGrant",
     "Filing", "Instrument", "AuditLog", "SigningRecord",
+    "ProRataRight",
 ]
