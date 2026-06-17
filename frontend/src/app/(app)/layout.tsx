@@ -159,6 +159,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             { label: 'Stakeholders', href: `/companies/${activeCompanyId}/stakeholders` },
             { label: 'ESOP', href: `/companies/${activeCompanyId}/esop` },
             { label: 'Instruments', href: `/companies/${activeCompanyId}/instruments` },
+            { label: 'Pro-Rata Rights', href: `/companies/${activeCompanyId}/pro-rata` },
             { label: 'Filings', href: `/companies/${activeCompanyId}/filings` },
             { label: 'Members', href: `/companies/${activeCompanyId}/members` },
           ].map(({ label, href, exact }) => {

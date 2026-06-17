@@ -184,6 +184,7 @@ export type FilingType =
 export type FilingStatus = 'pending' | 'in_progress' | 'submitted' | 'not_required';
 export type InstrumentType = 'sukuk_convertible' | 'phantom' | 'warrant';
 export type InstrumentStatus = 'active' | 'converted' | 'redeemed' | 'expired';
+export type ProRataStatus = 'active' | 'exercised' | 'waived' | 'expired';
 
 export type CompanyResponse = {
   id: string;
@@ -458,6 +459,21 @@ export type InstrumentResponse = {
   maturity_date: string | null;
   terms: Record<string, unknown>;
   status: InstrumentStatus;
+  notes: string | null;
+  created_at: string;
+};
+
+export type ProRataRightResponse = {
+  id: string;
+  company_id: string;
+  stakeholder_id: string;
+  instrument_id: string | null;
+  round_name: string;
+  max_investment_sar: string;
+  deadline: string | null;
+  status: ProRataStatus;
+  exercised_amount_sar: string | null;
+  exercised_at: string | null;
   notes: string | null;
   created_at: string;
 };
@@ -770,6 +786,27 @@ export const api = {
     }) =>
       request<InstrumentResponse>(`/api/companies/${companyId}/instruments`, {
         method: 'POST', body: JSON.stringify(body),
+      }),
+  },
+
+  proRata: {
+    list: (companyId: string) =>
+      request<ProRataRightResponse[]>(`/api/companies/${companyId}/pro-rata-rights`),
+    create: (companyId: string, body: {
+      stakeholder_id: string; round_name: string; max_investment_sar: number;
+      deadline?: string | undefined; instrument_id?: string | undefined;
+      notes?: string | undefined;
+    }) =>
+      request<ProRataRightResponse>(`/api/companies/${companyId}/pro-rata-rights`, {
+        method: 'POST', body: JSON.stringify(body),
+      }),
+    exercise: (companyId: string, rightId: string, exercisedAmountSar: number) =>
+      request<ProRataRightResponse>(`/api/companies/${companyId}/pro-rata-rights/${rightId}/exercise`, {
+        method: 'POST', body: JSON.stringify({ exercised_amount_sar: exercisedAmountSar }),
+      }),
+    waive: (companyId: string, rightId: string) =>
+      request<ProRataRightResponse>(`/api/companies/${companyId}/pro-rata-rights/${rightId}/waive`, {
+        method: 'POST',
       }),
   },
 
