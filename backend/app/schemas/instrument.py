@@ -77,3 +77,19 @@ class AntiDilutionResponse(BaseModel):
     old_shares_on_conversion: Decimal
     new_shares_on_conversion: Decimal
     extra_shares: Decimal
+
+
+class PhantomPayoutRequest(BaseModel):
+    exit_price_per_share_sar: Decimal = Field(..., gt=0)
+    # Withholding rate applied to the gross payout (0–1). Default 0 = no withholding.
+    tax_rate: Decimal = Field(default=Decimal("0"), ge=0, le=1)
+
+
+class PhantomPayoutResponse(BaseModel):
+    instrument_id: uuid.UUID
+    quantity: Decimal
+    exit_price_per_share_sar: Decimal
+    gross_payout_sar: Decimal
+    tax_rate: Decimal
+    tax_withheld_sar: Decimal
+    net_payout_sar: Decimal

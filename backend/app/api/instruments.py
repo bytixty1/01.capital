@@ -24,10 +24,13 @@ from app.schemas.instrument import (
     ConvertInstrumentRequest,
     CreateInstrumentRequest,
     InstrumentResponse,
+    PhantomPayoutRequest,
+    PhantomPayoutResponse,
 )
 from app.services.antidilution import broad_based_weighted_average, full_ratchet
 from app.services.cap_table import apply_share_issuance, get_cap_table
 from app.services.conversion import compute_conversion
+from app.services.phantom import compute_phantom_payout
 
 router = APIRouter(prefix="/companies", tags=["instruments"])
 
@@ -220,4 +223,24 @@ async def convert_instrument(
         principal=result.principal,
         share_class=body.share_class,
         committed=True,
+    )
+
+
+@router.post(
+    "/{company_id}/instruments/{instrument_id}/phantom-payout",
+    response_model=PhantomPayoutResponse,
+)
+async def phantom_payout(
+    instrument_id: uuid.UUID,
+    body: PhantomPayoutRequest,
+    member: CompanyMember = Depends(get_company_member),
+    db: AsyncSession = Depends(get_db),
+) -> PhantomPayoutResponse:
+    """Project a phantom-share cash payout at a hypothetical exit price. No persistence."""
+    return await compute_phantom_payout(
+        db,
+        company_id=member.company_id,
+        instrument_id=instrument_id,
+        exit_price_per_share_sar=body.exit_price_per_share_sar,
+        tax_rate=body.tax_rate,
     )
